@@ -2,25 +2,36 @@ from random import randint, uniform
 from time import perf_counter
 from random import choices
 from hashlib import sha512
-import enclib as enc
 from os import path, mkdir, remove
 from datetime import datetime
 from threading import Thread
+from socket import socket
+import enclib as enc
 
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.lang import Builder
-from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.config import Config
 
+if not path.exists("rdisc.kv"):
+    import rdisc_kv
+    rdisc_kv.kv()
+
+if path.exists("rdisc.py"):
+    import rdisc_kv
+    rdisc_kv.kv()
 
 # todo stop all screens from starting at startup
+if path.exists("userdata/key"):
+    remove("userdata/key")
 
-
-hashed = enc.hash_a_file("rdisc.py")
+if path.exists("rdisc.exe"):
+    hashed = enc.hash_a_file("rdisc.exe")
+else:
+    hashed = enc.hash_a_file("rdisc.py")
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
         latest_sha_, version_, tme_, run_num_ = f.readlines()[-1].split("§")
@@ -76,21 +87,22 @@ class logInOrSignUpScreen(Screen):
             print(" - Key data loaded")
             if len(key_data.split(b"NGEN")) == 4:
                 print(" - Detected old generation key, resuming...")
-                key_data = key_data.split(b"NGEN")
-                file_key = generate_master_key(key_location, key_data[0], key_data[1],
-                                               float(key_data[2]), int(key_data[3]))
-                input()
+                print("CURRENTLY DISABLED. Deleting key")
+                remove(f'userdata\key')
+                #key_data = key_data.split(b"NGEN")
+                #file_key = generate_master_key(key_location, key_data[0], key_data[1],
+                #                               float(key_data[2]), int(key_data[3]))
             if len(key_data.split(b"RGEN")) == 4:
                 print(" - Detected old regeneration key, resuming...")
-                key_data = key_data.split(b"RGEN")
-                file_key = regenerate_master_key(key_location, key_data[0], key_data[1],
-                                                 int(key_data[2]), int(key_data[3]))
-                input()
+                print("CURRENTLY DISABLED. Deleting key")
+                remove(f'userdata\key')
+                #key_data = key_data.split(b"RGEN")
+                #file_key = regenerate_master_key(key_location, key_data[0], key_data[1],
+                #                                 int(key_data[2]), int(key_data[3]))
             if key_data.endswith(b"MAKE_KEY"):
                 print(" - MAKE KEY")
                 file_key = key_data.replace(b"MAKE_KEY", b"")
-                return None
-                input()
+                sm.switch_to(ipSetScreen())
             else:
                 if path.exists(f'{key_location}key_salt'):
                     with open(f'{key_location}key_salt', encoding="utf-8") as f:
@@ -118,9 +130,9 @@ class keyUnlockScreen(Screen):
             self.pwd.text = ""
 
 
-class signUpScreen1(Screen):
-    gen_progress_bar = ObjectProperty()
+class createKeyScreen(Screen):
     confirmation_code = ObjectProperty(None)
+    confirmation_warning = ObjectProperty(None)
     pass_code_text = StringProperty()
     pin_code_text = StringProperty()
     rand_confirm_text = StringProperty()
@@ -139,23 +151,26 @@ class signUpScreen1(Screen):
                     time_left -= (perf_counter()-loop_timer)
                     loop_timer = perf_counter()
                     real_dps = int(round(current_depth/(perf_counter()-start), 0))
-                    print(f"\n Runtime: {round(perf_counter()-start, 2)}s  "
+                    print(f"Runtime: {round(perf_counter()-start, 2)}s  "
                           f"Time Left: {round(time_left, 2)}s  "
                           f"DPS: {round(real_dps/1000000, 3)}M  "
-                          f"Depth: {current_depth}/{round(real_dps * time_left, 2)}  "
+                          f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
                           f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
                     with open(f'userdata/key', 'wb') as f:
                         f.write(file_key + b"NGEN" + salt + b"NGEN" +
                                 str(time_left).encode() + b"NGEN" + str(current_depth).encode())
-                    self.gen_progress_bar.value = (depth_time-time_left)/depth_time
-                    self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
+                    self.pin_code_text = f"Generating keys ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
         with open(f"userdata/key", "wb") as f:
             f.write(file_key + b"MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Depth pin: {current_depth}"
-        self.rand_confirm_text = f"Once you have written down your recovery code " \
+        self.pin_code_text = f"Your account pin is: {current_depth}"
+        self.confirmation_warning.text = f"Your account code and pin are REQUIRED to access your account " \
+                                         f"on another device.\nIf you lose these YOU WILL NOT be able to login " \
+                                         f"in to your account or recover it.\nFor security reasons we suggest you " \
+                                         f"don't store these codes digitally"
+        self.rand_confirm_text = f"Once you have written down your account code " \
                                  f"and pin enter {self.rand_confirmation} below"
 
     def on_pre_enter(self, *args):
@@ -166,7 +181,7 @@ class signUpScreen1(Screen):
                pass_code[15:].encode(), time_depth,), daemon=True).start()
         self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
         pass_code_print = f"{pass_code[:5]}-{pass_code[5:10]}-{pass_code[10:15]}-{pass_code[15:20]}-{pass_code[20:]}"
-        self.pass_code_text = f"Your recovery code is: {pass_code_print}"
+        self.pass_code_text = f"Your account code is: {pass_code_print}"
 
     def continue_confirmation(self):
         if self.rand_confirmation:
@@ -175,23 +190,142 @@ class signUpScreen1(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    sm.switch_to(signUpScreen2())
+                    sm.switch_to(ipSetScreen())
                 else:
                     print("Confirmation code incorrect")
 
 
-class signUpScreen2(Screen):
-    gen_progress_bar = ObjectProperty()
+class reCreateKeyScreen(Screen):
+    pass_code_text = StringProperty()
+    pin_code_text = StringProperty()
+    rand_confirm_text = StringProperty()
+    start_time = None
+    rand_confirmation = None
 
-    def __init__(self, **kwa):
-        super(signUpScreen2, self).__init__(**kwa)
-        Clock.schedule_interval(self.update_progress_bar, 1.0 / 60.0)
+    def generate_master_key(self, file_key, salt, depth_time, current_depth=0):
+        start, time_left, loop_timer = perf_counter(), depth_time, perf_counter()
+        if not path.exists("userdata"):
+            mkdir("userdata")
+        while time_left > 0:
+            current_depth += 1
+            file_key = sha512(file_key+salt).digest()
+            if perf_counter()-loop_timer > 0.25:
+                try:
+                    time_left -= (perf_counter()-loop_timer)
+                    loop_timer = perf_counter()
+                    real_dps = int(round(current_depth/(perf_counter()-start), 0))
+                    print(f"Runtime: {round(perf_counter()-start, 2)}s  "
+                          f"Time Left: {round(time_left, 2)}s  "
+                          f"DPS: {round(real_dps/1000000, 3)}M  "
+                          f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
+                          f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
+                    with open(f'userdata/key', 'wb') as f:
+                        f.write(file_key + b"NGEN" + salt + b"NGEN" +
+                                str(time_left).encode() + b"NGEN" + str(current_depth).encode())
+                    self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
+                except ZeroDivisionError:
+                    pass
+        with open(f"userdata/key", "wb") as f:
+            f.write(file_key + b"MAKE_KEY")
+        self.rand_confirmation = str(randint(0, 9))
+        self.pin_code_text = f"Depth pin: {current_depth}"
+        self.rand_confirm_text = f"Once you have written down your account code " \
+                                 f"and pin enter {self.rand_confirmation} below"
 
-    def update_progress_bar(self, dt):
-        self.gen_progress_bar.value += 0.01
-        if self.gen_progress_bar.value >= 1:
-            self.gen_progress_bar.value = 0
-            #sm.switch_to(createScreen4())
+    def on_pre_enter(self, *args):
+        self.start_time = perf_counter()
+        pass_code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(25)))
+        time_depth = uniform(3, 10)  # time_depth
+        Thread(target=self.generate_master_key, args=(pass_code[:15].encode(),
+               pass_code[15:].encode(), time_depth,), daemon=True).start()
+        self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
+        pass_code_print = f"{pass_code[:5]}-{pass_code[5:10]}-{pass_code[10:15]}-{pass_code[15:20]}-{pass_code[20:]}"
+        self.pass_code_text = f"Your account code is: {pass_code_print}"
+
+    def continue_confirmation(self):
+        if self.rand_confirmation:
+            if self.confirmation_code == "":
+                print("No input provided")
+            else:
+                if self.confirmation_code.text == self.rand_confirmation:
+                    print("Confirmation code correct")
+                    sm.switch_to(ipSetScreen())
+                else:
+                    print("Confirmation code incorrect")
+
+
+class Server:
+    def __init__(self):
+        self.sock = socket()
+        #self.connected = False
+        if path.exists("userdata/ip"):
+            with open(f"userdata/ip", "rb") as f:
+                self.ip = f.read().decode().split(":")
+        else:
+            self.ip = None
+
+    def connect(self):
+        try:
+            self.sock.connect((self.ip[0], int(self.ip[1])))
+            print("Connected to server")
+            #self.connected = True
+            return True
+        except ConnectionRefusedError:
+            print("Connection refused")
+            return False
+
+
+server = Server()
+
+
+class ipSetScreen(Screen):
+    ip_address = ObjectProperty(None)
+    ip = None
+
+    def on_pre_enter(self, *args):
+        if server.ip:
+            if server.connect():
+                print("Success")
+                sm.switch_to(next())
+            else:
+                print("Failed to connect to set IP")
+
+    def try_connect(self):
+        if self.ip_address.text == "":
+            print("No input provided")
+        else:
+            try:
+                server_ip, server_port = self.ip_address.text.split(":")
+                server_port = int(server_port)
+            except ValueError or NameError:
+                print("\n🱫[COL-RED] Invalid input")
+            else:
+                if server_port < 1 or server_port > 65535:
+                    print("\n🱫[COL-RED] Port number must be between 1 and 65535")
+                else:
+                    try:
+                        ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
+                    except ValueError:
+                        print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
+                    try:
+                        if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
+                            server.ip = [server_ip, server_port]
+                            if server.connect():
+                                print("Success")
+                                with open(f"userdata/ip", "w", encoding="utf-8") as f:
+                                    f.write(f"{server_ip}:{server_port}")
+                                sm.switch_to(next())
+                            else:
+                                print("Failed to connect to IP")
+                        else:
+                            print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
+                    except NameError:
+                        print("\n🱫[COL-RED] IP address must be in the form of 'xxx.xxx.xxx.xxx'")
+
+
+class next(Screen):
+    def on_pre_enter(self, *args):
+        print("Next")
 
 
 class loginScreen(Screen):
@@ -213,16 +347,18 @@ class windowManager(ScreenManager):
     pass
 
 
-kv = Builder.load_file('rdisc_screens.kv')
+kv = Builder.load_file("rdisc.kv")
 sm = windowManager()
 
 
 # adding screens
 sm.add_widget(logInOrSignUpScreen(name='login_signup'))
-sm.add_widget(keyUnlockScreen(name='login'))
-sm.add_widget(signUpScreen1(name='signup1'))
-sm.add_widget(signUpScreen2(name='signup2'))
-sm.add_widget(loginScreen(name='recovery'))
+sm.add_widget(keyUnlockScreen(name='unlock_key'))
+sm.add_widget(createKeyScreen(name='create_key'))
+sm.add_widget(reCreateKeyScreen(name='recreate_key'))
+sm.add_widget(ipSetScreen(name='ip_set'))
+sm.add_widget(next(name='next'))
+sm.add_widget(loginScreen(name='login'))
 sm.add_widget(logDataScreen(name='logdata'))
 
 
