@@ -39,11 +39,13 @@
 0.39 better installers, smaller app size, account key creator
 0.40 changing to rdisc-4c5, the kivy GUI, exes back and in one file
 
-0.41 account creation with 2fa setup
-0.42 session limit = account compromised
-0.43 uname setting, basic chat functionality
-0.44 venv not tracked but still downloaded, clean app (remove user files), version.txt store hash and check
-0.45 use CLI even when UI active << is this actually possible?
+0.41 captcha human verification
+
+0.42 2fa setup
+0.43 account creation and username setting
+0.44 basic chat functionality
+0.45 session limit = account compromised
+0.46 venv not tracked but still downloaded, clean app (remove user files)
 
 planned features:
 - multiple build types:

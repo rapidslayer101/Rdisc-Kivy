@@ -26,18 +26,18 @@ if path.exists("rdisc.py"):
     rdisc_kv.kv()
 
 if path.exists("rdisc.exe"):
-    hashed = enc.hash_a_file("rdisc.exe")
+    app_hash = enc.hash_a_file("rdisc.exe")
 else:
-    hashed = enc.hash_a_file("rdisc.py")
+    app_hash = enc.hash_a_file("rdisc.py")
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
         latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
     print("prev", version_, tme_, bld_num_, run_num_)
     release_major, major, build, run = version_.replace("V", "").split(".")
-    if latest_sha_ != hashed:
+    if latest_sha_ != app_hash:
         run = int(run) + 1
         with open("sha.txt", "a+", encoding="utf-8") as f:
-            write = f"\n{hashed}§V{release_major}.{major}.{build}.{run}" \
+            write = f"\n{app_hash}§V{release_major}.{major}.{build}.{run}" \
                     f"§TME-{str(datetime.now())[:-4].replace(' ', '_')}" \
                     f"§BLD_NM-{bld_num_[7:]}§RUN_NM-{int(run_num_[7:])+1}"
             print(f"crnt V{release_major}.{major}.{build}.{run} "
@@ -45,6 +45,9 @@ if path.exists("sha.txt"):
                   f"BLD_NM-{bld_num_[7:]} RUN_NM-{int(run_num_[7:])+1}")
             f.write(write)
     print(f"Running rdisc V{release_major}.{major}.{build}.{run}")
+
+default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=" \
+               "G-;|&&rR81!BTElChN|+\"TCM'CNJ+ws@ZQ~7[:¬`-OC8)JCTtI¬k<i#.\"H4tq)p4"
 
 
 #def regenerate_master_key(self, key_location, file_key, salt, depth_to, current_depth=0):
@@ -101,7 +104,7 @@ class Server:
             enc_seed = decrypt(self.s.recv(128), self.pri_key).decode()
             enc_salt = decrypt(self.s.recv(128), self.pri_key).decode()
             self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
-            print(" << Client enc_seed and enc_salt received and loaded\n"
+            print(" << Client enc_seed and enc_salt received and loaded\n "
                   "-- RSA Enc bootstrap complete")
             return True
         except ConnectionRefusedError:
@@ -125,8 +128,7 @@ s = Server()
 
 
 class logInOrSignUpScreen(Screen):
-    def __init__(self, **kwargs):
-        super(logInOrSignUpScreen, self).__init__(**kwargs)
+    def on_enter(self, *args):
         print("Loading account keys...")
         key_location = None
         if path.exists(f'userdata\key'):
@@ -142,8 +144,8 @@ class logInOrSignUpScreen(Screen):
                 print(" - MAKE KEY")
                 #file_key = key_data.replace(b"MAKE_KEY", b"")
                 if s.ip:  # todo: get rid of weird problem where server connects twice if going via MAKE_KEY route
-                    #sm.switch_to(attemptConnection(), direction="left")
-                    pass
+                    sm.switch_to(attemptConnection(), direction="left")
+                    #pass
                 else:
                     sm.switch_to(ipSetScreen(), direction="left")
             else:
@@ -289,7 +291,10 @@ class reCreateKeyScreen(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    sm.switch_to(ipSetScreen(), direction="left")
+                    if s.ip:
+                        sm.switch_to(attemptConnection(), direction="left")
+                    else:
+                        sm.switch_to(ipSetScreen(), direction="left")
                 else:
                     print("Confirmation code incorrect")
 
@@ -334,15 +339,36 @@ class attemptConnection(Screen):
             if not path.exists("userdata/server_ip"):
                 with open(f"userdata/server_ip", "w", encoding="utf-8") as f:
                     f.write(f"{s.ip[0]}:{s.ip[1]}")
-            sm.switch_to(next(), direction="left")
+            sm.switch_to(captcha(), direction="left")
         else:
             print("Failed to connect to set IP")
             sm.switch_to(ipSetScreen(), direction='right')
 
 
-class next(Screen):
+class captcha(Screen):
+    captcha_prompt_text = StringProperty()
+    captcha_input = ObjectProperty(None)
+
     def on_pre_enter(self, *args):
-        print("Next screen")
+        self.captcha_prompt_text = "Waiting for captcha..."
+
+    def on_enter(self, *args):
+        print("Captcha screen")
+        self.get_captcha()
+
+    def get_captcha(self):
+        s.send_e("CAP")
+        image = s.recv_d(32768)  # todo remove the need for a file
+        with open('captcha.jpg', 'wb') as f:
+            f.write(image)
+        self.captcha_prompt_text = f"Enter the text below"
+        self.ids.captcha_image.source = 'captcha.jpg'
+
+    def try_captcha(self):
+        if self.captcha_input.text == "":
+            print("No input provided")
+        else:
+            print(self.captcha_input.text)
 
 
 class loginScreen(Screen):
@@ -373,7 +399,7 @@ sm.add_widget(createKeyScreen(name='create_key'))
 sm.add_widget(reCreateKeyScreen(name='recreate_key'))
 sm.add_widget(ipSetScreen(name='ip_set'))
 sm.add_widget(attemptConnection(name='attempt_connect'))
-sm.add_widget(next(name='next'))
+sm.add_widget(captcha(name='captcha'))
 sm.add_widget(loginScreen(name='login'))
 sm.add_widget(logDataScreen(name='logdata'))
 

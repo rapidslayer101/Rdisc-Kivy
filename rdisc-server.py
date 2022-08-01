@@ -1,5 +1,6 @@
 import enclib as enc
 import socket
+from captcha.image import ImageCaptcha
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
 from os import path, mkdir, listdir, remove, removedirs, rename
@@ -116,8 +117,13 @@ def client_connection(cs):
         while True:
             login_request = recv_d(1024)
             print(login_request)  # temp debug for dev
-            if login_request.startswith("NKY:"):
-                print(f"NKY: {login_request[4:]}")
+            if login_request.startswith("CAP"):
+                img = ImageCaptcha(width=280, height=90)
+                text = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(10)))
+                img.generate(text)  # todo remove the need for a file
+                img.write(text, 'captcha.jpg')
+                with open("captcha.jpg", "rb") as f:
+                    send_e(f.read())
 
             if login_request.startswith("NAC:"):
                 if login_request[4:] in users.valid_hashes:
