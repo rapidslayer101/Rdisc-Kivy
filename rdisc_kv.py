@@ -1,16 +1,39 @@
 kv_payload = """# You can edit this file to change the settings of the UI. 
-# To see what can be edited visit the wiki at https://kivy.org/doc/stable/guide/lang.html
+# To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html#module-kivy.lang
+# other useful links:
+# Programming Guide: https://kivy.org/doc/stable/api-kivy.lang.html#module-kivy.lang
 
-# Dont touch this section
+### Window Manager ###
+# [!] DO NOT EDIT THIS SECTION [!] # 
+
 windowManager:
     logInOrSignUpScreen:
     keyUnlockScreen:
     createKeyScreen:
     ipSetScreen:
+    attemptConnection:
     next:
     reCreateKeyScreen:
     loginScreen:
     logDataScreen:
+    
+    
+### Templates ###
+    
+# editing this will change most buttons 
+<RoundedButton@Button>
+    background_color: (0,0,0,0)
+    background_normal: ''
+    canvas.before:
+        Color:
+            rgba: (104/255, 84/255, 252/255,1)
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [10]
+            
+
+### Screens ###
 
 <logInOrSignUpScreen>:
     FloatLayout:
@@ -58,7 +81,6 @@ windowManager:
 
 <createKeyScreen>:
     confirmation_code : confirmation_code
-    confirmation_warning : confirmation_warning
     FloatLayout:
         Label:
             text : root.pass_code_text
@@ -69,8 +91,7 @@ windowManager:
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.8}
         Label:
-            id : confirmation_warning
-            text : ""
+            text : "Your account code and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you don't store these codes digitally"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.7}
         Label:
@@ -148,6 +169,14 @@ windowManager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
+
+
+<attemptConnection>:
+    FloatLayout:
+        Label:
+            text : "Attempting to connect to server..."
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.85}
 
 <next>:
     FloatLayout:
@@ -230,19 +259,6 @@ windowManager:
             size_hint : 0.8, 0.2
             pos_hint : {"x" : 0.12, "top" : 0.8}
             text : "SUCCESSFULLY LOGGED IN AS"
-
-
-<RoundedButton@Button>
-    background_color: (0,0,0,0)
-    background_normal: ''
-    canvas.before:
-        Color:
-            #rgba: (48/255,84/255,150/255,1)
-            rgba: (104/255, 84/255, 252/255,1)
-        RoundedRectangle:
-            size: self.size
-            pos: self.pos
-            radius: [10]
 
 
 """

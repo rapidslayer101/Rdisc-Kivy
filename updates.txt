@@ -1,0 +1,55 @@
+0.1 code rewrite and code foundations/framework from rchat 0.7.119.14 (process build 119, rchat C# GUI build 14)
+0.2 enc 6.4.0 implemented and seed key switching added
+0.3 the auth server framework, sha versioning and updating
+0.4 the client setup, server version checks, some UI elements updated
+0.5 time_key server syncing
+0.6 dynamic key shifting and major auth.txt storage and load rewrites
+0.7 df_key.txt added, auth_key system, first time login, removed exiter.txt, removed git pushes of password files
+0.8 most encryption stuff moved into enclib.py library, some login checks, some minor UI changes
+0.9 UI overhaul part 1, some work done towards resizable forms and message processing stuff
+0.10 server connections and basic message sending system
+0.11 message formatting, authorisation, naming
+0.12 message post fixes, cooldown + changes. ui.exe now usable as launcher, restart.bat removed
+0.13 upgrade to enc 7.0.0, massive rewrite to sockets instead of discord slight login changes (half complete)
+0.14 first functioning socket version
+0.15 file cleanup and load changes, code cleanup, names, multi-user support (so actually functional)
+0.16 socket close improvements, name changes, fixed restarts, password changes, len checks
+0.17 rdisc-rc3 rewrites, enc 9.5.0 implemented, changed mostly from str to bytes, removal of entire time_key system
+0.18 s<->c connect RSA falls back to enc 10.0.1 (implemented), signup complete (apart from key saving to auth)
+0.19 saving keys, logging back in via dk and sk
+0.20 fall back method if sk/ip wrong -> dk, if no dk -> email and pass
+0.21 version checking, username changing
+0.22 login and signup rework -> a new dk call will now also give back a sk, general validation framework
+0.23 users folder with new user saving to support more future data and data access efficiency, uid now in auth.txt
+0.24 dynamic loading rewrites, solution cleanup
+0.25 invalid req catching, only allow one user session, remove client wide thread, redid exit system
+0.26 client CLI, 1 login per IP at a time, 2 account created per IP, upto 3 dks active at once with ips and sks
+0.27 fast restarts, reloads and exits, logout current session, logins/logouts log, logout all
+0.28 shortcut keys, ui reworks, on setup know version, runtime clock
+0.29 delete account, minor ui tweaks
+0.30 change pass, forgot pass
+0.31 updator
+0.32 ui hot switching, redone restart
+0.33 smaller responses, fixed single session issues, fixed versioning
+0.34 changing to rdisc-rc4, the file server and private chat network client, enc 11.8.0 implemented
+0.35 access key system, first time signup, remove email
+0.36 server ip file, updater now git, exe's removed, User class done properly
+0.37 removed build nums, change pass, rebuilt account delete
+0.38 key generator and resuming generation, key regeneration and resuming regeneration
+0.39 better installers, smaller app size, account key creator
+0.40 changing to rdisc-4c5, the kivy GUI, exes back and in one file
+
+0.41 account creation with 2fa setup
+0.42 session limit = account compromised
+0.43 uname setting, basic chat functionality
+0.44 venv not tracked but still downloaded, clean app (remove user files), version.txt store hash and check
+0.45 use CLI even when UI active << is this actually possible?
+
+planned features:
+- multiple build types:
+  - downloadable exe
+  - buildable exe
+  - runnable updating rdisc client code
+  - runnable updating rdisc full repo code
+
+- console toggle

@@ -25,10 +25,6 @@ if path.exists("rdisc.py"):
     import rdisc_kv
     rdisc_kv.kv()
 
-# todo stop all screens from starting at startup
-if path.exists("userdata/key"):
-    remove("userdata/key")
-
 if path.exists("rdisc.exe"):
     hashed = enc.hash_a_file("rdisc.exe")
 else:
@@ -74,6 +70,59 @@ if path.exists("sha.txt"):
 #        f.write(file_key+b"MAKE_KEY")
 #    return file_key
 
+class Server:
+    def __init__(self):
+        self.s = socket()
+        self.pub_key = None
+        self.pri_key = None
+        self.enc_seed = None
+        self.enc_salt = None
+        self.enc_key = None
+        if path.exists("userdata/server_ip"):
+            with open(f"userdata/server_ip", "rb") as f:
+                self.ip = f.read().decode().split(":")
+        else:
+            self.ip = None
+
+    def connect(self):
+        if not self.pub_key:
+            self.pub_key, self.pri_key = newkeys(1024)
+        try:
+            self.s.connect((self.ip[0], int(self.ip[1])))
+            print("Connected to server")
+            l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
+            s_ip, s_port = str(self.s).split("raddr=")[1][2:-2].split("', ")
+            print(f" << Server connected via {l_ip}:{l_port} -> {s_ip}:{s_port}")
+            try:
+                self.s.send(PublicKey.save_pkcs1(self.pub_key))
+            except ConnectionResetError:
+                return False
+            print(" >> Public RSA key sent")
+            enc_seed = decrypt(self.s.recv(128), self.pri_key).decode()
+            enc_salt = decrypt(self.s.recv(128), self.pri_key).decode()
+            self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
+            print(" << Client enc_seed and enc_salt received and loaded\n"
+                  "-- RSA Enc bootstrap complete")
+            return True
+        except ConnectionRefusedError:
+            print("Connection refused")
+            return False
+
+    def send_e(self, text):
+        try:
+            self.s.send(enc.enc_from_key(text, self.enc_key))
+        except ConnectionResetError:
+            print("CONNECTION_LOST")  # todo deal with this
+
+    def recv_d(self, buf_lim):
+        try:
+            return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
+        except ConnectionResetError:
+            print("CONNECTION_LOST")  # todo deal with this
+
+
+s = Server()
+
 
 class logInOrSignUpScreen(Screen):
     def __init__(self, **kwargs):
@@ -85,24 +134,18 @@ class logInOrSignUpScreen(Screen):
             with open(f'userdata\key', 'rb') as f:
                 key_data = f.read()
             print(" - Key data loaded")
-            if len(key_data.split(b"NGEN")) == 4:
-                print(" - Detected old generation key, resuming...")
-                print("CURRENTLY DISABLED. Deleting key")
+            if len(key_data.split(b"NGEN")) == 4 or len(key_data.split(b"RGEN")) == 4:
+                print("Detected incomplete generation key, deleting...")
                 remove(f'userdata\key')
-                #key_data = key_data.split(b"NGEN")
-                #file_key = generate_master_key(key_location, key_data[0], key_data[1],
-                #                               float(key_data[2]), int(key_data[3]))
-            if len(key_data.split(b"RGEN")) == 4:
-                print(" - Detected old regeneration key, resuming...")
-                print("CURRENTLY DISABLED. Deleting key")
-                remove(f'userdata\key')
-                #key_data = key_data.split(b"RGEN")
-                #file_key = regenerate_master_key(key_location, key_data[0], key_data[1],
-                #                                 int(key_data[2]), int(key_data[3]))
+        if path.exists(f'userdata\key'):
             if key_data.endswith(b"MAKE_KEY"):
                 print(" - MAKE KEY")
-                file_key = key_data.replace(b"MAKE_KEY", b"")
-                sm.switch_to(ipSetScreen())
+                #file_key = key_data.replace(b"MAKE_KEY", b"")
+                if s.ip:  # todo: get rid of weird problem where server connects twice if going via MAKE_KEY route
+                    #sm.switch_to(attemptConnection(), direction="left")
+                    pass
+                else:
+                    sm.switch_to(ipSetScreen(), direction="left")
             else:
                 if path.exists(f'{key_location}key_salt'):
                     with open(f'{key_location}key_salt', encoding="utf-8") as f:
@@ -110,7 +153,7 @@ class logInOrSignUpScreen(Screen):
                     print(" - Key salt loaded\n - User id loaded")
                 else:
                     print("Activation key required")
-                    sm.switch_to(keyUnlockScreen())
+                    sm.switch_to(keyUnlockScreen(), direction="left")
         else:
             print(" - No keys found")
 
@@ -164,10 +207,6 @@ class createKeyScreen(Screen):
             f.write(file_key + b"MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Your account pin is: {current_depth}"
-        self.confirmation_warning.text = f"Your account code and pin are REQUIRED to access your account " \
-                                         f"on another device.\nIf you lose these YOU WILL NOT be able to login " \
-                                         f"in to your account or recover it.\nFor security reasons we suggest you " \
-                                         f"don't store these codes digitally"
         self.rand_confirm_text = f"Once you have written down your account code " \
                                  f"and pin enter {self.rand_confirmation} below"
 
@@ -188,7 +227,10 @@ class createKeyScreen(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    sm.switch_to(ipSetScreen())
+                    if s.ip:
+                        sm.switch_to(attemptConnection(), direction="left")
+                    else:
+                        sm.switch_to(ipSetScreen(), direction="left")
                 else:
                     print("Confirmation code incorrect")
 
@@ -247,75 +289,17 @@ class reCreateKeyScreen(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    sm.switch_to(ipSetScreen())
+                    sm.switch_to(ipSetScreen(), direction="left")
                 else:
                     print("Confirmation code incorrect")
 
 
-class Server:
-    def __init__(self):
-        self.pub_key = None
-        self.pri_key = None
-        self.s = socket()
-        self.enc_seed = None
-        self.enc_salt = None
-        self.enc_key = None
-        if path.exists("userdata/server_ip"):
-            with open(f"userdata/server_ip", "rb") as f:
-                self.ip = f.read().decode().split(":")
-        else:
-            self.ip = None
-
-    def connect(self):
-        if not self.pub_key:
-            self.pub_key, self.pri_key = newkeys(1024)
-        try:
-            self.s.connect((self.ip[0], int(self.ip[1])))
-            print("Connected to server")
-            l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
-            s_ip, s_port = str(self.s).split("raddr=")[1][2:-2].split("', ")
-            print(f" << Server connected via {l_ip}:{l_port} -> {s_ip}:{s_port}")
-            try:
-                self.s.send(PublicKey.save_pkcs1(self.pub_key))
-            except ConnectionResetError:
-                return False
-            print(" >> Public RSA key sent")
-            enc_seed = decrypt(self.s.recv(128), self.pri_key).decode()
-            enc_salt = decrypt(self.s.recv(128), self.pri_key).decode()
-            self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
-            print(" << Client enc_seed and enc_salt received and loaded\n"
-                  "-- RSA Enc bootstrap complete")
-            return True
-        except ConnectionRefusedError:
-            print("Connection refused")
-            return False
-
-    def send_e(self, text):
-        try:
-            self.s.send(enc.enc_from_key(text, self.enc_key))
-        except ConnectionResetError:
-            print("CONNECTION_LOST")  # todo deal with this
-
-    def recv_d(self, buf_lim):
-        try:
-            return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
-        except ConnectionResetError:
-            print("CONNECTION_LOST")  # todo deal with this
-
-
-s = Server()
+# todo inheritance for login / signup versions of the below screen
 
 
 class ipSetScreen(Screen):
     ip_address = ObjectProperty(None)
     ip = None
-
-    def on_pre_enter(self, *args):
-        if s.ip:
-            if s.connect():
-                sm.switch_to(next())
-            else:
-                print("Failed to connect to set IP")
 
     def try_connect(self):
         if self.ip_address.text == "":
@@ -337,16 +321,23 @@ class ipSetScreen(Screen):
                     try:
                         if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
                             s.ip = [server_ip, server_port]
-                            if s.connect():
-                                with open(f"userdata/server_ip", "w", encoding="utf-8") as f:
-                                    f.write(f"{server_ip}:{server_port}")
-                                sm.switch_to(next())
-                            else:
-                                print("Failed to connect to IP")
+                            sm.switch_to(attemptConnection(), direction="left")
                         else:
                             print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
                     except NameError:
                         print("\n🱫[COL-RED] IP address must be in the form of 'xxx.xxx.xxx.xxx'")
+
+
+class attemptConnection(Screen):
+    def on_enter(self, *args):
+        if s.connect():
+            if not path.exists("userdata/server_ip"):
+                with open(f"userdata/server_ip", "w", encoding="utf-8") as f:
+                    f.write(f"{s.ip[0]}:{s.ip[1]}")
+            sm.switch_to(next(), direction="left")
+        else:
+            print("Failed to connect to set IP")
+            sm.switch_to(ipSetScreen(), direction='right')
 
 
 class next(Screen):
@@ -381,6 +372,7 @@ sm.add_widget(keyUnlockScreen(name='unlock_key'))
 sm.add_widget(createKeyScreen(name='create_key'))
 sm.add_widget(reCreateKeyScreen(name='recreate_key'))
 sm.add_widget(ipSetScreen(name='ip_set'))
+sm.add_widget(attemptConnection(name='attempt_connect'))
 sm.add_widget(next(name='next'))
 sm.add_widget(loginScreen(name='login'))
 sm.add_widget(logDataScreen(name='logdata'))
