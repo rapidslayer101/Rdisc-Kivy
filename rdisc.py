@@ -1,3 +1,5 @@
+import enclib as enc
+from rsa import newkeys, PublicKey, decrypt
 from random import randint, uniform
 from time import perf_counter
 from random import choices
@@ -6,7 +8,6 @@ from os import path, mkdir, remove
 from datetime import datetime
 from threading import Thread
 from socket import socket
-import enclib as enc
 
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -34,45 +35,44 @@ else:
     hashed = enc.hash_a_file("rdisc.py")
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
-        latest_sha_, version_, tme_, run_num_ = f.readlines()[-1].split("§")
-    print(f"Previous {version_} {tme_} {run_num_}")
-    print(version_)
-    release_major, major, run = version_.replace("V", "").split(".")
+        latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
+    print("prev", version_, tme_, bld_num_, run_num_)
+    release_major, major, build, run = version_.replace("V", "").split(".")
     if latest_sha_ != hashed:
         run = int(run) + 1
         with open("sha.txt", "a+", encoding="utf-8") as f:
-            write = f"\n{hashed}§V{release_major}.{major}.{run}" \
+            write = f"\n{hashed}§V{release_major}.{major}.{build}.{run}" \
                     f"§TME-{str(datetime.now())[:-4].replace(' ', '_')}" \
-                    f"§RUN_NM-{int(run_num_[7:]) + 1}"
-            print(f"Current V{release_major}.{major}.{run} "
+                    f"§BLD_NM-{bld_num_[7:]}§RUN_NM-{int(run_num_[7:])+1}"
+            print(f"crnt V{release_major}.{major}.{build}.{run} "
                   f"TME-{str(datetime.now())[:-4].replace(' ', '_')} "
-                  f"RUN_NM-{int(run_num_[7:]) + 1}")
+                  f"BLD_NM-{bld_num_[7:]} RUN_NM-{int(run_num_[7:])+1}")
             f.write(write)
-    print(f"Running rdisc V{release_major}.{major}.{run}")
+    print(f"Running rdisc V{release_major}.{major}.{build}.{run}")
 
 
-def regenerate_master_key(self, key_location, file_key, salt, depth_to, current_depth=0):
-    to_c("\n🱫[COL-GRN] Generating master key...")
-    start, depth_left, loop_timer = perf_counter(), depth_to-current_depth, perf_counter()
-    for depth_count in range(1, depth_left+1):
-        file_key = sha512(file_key+salt).digest()
-        if perf_counter() - loop_timer > 0.25:
-            try:
-                loop_timer = perf_counter()
-                real_dps = int(round(depth_count/(perf_counter()-start), 0))
-                to_c(f"\n Runtime: {round(perf_counter()-start, 2)}s  "
-                     f"Time Left: {round((depth_left-depth_count)/real_dps, 2)}s  "
-                     f"DPS: {round(real_dps/1000000, 3)}M  "
-                     f"Depth: {current_depth+depth_count}/{depth_to}  "
-                     f"Progress: {round((current_depth+depth_count)/depth_to * 100, 3)}%")
-                with open(f'{key_location}key', 'wb') as f:
-                    f.write(file_key + b"RGEN" + salt + b"RGEN" +
-                            str(depth_to).encode() + b"RGEN" + str(current_depth+depth_count).encode())
-            except ZeroDivisionError:
-                pass
-    with open(f"{key_location}key", "wb") as f:
-        f.write(file_key+b"MAKE_KEY")
-    return file_key
+#def regenerate_master_key(self, key_location, file_key, salt, depth_to, current_depth=0):
+#    print("\n🱫[COL-GRN] Generating master key...")
+#    start, depth_left, loop_timer = perf_counter(), depth_to-current_depth, perf_counter()
+#    for depth_count in range(1, depth_left+1):
+#        file_key = sha512(file_key+salt).digest()
+#        if perf_counter() - loop_timer > 0.25:
+#            try:
+#                loop_timer = perf_counter()
+#                real_dps = int(round(depth_count/(perf_counter()-start), 0))
+#                print(f"\n Runtime: {round(perf_counter()-start, 2)}s  "
+#                     f"Time Left: {round((depth_left-depth_count)/real_dps, 2)}s  "
+#                     f"DPS: {round(real_dps/1000000, 3)}M  "
+#                     f"Depth: {current_depth+depth_count}/{depth_to}  "
+#                     f"Progress: {round((current_depth+depth_count)/depth_to * 100, 3)}%")
+#                with open(f'{key_location}key', 'wb') as f:
+#                    f.write(file_key + b"RGEN" + salt + b"RGEN" +
+#                            str(depth_to).encode() + b"RGEN" + str(current_depth+depth_count).encode())
+#            except ZeroDivisionError:
+#                pass
+#    with open(f"{key_location}key", "wb") as f:
+#        f.write(file_key+b"MAKE_KEY")
+#    return file_key
 
 
 class logInOrSignUpScreen(Screen):
@@ -124,9 +124,7 @@ class keyUnlockScreen(Screen):
         if self.pwd.text:
             print(self.pwd.text)
         else:
-            # switching the current screen to display validation result
             sm.current = 'logdata'
-            # reset TextInput widget
             self.pwd.text = ""
 
 
@@ -256,26 +254,56 @@ class reCreateKeyScreen(Screen):
 
 class Server:
     def __init__(self):
-        self.sock = socket()
-        #self.connected = False
-        if path.exists("userdata/ip"):
-            with open(f"userdata/ip", "rb") as f:
+        self.pub_key = None
+        self.pri_key = None
+        self.s = socket()
+        self.enc_seed = None
+        self.enc_salt = None
+        self.enc_key = None
+        if path.exists("userdata/server_ip"):
+            with open(f"userdata/server_ip", "rb") as f:
                 self.ip = f.read().decode().split(":")
         else:
             self.ip = None
 
     def connect(self):
+        if not self.pub_key:
+            self.pub_key, self.pri_key = newkeys(1024)
         try:
-            self.sock.connect((self.ip[0], int(self.ip[1])))
+            self.s.connect((self.ip[0], int(self.ip[1])))
             print("Connected to server")
-            #self.connected = True
+            l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
+            s_ip, s_port = str(self.s).split("raddr=")[1][2:-2].split("', ")
+            print(f" << Server connected via {l_ip}:{l_port} -> {s_ip}:{s_port}")
+            try:
+                self.s.send(PublicKey.save_pkcs1(self.pub_key))
+            except ConnectionResetError:
+                return False
+            print(" >> Public RSA key sent")
+            enc_seed = decrypt(self.s.recv(128), self.pri_key).decode()
+            enc_salt = decrypt(self.s.recv(128), self.pri_key).decode()
+            self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
+            print(" << Client enc_seed and enc_salt received and loaded\n"
+                  "-- RSA Enc bootstrap complete")
             return True
         except ConnectionRefusedError:
             print("Connection refused")
             return False
 
+    def send_e(self, text):
+        try:
+            self.s.send(enc.enc_from_key(text, self.enc_key))
+        except ConnectionResetError:
+            print("CONNECTION_LOST")  # todo deal with this
 
-server = Server()
+    def recv_d(self, buf_lim):
+        try:
+            return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
+        except ConnectionResetError:
+            print("CONNECTION_LOST")  # todo deal with this
+
+
+s = Server()
 
 
 class ipSetScreen(Screen):
@@ -283,9 +311,8 @@ class ipSetScreen(Screen):
     ip = None
 
     def on_pre_enter(self, *args):
-        if server.ip:
-            if server.connect():
-                print("Success")
+        if s.ip:
+            if s.connect():
                 sm.switch_to(next())
             else:
                 print("Failed to connect to set IP")
@@ -309,10 +336,9 @@ class ipSetScreen(Screen):
                         print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
                     try:
                         if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
-                            server.ip = [server_ip, server_port]
-                            if server.connect():
-                                print("Success")
-                                with open(f"userdata/ip", "w", encoding="utf-8") as f:
+                            s.ip = [server_ip, server_port]
+                            if s.connect():
+                                with open(f"userdata/server_ip", "w", encoding="utf-8") as f:
                                     f.write(f"{server_ip}:{server_port}")
                                 sm.switch_to(next())
                             else:
@@ -325,7 +351,7 @@ class ipSetScreen(Screen):
 
 class next(Screen):
     def on_pre_enter(self, *args):
-        print("Next")
+        print("Next screen")
 
 
 class loginScreen(Screen):
@@ -337,7 +363,6 @@ class loginScreen(Screen):
         print("null")
 
 
-# class to display validation result
 class logDataScreen(Screen):
     pass
 
@@ -349,7 +374,6 @@ class windowManager(ScreenManager):
 
 kv = Builder.load_file("rdisc.kv")
 sm = windowManager()
-
 
 # adding screens
 sm.add_widget(logInOrSignUpScreen(name='login_signup'))
@@ -368,6 +392,7 @@ class Rdisc(App):
         Window.clearcolor = (50/255, 50/255, 50/255, 1)
         Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
+        Config.set('kivy', 'exit_on_escape', '0')
         return sm
 
 
