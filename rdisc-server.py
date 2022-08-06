@@ -1,5 +1,6 @@
 import enclib as enc
 import socket
+from time import sleep
 from captcha.image import ImageCaptcha
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
@@ -119,37 +120,52 @@ def client_connection(cs):
             print(login_request)  # temp debug for dev
             if login_request.startswith("CAP"):
                 img = ImageCaptcha(width=280, height=90)
-                text = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(10)))
-                img.generate(text)  # todo remove the need for a file
-                img.write(text, 'captcha.jpg')
+                captcha_text = "".join(choices("123456789ABCDEFGHIJKLMNPQRSTUVWXYZ", k=int(10)))
+                print(captcha_text)
+                img.generate(captcha_text)  # todo remove the need for a file
+                img.write(captcha_text, 'captcha.jpg')
                 with open("captcha.jpg", "rb") as f:
                     send_e(f.read())
 
-            if login_request.startswith("NAC:"):
-                if login_request[4:] in users.valid_hashes:
-                    u_salt = enc.rand_b96_str(64)
-                    send_e(f"V:{u_salt}")
-                    u_pass = recv_d(2048)
-                    challenge_int = randint(1, 999999)
-                    challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
-                    send_e(f"{challenge_int}")
-                    user_challenge = recv_d(2048)
-                    if user_challenge == challenge_hash:
-                        while True:
-                            uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
-                            if uid not in users.ids:
-                                break
-                        mkdir(f"Users/{uid}")
-                        with open(f"Users/{uid}/{uid}-keys.txt", "w", encoding="utf-8") as f:
-                            f.write(f"{u_pass}🱫{u_salt}")
-                        users.v_hash_r(login_request[4:])
-                        users.ids_up(uid)
-                        send_e(f"{uid}")
+                counter = 0
+                while True:
+                    counter += 1
+                    captcha_attempt = recv_d(2048)
+                    if captcha_attempt != captcha_text:
+                        send_e("N")
+                        if counter == 3:
+                            sleep(10)  # rate limit
+                    else:
+                        send_e("V")
                         break
+
+                print("CAPTCHA OK")
+                log_or_create = recv_d(1024)
+                if log_or_create.startswith("NAC:"):
+                    if log_or_create[4:] in users.valid_hashes:
+                        u_salt = enc.rand_b96_str(64)
+                        send_e(f"V:{u_salt}")
+                        u_pass = recv_d(2048)
+                        challenge_int = randint(1, 999999)
+                        challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
+                        send_e(f"{challenge_int}")
+                        user_challenge = recv_d(2048)
+                        if user_challenge == challenge_hash:
+                            while True:
+                                uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
+                                if uid not in users.ids:
+                                    break
+                            mkdir(f"Users/{uid}")
+                            with open(f"Users/{uid}/{uid}-keys.txt", "w", encoding="utf-8") as f:
+                                f.write(f"{u_pass}🱫{u_salt}")
+                            users.v_hash_r(login_request[4:])
+                            users.ids_up(uid)
+                            send_e(f"{uid}")
+                            break
+                        else:
+                            send_e("N")
                     else:
                         send_e("N")
-                else:
-                    send_e("N")
 
             if login_request.startswith("LOG:"):
                 uid = login_request[4:]

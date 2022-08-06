@@ -7,12 +7,14 @@ kv_payload = """# You can edit this file to change the settings of the UI.
 # [!] DO NOT EDIT THIS SECTION [!] # 
 
 windowManager:
-    logInOrSignUpScreen:
+    logInOrSignUpScreen: 
     keyUnlockScreen:
     createKeyScreen:
     ipSetScreen:
-    attemptConnection:
-    next:
+    attemptConnectionScreen:
+    captchaScreen:
+    nacPassword:
+    twoFacSetupScreen:
     reCreateKeyScreen:
     loginScreen:
     logDataScreen:
@@ -119,7 +121,7 @@ windowManager:
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.8}
         Label:
-            text : "Your account code and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you don't store these codes digitally"
+            text : "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you do not store these keys digitally"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.7}
         Label:
@@ -137,7 +139,7 @@ windowManager:
             pos_hint : {"x" : 0.35, "top" : 0.3}
             on_press : root.continue_confirmation()
         YellowLabel:
-            text : "User codes >>"
+            text : "User keys >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.2,  "top": 1}
         Label:
@@ -161,7 +163,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup >>"
+            text : "Password >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.5,  "top": 1}
             canvas.before:
@@ -171,9 +173,19 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Username"
+            text : "2FA Setup >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.6,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Username"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.7,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -199,7 +211,7 @@ windowManager:
             pos_hint : {"x" : 0.35, "top" : 0.45}
             on_press : root.try_connect()
         GreenLabel:
-            text : "User codes >>"
+            text : "User keys >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.2,  "top": 1}
         YellowLabel:
@@ -217,7 +229,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup >>"
+            text : "Password >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.5,  "top": 1}
             canvas.before:
@@ -227,7 +239,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Username"
+            text : "2FA Setup >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.6,  "top": 1}
             canvas.before:
@@ -236,16 +248,26 @@ windowManager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
+        Label:
+            text : "Username"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.7,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
 
-<attemptConnection>:
+<attemptConnectionScreen>:
     FloatLayout:
         Label:
             text : "Attempting to connect to server..."
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.85}
         GreenLabel:
-            text : "User codes >>"
+            text : "User keys >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.2,  "top": 1}
         OrangeLabel:
@@ -263,7 +285,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup >>"
+            text : "Password >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.5,  "top": 1}
             canvas.before:
@@ -273,7 +295,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Username"
+            text : "2FA Setup >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.6,  "top": 1}
             canvas.before:
@@ -282,8 +304,18 @@ windowManager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
+        Label:
+            text : "Username"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.7,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
-<captcha>:
+<captchaScreen>:
     captcha_input : captcha_input
     FloatLayout:
         Label:
@@ -305,7 +337,7 @@ windowManager:
             pos_hint : {"x" : 0.35, "top" : 0.35}
             on_press : root.try_captcha()
         GreenLabel:
-            text : "User codes >>"
+            text : "User keys >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.2,  "top": 1}
         GreenLabel:
@@ -317,7 +349,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.4,  "top": 1}
         Label:
-            text : "2FA Setup >>"
+            text : "Password >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.5,  "top": 1}
             canvas.before:
@@ -327,9 +359,135 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Username"
+            text : "2FA Setup >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.6,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Username"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.7,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+
+<nacPassword>:
+    nac_password_1 : nac_password_1
+    nac_password_2 : nac_password_2
+    FloatLayout:
+        Label:
+            text : "Enter a password"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.80}
+        TextInput:
+            id : nac_password_1
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.70}
+        Label:
+            text : "Repeat password"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.60}
+        TextInput:
+            id : nac_password_2
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.50}
+        RoundedButton:
+            text : "Next"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.30}
+            on_press : root.try_captcha()
+        GreenLabel:
+            text : "User keys >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.2,  "top": 1}
+        GreenLabel:
+            text : "Set IP >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.3,  "top": 1}
+        GreenLabel:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.4,  "top": 1}
+        YellowLabel:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.5,  "top": 1}
+        Label:
+            text : "2FA Setup >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.6,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Username"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.7,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+
+<twoFacSetupScreen>:
+    FloatLayout:
+        Label:
+            text : root.two_fac_wait_text
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.85}
+        Image:
+            id: 2fa_qr_image
+            source: 'captcha_blank.jpg' # 'qr_blank.jpg'
+            pos_hint : {"x": 0, "top": 1.15}
+        RoundedButton:
+            text : "Next"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.35}
+            on_press : root.try_captcha()
+        GreenLabel:
+            text : "User keys >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.2,  "top": 1}
+        GreenLabel:
+            text : "Set IP >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.3,  "top": 1}
+        GreenLabel:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.4,  "top": 1}
+        YellowLabel:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.5,  "top": 1}
+        Label:
+            text : "2FA Setup >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.6,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Username"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.7,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)

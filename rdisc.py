@@ -142,10 +142,8 @@ class logInOrSignUpScreen(Screen):
         if path.exists(f'userdata\key'):
             if key_data.endswith(b"MAKE_KEY"):
                 print(" - MAKE KEY")
-                #file_key = key_data.replace(b"MAKE_KEY", b"")
-                if s.ip:  # todo: get rid of weird problem where server connects twice if going via MAKE_KEY route
-                    sm.switch_to(attemptConnection(), direction="left")
-                    #pass
+                if s.ip:
+                    sm.switch_to(attemptConnectionScreen(), direction="left")
                 else:
                     sm.switch_to(ipSetScreen(), direction="left")
             else:
@@ -209,18 +207,18 @@ class createKeyScreen(Screen):
             f.write(file_key + b"MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Your account pin is: {current_depth}"
-        self.rand_confirm_text = f"Once you have written down your account code " \
+        self.rand_confirm_text = f"Once you have written down your account key " \
                                  f"and pin enter {self.rand_confirmation} below"
 
     def on_pre_enter(self, *args):
         self.start_time = perf_counter()
-        pass_code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(25)))
+        acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(20)))
         time_depth = uniform(3, 10)  # time_depth
-        Thread(target=self.generate_master_key, args=(pass_code[:15].encode(),
-               pass_code[15:].encode(), time_depth,), daemon=True).start()
+        Thread(target=self.generate_master_key, args=(acc_key[:15].encode(),
+               acc_key[15:].encode(), time_depth,), daemon=True).start()
         self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
-        pass_code_print = f"{pass_code[:5]}-{pass_code[5:10]}-{pass_code[10:15]}-{pass_code[15:20]}-{pass_code[20:]}"
-        self.pass_code_text = f"Your account code is: {pass_code_print}"
+        acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}-{acc_key[15:]}"
+        self.pass_code_text = f"Your account key is: {acc_key_print}"
 
     def continue_confirmation(self):
         if self.rand_confirmation:
@@ -230,7 +228,7 @@ class createKeyScreen(Screen):
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
                     if s.ip:
-                        sm.switch_to(attemptConnection(), direction="left")
+                        sm.switch_to(attemptConnectionScreen(), direction="left")
                     else:
                         sm.switch_to(ipSetScreen(), direction="left")
                 else:
@@ -292,7 +290,7 @@ class reCreateKeyScreen(Screen):
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
                     if s.ip:
-                        sm.switch_to(attemptConnection(), direction="left")
+                        sm.switch_to(attemptConnectionScreen(), direction="left")
                     else:
                         sm.switch_to(ipSetScreen(), direction="left")
                 else:
@@ -326,26 +324,26 @@ class ipSetScreen(Screen):
                     try:
                         if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
                             s.ip = [server_ip, server_port]
-                            sm.switch_to(attemptConnection(), direction="left")
+                            sm.switch_to(attemptConnectionScreen(), direction="left")
                         else:
                             print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
                     except NameError:
                         print("\n🱫[COL-RED] IP address must be in the form of 'xxx.xxx.xxx.xxx'")
 
 
-class attemptConnection(Screen):
+class attemptConnectionScreen(Screen):
     def on_enter(self, *args):
         if s.connect():
             if not path.exists("userdata/server_ip"):
                 with open(f"userdata/server_ip", "w", encoding="utf-8") as f:
                     f.write(f"{s.ip[0]}:{s.ip[1]}")
-            sm.switch_to(captcha(), direction="left")
+            sm.switch_to(captchaScreen(), direction="left")
         else:
             print("Failed to connect to set IP")
             sm.switch_to(ipSetScreen(), direction='right')
 
 
-class captcha(Screen):
+class captchaScreen(Screen):
     captcha_prompt_text = StringProperty()
     captcha_input = ObjectProperty(None)
 
@@ -354,13 +352,14 @@ class captcha(Screen):
 
     def on_enter(self, *args):
         print("Captcha screen")
+        s.send_e("CAP")
         self.get_captcha()
 
     def get_captcha(self):
-        s.send_e("CAP")
         image = s.recv_d(32768)  # todo remove the need for a file
         with open('captcha.jpg', 'wb') as f:
             f.write(image)
+            print("new captcha")
         self.captcha_prompt_text = f"Enter the text below"
         self.ids.captcha_image.source = 'captcha.jpg'
 
@@ -368,7 +367,36 @@ class captcha(Screen):
         if self.captcha_input.text == "":
             print("No input provided")
         else:
-            print(self.captcha_input.text)
+            s.send_e(self.captcha_input.text.replace(" ", "").upper())
+            if s.recv_d(1024) == "V":
+                s.send_e("NAC:{}")  # todo send the account key (fully hashed)
+                sm.switch_to(nacPassword(), direction="left")
+            else:
+                print("Captcha failed")
+
+
+class nacPassword(Screen):
+    nac_password_1 = ObjectProperty(None)
+    nac_password_2 = ObjectProperty(None)
+
+    def try_nac_password(self):
+        if self.nac_password.text == "":
+            print("No input provided")
+        else:
+            s.send_e(self.nac_password.text)
+            if s.recv_d(1024) == "V":
+                sm.switch_to(loginScreen(), direction="left")
+            else:
+                print("NAC password failed")
+
+
+class twoFacSetupScreen(Screen):
+    two_fac_wait_text = StringProperty()
+
+    def on_pre_enter(self, *args):
+        self.two_fac_wait_text = "Waiting for 2fa QR code..."
+        print("Two factor setup screen")
+        # https://www.authenticatorapi.com/pair.aspx?AppName=Rdisc&AppInfo=UID&SecretCode=12345678BXYT
 
 
 class loginScreen(Screen):
@@ -398,8 +426,10 @@ sm.add_widget(keyUnlockScreen(name='unlock_key'))
 sm.add_widget(createKeyScreen(name='create_key'))
 sm.add_widget(reCreateKeyScreen(name='recreate_key'))
 sm.add_widget(ipSetScreen(name='ip_set'))
-sm.add_widget(attemptConnection(name='attempt_connect'))
-sm.add_widget(captcha(name='captcha'))
+sm.add_widget(attemptConnectionScreen(name='attempt_connect'))
+sm.add_widget(captchaScreen(name='captcha'))
+sm.add_widget(nacPassword(name='new_acc_pass'))
+sm.add_widget(twoFacSetupScreen(name='2fa_setup'))
 sm.add_widget(loginScreen(name='login'))
 sm.add_widget(logDataScreen(name='logdata'))
 

@@ -39,7 +39,7 @@
 0.39 better installers, smaller app size, account key creator
 0.40 changing to rdisc-4c5, the kivy GUI, exes back and in one file
 
-0.41 captcha human verification
+0.41 captcha human verification and password setting
 
 0.42 2fa setup
 0.43 account creation and username setting
@@ -55,3 +55,5 @@ planned features:
   - runnable updating rdisc full repo code
 
 - console toggle
+- tell people what is required to make an account before starting
+  - mobile phone
