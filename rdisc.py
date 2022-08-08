@@ -4,10 +4,12 @@ from random import randint, uniform
 from time import perf_counter
 from random import choices
 from hashlib import sha512
-from os import path, mkdir, remove
+from os import path, mkdir
 from datetime import datetime
 from threading import Thread
 from socket import socket
+from requests import get
+from base64 import b32encode
 
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -127,6 +129,14 @@ class Server:
 s = Server()
 
 
+class key_system:
+    def __init__(self):
+        self.master_key = None
+
+
+keys = key_system()
+
+
 class logInOrSignUpScreen(Screen):
     def on_enter(self, *args):
         print("Loading account keys...")
@@ -136,17 +146,15 @@ class logInOrSignUpScreen(Screen):
             with open(f'userdata\key', 'rb') as f:
                 key_data = f.read()
             print(" - Key data loaded")
-            if len(key_data.split(b"NGEN")) == 4 or len(key_data.split(b"RGEN")) == 4:
-                print("Detected incomplete generation key, deleting...")
-                remove(f'userdata\key')
-        if path.exists(f'userdata\key'):
             if key_data.endswith(b"MAKE_KEY"):
                 print(" - MAKE KEY")
+                keys.master_key = key_data[:-8]
                 if s.ip:
                     sm.switch_to(attemptConnectionScreen(), direction="left")
                 else:
                     sm.switch_to(ipSetScreen(), direction="left")
             else:
+                # ip key route
                 if path.exists(f'{key_location}key_salt'):
                     with open(f'{key_location}key_salt', encoding="utf-8") as f:
                         key_salt, uid = f.read().split("🱫")
@@ -180,13 +188,13 @@ class createKeyScreen(Screen):
     start_time = None
     rand_confirmation = None
 
-    def generate_master_key(self, file_key, salt, depth_time, current_depth=0):
+    def generate_master_key(self, master_key, salt, depth_time, current_depth=0):
         start, time_left, loop_timer = perf_counter(), depth_time, perf_counter()
         if not path.exists("userdata"):
             mkdir("userdata")
         while time_left > 0:
             current_depth += 1
-            file_key = sha512(file_key+salt).digest()
+            master_key = sha512(master_key+salt).digest()
             if perf_counter()-loop_timer > 0.25:
                 try:
                     time_left -= (perf_counter()-loop_timer)
@@ -197,14 +205,12 @@ class createKeyScreen(Screen):
                           f"DPS: {round(real_dps/1000000, 3)}M  "
                           f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
                           f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
-                    with open(f'userdata/key', 'wb') as f:
-                        f.write(file_key + b"NGEN" + salt + b"NGEN" +
-                                str(time_left).encode() + b"NGEN" + str(current_depth).encode())
                     self.pin_code_text = f"Generating keys ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        with open(f"userdata/key", "wb") as f:
-            f.write(file_key + b"MAKE_KEY")
+        with open("userdata/key", "wb") as f:
+            f.write(master_key + b"MAKE_KEY")
+        keys.master_key = master_key
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Your account pin is: {current_depth}"
         self.rand_confirm_text = f"Once you have written down your account key " \
@@ -242,13 +248,13 @@ class reCreateKeyScreen(Screen):
     start_time = None
     rand_confirmation = None
 
-    def generate_master_key(self, file_key, salt, depth_time, current_depth=0):
+    def generate_master_key(self, master_key, salt, depth_time, current_depth=0):
         start, time_left, loop_timer = perf_counter(), depth_time, perf_counter()
         if not path.exists("userdata"):
             mkdir("userdata")
         while time_left > 0:
             current_depth += 1
-            file_key = sha512(file_key+salt).digest()
+            master_key = sha512(master_key+salt).digest()
             if perf_counter()-loop_timer > 0.25:
                 try:
                     time_left -= (perf_counter()-loop_timer)
@@ -259,14 +265,11 @@ class reCreateKeyScreen(Screen):
                           f"DPS: {round(real_dps/1000000, 3)}M  "
                           f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
                           f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
-                    with open(f'userdata/key', 'wb') as f:
-                        f.write(file_key + b"NGEN" + salt + b"NGEN" +
-                                str(time_left).encode() + b"NGEN" + str(current_depth).encode())
                     self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        with open(f"userdata/key", "wb") as f:
-            f.write(file_key + b"MAKE_KEY")
+        with open("userdata/key", "wb") as f:
+            f.write(master_key + b"MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Depth pin: {current_depth}"
         self.rand_confirm_text = f"Once you have written down your account code " \
@@ -335,7 +338,7 @@ class attemptConnectionScreen(Screen):
     def on_enter(self, *args):
         if s.connect():
             if not path.exists("userdata/server_ip"):
-                with open(f"userdata/server_ip", "w", encoding="utf-8") as f:
+                with open("userdata/server_ip", "w", encoding="utf-8") as f:
                     f.write(f"{s.ip[0]}:{s.ip[1]}")
             sm.switch_to(captchaScreen(), direction="left")
         else:
@@ -369,7 +372,6 @@ class captchaScreen(Screen):
         else:
             s.send_e(self.captcha_input.text.replace(" ", "").upper())
             if s.recv_d(1024) == "V":
-                s.send_e("NAC:{}")  # todo send the account key (fully hashed)
                 sm.switch_to(nacPassword(), direction="left")
             else:
                 print("Captcha failed")
@@ -379,24 +381,67 @@ class nacPassword(Screen):
     nac_password_1 = ObjectProperty(None)
     nac_password_2 = ObjectProperty(None)
 
-    def try_nac_password(self):
-        if self.nac_password.text == "":
-            print("No input provided")
+    def set_nac_password(self):
+        if self.nac_password_1.text == "":
+            print("No input provided (1)")
         else:
-            s.send_e(self.nac_password.text)
-            if s.recv_d(1024) == "V":
-                sm.switch_to(loginScreen(), direction="left")
+            if self.nac_password_2.text == "":
+                print("No input provided (2)")
             else:
-                print("NAC password failed")
+                if len(self.nac_password_1.text) < 9:
+                    print("Password must be at least 9 characters")
+                else:
+                    if self.nac_password_1.text != self.nac_password_2.text:
+                        print("Passwords do not match")
+                    else:
+                        pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 100000)
+                        s.send_e(f"NAC:{keys.master_key}🱫{pass_send}")
+                        sm.switch_to(twoFacSetupScreen(), direction="left")
 
 
 class twoFacSetupScreen(Screen):
     two_fac_wait_text = StringProperty()
+    two_fac_confirm = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
-        self.two_fac_wait_text = "Waiting for 2fa QR code..."
         print("Two factor setup screen")
-        # https://www.authenticatorapi.com/pair.aspx?AppName=Rdisc&AppInfo=UID&SecretCode=12345678BXYT
+        self.two_fac_wait_text = "Waiting for 2fa QR code..."
+
+    def on_enter(self, *args):
+        uid, secret_code = s.recv_d(2048).split("🱫")
+        secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
+        print(secret_code)
+        secret_qr = get(f"https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2"
+                        f"F%2Ftotp%2F{uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc").content
+        with open("secret_qr.png", "wb") as f:
+            f.write(secret_qr)
+        self.two_fac_wait_text = "Save this code to your authenticator, then enter code to confirm\n" \
+                                 f"Your User ID is {uid}"
+        self.ids.two_fac_qr.source = 'secret_qr.png'
+
+    def confirm_2fa(self):
+        if self.two_fac_confirm.text == "":
+            print("No input provided")
+        else:
+            self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
+            if len(self.two_fac_confirm.text) == 6:
+                s.send_e(self.two_fac_confirm.text.replace(" ", ""))
+                if s.recv_d(1024) == "V":  # todo save ip key
+                    print("2FA confirmed")
+                    sm.switch_to(unameAndFinish(), direction="left")
+                else:
+                    print("2FA failed")
+            else:
+                print("Invalid input")
+
+
+class unameAndFinish(Screen):
+    account_finished_details_text = StringProperty()
+    username_setup = ObjectProperty(None)
+
+    def on_pre_enter(self, *args):
+        print("Username setting and account create finished screen")
+        self.account_finished_details_text = "Account created. Please enter a username"
 
 
 class loginScreen(Screen):
@@ -430,6 +475,7 @@ sm.add_widget(attemptConnectionScreen(name='attempt_connect'))
 sm.add_widget(captchaScreen(name='captcha'))
 sm.add_widget(nacPassword(name='new_acc_pass'))
 sm.add_widget(twoFacSetupScreen(name='2fa_setup'))
+sm.add_widget(unameAndFinish(name='uname_and_acc_finish'))
 sm.add_widget(loginScreen(name='login'))
 sm.add_widget(logDataScreen(name='logdata'))
 

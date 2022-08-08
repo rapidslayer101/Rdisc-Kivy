@@ -38,14 +38,13 @@
 0.38 key generator and resuming generation, key regeneration and resuming regeneration
 0.39 better installers, smaller app size, account key creator
 0.40 changing to rdisc-4c5, the kivy GUI, exes back and in one file
+0.41 captcha human verification, password setting screen, 2fa setup
 
-0.41 captcha human verification and password setting
+0.42 ip keys, account creation and username setting
 
-0.42 2fa setup
-0.43 account creation and username setting
-0.44 basic chat functionality
-0.45 session limit = account compromised
-0.46 venv not tracked but still downloaded, clean app (remove user files)
+0.43 login system, pack blank images into exe
+0.44 session limit = account compromised
+0.45 venv not tracked but still downloaded, clean app (remove user files)
 
 planned features:
 - multiple build types:
@@ -57,3 +56,11 @@ planned features:
 - console toggle
 - tell people what is required to make an account before starting
   - mobile phone
+
+
+# account key + account pin = master key
+# MASTER KEY NEVER SAVED TO CLIENTS DEVICE
+#-> set master key and password
+# master key + 2fa = ip key enc
+# (ip key + password) + challenge depth = login
+# 5 ips at one time

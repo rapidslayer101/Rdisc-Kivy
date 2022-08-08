@@ -3,3 +3,5 @@ rdisc.kv
 dist
 build
 validation_keys.txt
+captcha.jpg
+secret_qr.png

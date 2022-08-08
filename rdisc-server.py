@@ -8,6 +8,7 @@ from os import path, mkdir, listdir, remove, removedirs, rename
 from threading import Thread
 from random import choices, randint
 from hashlib import sha512
+from requests import get
 
 
 def version_info(hashed):
@@ -140,30 +141,46 @@ def client_connection(cs):
                         break
 
                 print("CAPTCHA OK")
-                log_or_create = recv_d(1024)
+                log_or_create = recv_d(2048)
                 if log_or_create.startswith("NAC:"):
-                    if log_or_create[4:] in users.valid_hashes:
-                        u_salt = enc.rand_b96_str(64)
-                        send_e(f"V:{u_salt}")
-                        u_pass = recv_d(2048)
-                        challenge_int = randint(1, 999999)
-                        challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
-                        send_e(f"{challenge_int}")
-                        user_challenge = recv_d(2048)
-                        if user_challenge == challenge_hash:
-                            while True:
-                                uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
-                                if uid not in users.ids:
-                                    break
-                            mkdir(f"Users/{uid}")
-                            with open(f"Users/{uid}/{uid}-keys.txt", "w", encoding="utf-8") as f:
-                                f.write(f"{u_pass}🱫{u_salt}")
-                            users.v_hash_r(login_request[4:])
-                            users.ids_up(uid)
-                            send_e(f"{uid}")
+                    print(log_or_create[4:].split("🱫"))
+                    # todo password checks here
+                    while True:
+                        uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
+                        if uid not in users.ids:
+                            break
+                    mkdir(f"Users/{uid}")
+                    user_secret = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXY"
+                                                  "abcdefghijklmnopqrstuvwxyz", k=24))
+                    print(user_secret)
+                    send_e(f"{uid}🱫{user_secret}")
+                    while True:
+                        code_challenge = recv_d(2048)
+                        if get(f"https://www.authenticatorapi.com/Validate.aspx?"
+                               f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
+                            send_e("V") # todo send ip key
                             break
                         else:
                             send_e("N")
+
+                    input()
+                    u_pass = recv_d(2048)
+                    challenge_int = randint(1, 999999)
+                    challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
+                    send_e(f"{challenge_int}")
+                    user_challenge = recv_d(2048)
+                    if user_challenge == challenge_hash:
+                        while True:
+                            uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
+                            if uid not in users.ids:
+                                break
+                        mkdir(f"Users/{uid}")
+                        with open(f"Users/{uid}/{uid}-keys.txt", "w", encoding="utf-8") as f:
+                            f.write(f"{u_pass}🱫{u_salt}")
+                        users.v_hash_r(login_request[4:])
+                        users.ids_up(uid)
+                        send_e(f"{uid}")
+                        break
                     else:
                         send_e("N")
 
