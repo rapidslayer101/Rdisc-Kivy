@@ -1,26 +1,27 @@
 from datetime import datetime, timedelta
 from sys import byteorder
-from re import search as sr
 from time import perf_counter
-from os import path
+from os.path import exists, getsize
 from random import choices
 from hashlib import sha512
 from zlib import compress, decompress
 from multiprocessing import Pool, cpu_count
 
-# enc 11.8.4 - CREATED BY RAPIDSLAYER101 (Scott Bree)
-_default_block_size_ = 5000000  # modifies the chunking size
+# enc 11.8.5 - CREATED BY RAPIDSLAYER101 (Scott Bree)
+_default_block_size_ = 5000000  # the chunking size
 _xor_salt_len_ = 8  # 94^8 combinations
-_default_pass_depth_ = 100000
+_default_pass_depth_ = 100000  # the hash loop depth
 _b94set_ = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/`!\"$%^&*() -=[{]};:'@#~\\|,<.>?"
 _b96set_ = _b94set_+"¬£"
 
 
+# generate a random base 96 string of a given length
 def rand_b96_str(num):
     return "".join(choices(_b96set_, k=int(num)))
 
 
-def to_base(base_fr, base_to, hex_to_convert):
+# convert a string to another base
+def to_base(base_to, base_fr, hex_to_convert):
     decimal, power = 0, len(str(hex_to_convert))-1
     for digit in str(hex_to_convert):
         decimal += _b96set_.index(digit)*base_fr**power
@@ -31,19 +32,23 @@ def to_base(base_fr, base_to, hex_to_convert):
     return hexadecimal
 
 
-def get_base(data_to_resolve):  # this is only a guess
+# attempts to find the base of an input string
+def get_base(data_to_resolve):
     for i in range(96):
         if to_base(i+2, i+2, data_to_resolve) == data_to_resolve:
             return i+2
 
 
+# turns a password and salt into a key
+# used to save a key so encryption/decryption does not require the generation of a key each time
 def pass_to_key(password, salt, depth):
     password, salt = password.encode(), salt.encode()
     for i in range(depth):
         password = sha512(password+salt).digest()
-    return to_base(16, 96, password.hex())
+    return to_base(96, 16, password.hex())
 
 
+# generates a key of equal length to the data then xor the data with the key
 def _xor_(data, key, xor_salt):
     key_value, key = [], key.encode()
     for i in range((len(data)//64)+1):
@@ -77,7 +82,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
     else:
         text = [text[i:i+block_size] for i in range(0, len(text), block_size)]
         print(f"Generating {len(text)} block keys")
-        key1, alpha_gen, counter, keys_salt = int(to_base(96, 16, key), 36), _b94set_, 0, ""
+        key1, alpha_gen, counter, keys_salt = int(to_base(16, 96, key), 36), _b94set_, 0, ""
         while len(alpha_gen) > 0:
             counter += 2
             value = int(str(key1)[counter:counter+2]) << 1
@@ -141,8 +146,9 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
             return d_data
 
 
+# returns the file size of a file in standard units
 def get_file_size(file):
-    size, power, n = [path.getsize(file), 2 ** 10, 0]
+    size, power, n = [getsize(file), 2 ** 10, 0]
     power_labels = {0: '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
     while size > power:
         size /= power
@@ -150,11 +156,12 @@ def get_file_size(file):
     return f"{round(size, 2)}{power_labels[n]}"
 
 
+# a wrapper for the encrypter function to support file encryption and decryption
 def _file_encrypter_(enc, file, key, file_output, compressor):
     start = perf_counter()
-    if path.exists(file):
+    if exists(file):
         file_name = file.split("/")[-1].split(".")[:-1]  # file_type = file.split("/")[-1].split(".")[-1:]
-        print(f"{file_name} is {get_file_size(file)}, should take {round(path.getsize(file)/136731168.599, 2)}s")
+        print(f"{file_name} is {get_file_size(file)}, should take {round(getsize(file)/136731168.599, 2)}s")
         with open(file, 'rb') as hash_file:
             data = hash_file.read()
         _encrypter_(enc, data, key, _default_block_size_, compressor, file_output)
@@ -163,38 +170,41 @@ def _file_encrypter_(enc, file, key, file_output, compressor):
         return "File not found"
 
 
+# a selection of wrappers for the encrypter function for encryption and decryption
+
+
+# encrypts data
 def enc_from_pass(text, password, salt, depth=_default_pass_depth_, block_size=_default_block_size_):
     return _encrypter_(True, text, pass_to_key(password, salt, depth), block_size, True)
 
 
+# uses a pre-generated key to encrypt data
 def enc_from_key(text, key, block_size=_default_block_size_):
     return _encrypter_(True, text, key, block_size, True)
 
 
+# decrypts data
 def dec_from_pass(e_text, password, salt, depth=_default_pass_depth_, block_size=_default_block_size_):
     return _encrypter_(False, e_text, pass_to_key(password, salt, depth), block_size, True)
 
 
+# uses a pre-generated key to decrypt data
 def dec_from_key(e_text, key, block_size=_default_block_size_):
     return _encrypter_(False, e_text, key, block_size, True)
 
 
+# encrypts a file
 def enc_file_from_pass(file, password, salt, file_output, depth=_default_pass_depth_, compressor=False):
     return _file_encrypter_(True, file, pass_to_key(password, salt, depth), file_output, compressor)
 
 
+# decrypts a file
 def dec_file_from_pass(e_file, password, salt, file_output, depth=_default_pass_depth_, compressor=False):
     return _file_encrypter_(False, e_file, pass_to_key(password, salt, depth), file_output, compressor)
 
 
-def search(data, filter_fr, filter_to):
-    m = sr(f"""{filter_fr}(.+?){filter_to}""", str(data))
-    if m:
-        return m.group(1)
-    else:
-        return None
-
-
+# rounds dt to an amount of seconds
+# this function could be used to create a time based key system
 def round_time(dt=None, round_to=30):
     if not dt:
         dt = datetime.now()
@@ -202,6 +212,7 @@ def round_time(dt=None, round_to=30):
     return dt+timedelta(0, (seconds+round_to/2)//round_to*round_to-seconds, -dt.microsecond)
 
 
+# hashes a file using the SHA512 algorithm
 def hash_a_file(file):
     hash_ = sha512()
     with open(file, 'rb') as hash_file:
@@ -209,4 +220,4 @@ def hash_a_file(file):
         while len(buf) > 0:
             hash_.update(buf)
             buf = hash_file.read(262144)
-    return to_base(16, 96, hash_.hexdigest())
+    return to_base(96, 16, hash_.hexdigest())

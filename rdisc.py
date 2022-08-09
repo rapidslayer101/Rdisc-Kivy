@@ -8,7 +8,6 @@ from os import path, mkdir
 from datetime import datetime
 from threading import Thread
 from socket import socket
-from requests import get
 from base64 import b32encode
 
 from kivy.app import App
@@ -148,7 +147,7 @@ class logInOrSignUpScreen(Screen):
             print(" - Key data loaded")
             if key_data.endswith(b"MAKE_KEY"):
                 print(" - MAKE KEY")
-                keys.master_key = key_data[:-8]
+                keys.master_key = str(key_data)[2:-9]
                 if s.ip:
                     sm.switch_to(attemptConnectionScreen(), direction="left")
                 else:
@@ -208,11 +207,12 @@ class createKeyScreen(Screen):
                     self.pin_code_text = f"Generating keys ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        with open("userdata/key", "wb") as f:
-            f.write(master_key + b"MAKE_KEY")
+        master_key = enc.to_base(96, 16, master_key.hex())
+        with open("userdata/key", "w") as f:
+            f.write(f"{master_key}MAKE_KEY")
         keys.master_key = master_key
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Your account pin is: {current_depth}"
+        self.pin_code_text = f"Your account pin is: {enc.to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your account key " \
                                  f"and pin enter {self.rand_confirmation} below"
 
@@ -411,13 +411,10 @@ class twoFacSetupScreen(Screen):
         uid, secret_code = s.recv_d(2048).split("🱫")
         secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
         print(secret_code)
-        secret_qr = get(f"https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2"
-                        f"F%2Ftotp%2F{uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc").content
-        with open("secret_qr.png", "wb") as f:
-            f.write(secret_qr)
-        self.two_fac_wait_text = "Save this code to your authenticator, then enter code to confirm\n" \
+        self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
+                                     f"F%2Ftotp%2F{uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
+        self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
                                  f"Your User ID is {uid}"
-        self.ids.two_fac_qr.source = 'secret_qr.png'
 
     def confirm_2fa(self):
         if self.two_fac_confirm.text == "":

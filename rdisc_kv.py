@@ -451,7 +451,7 @@ windowManager:
             text : root.two_fac_wait_text
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.93}
-        Image:
+        AsyncImage:
             id: two_fac_qr
             source: 'blank_qr.png'
             pos_hint : {"x": 0, "top": 1.10}
@@ -502,16 +502,16 @@ windowManager:
         Label:
             text : root.account_finished_details_text
             size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.93}
+            pos_hint : {"x": 0.35, "top": 0.8}
         TextInput:
             id : username_setup
             multiline : False
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.34}
+            pos_hint : {"x" : 0.35, "top" : 0.6}
         RoundedButton:
             text : "Set Username"
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.20}
+            pos_hint : {"x" : 0.35, "top" : 0.4}
             on_press : root.confirm_2fa()
         GreenLabel:
             text : "User keys >>"

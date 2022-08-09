@@ -2,6 +2,8 @@ userdata
 rdisc.kv
 dist
 build
-validation_keys.txt
 captcha.jpg
 secret_qr.png
+rdisc_server.db
+bin
+.buildozer

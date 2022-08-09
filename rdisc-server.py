@@ -1,14 +1,16 @@
-import enclib as enc
 import socket
+import sqlite3
+import enclib as enc
 from time import sleep
-from captcha.image import ImageCaptcha
+from datetime import datetime
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
-from os import path, mkdir, listdir, remove, removedirs, rename
+from os import mkdir, listdir, remove, removedirs, rename
 from threading import Thread
 from random import choices, randint
 from hashlib import sha512
 from requests import get
+from captcha.image import ImageCaptcha
 
 
 def version_info(hashed):
@@ -25,53 +27,59 @@ def version_info(hashed):
     return f"{version_}🱫{tme_}🱫{run_num}"
 
 
-if not path.exists("validation_keys.txt"):
-    with open("validation_keys.txt", "w", encoding="utf-8") as f:
-        f.write("")
-
-if not path.exists("Users"):
-    mkdir("Users")
-
-
 class Users:
     def __init__(self):
-        self.ids = []
-        self.logged_in_users = []
-        self.sockets = []
-        self.valid_hashes = []
-        for user_id_ in listdir("Users"):
-            self.ids.append(user_id_)
-        with open("validation_keys.txt", encoding="utf-8") as vkf:
-            [self.valid_hashes.append(_h_.split("🱫")[1].replace("\n", "")) for _h_ in vkf.readlines()]
+        self.db = sqlite3.connect('rdisc_server.db', check_same_thread=False)
 
-    def v_hash_r(self, hash_r):
-        self.valid_hashes.pop(self.valid_hashes.index(hash_r))
-        with open("validation_keys.txt", "w", encoding="utf-8") as vkf:
-            for _h_ in self.valid_hashes:
-                vkf.write(_h_+"\n")
-
-    def ids_up(self, u_id):
-        self.ids.append(u_id)
-        self.ids.sort()
-
-    def ids_r(self, u_id):
-        self.ids.pop(self.ids.index(u_id))
-
-    def login(self, u_id, ip, cs):
-        self.logged_in_users.append(u_id)
-        self.logged_in_users.append(ip)
-        self.sockets.append(cs)
-
-    def logout(self, u_id, ip, cs):
         try:
-            self.logged_in_users.pop(self.logged_in_users.index(u_id))
-            self.logged_in_users.pop(self.logged_in_users.index(ip))
-            self.sockets.pop(self.sockets.index(cs))
-        except ValueError:
-            pass
+            self.db.execute("SELECT user_id FROM users")
+
+        except sqlite3.OperationalError:
+            print("No such table: users")
+            self.db.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
+                            "creation_time DATE, master_key TEXT, secret TEXT)")
+
+        #data_list = cur.fetchall()
+        #print(data_list)
+        #self.ids = data_list
+
+    def add_user(self, user_id, master_key, secret):
+        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?)",
+                        (user_id, str(datetime.now())[:-7], master_key, secret))
+        self.db.commit()
+        #self.ids.append(user_id)
 
 
 users = Users()
+
+
+#class Users:
+#    def __init__(self):
+#        self.logged_in_users = []
+#        self.sockets = []
+#
+#    def ids_up(self, u_id):
+#        self.ids.append(u_id)
+#        self.ids.sort()
+#
+#    def ids_r(self, u_id):
+#        self.ids.pop(self.ids.index(u_id))
+#
+#    def login(self, u_id, ip, cs):
+#        self.logged_in_users.append(u_id)
+#        self.logged_in_users.append(ip)
+#        self.sockets.append(cs)
+#
+#    def logout(self, u_id, ip, cs):
+#        try:
+#            self.logged_in_users.pop(self.logged_in_users.index(u_id))
+#            self.logged_in_users.pop(self.logged_in_users.index(ip))
+#            self.sockets.pop(self.sockets.index(cs))
+#        except ValueError:
+#            pass
+
+
+#users = Users()
 client_sockets = set()
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -143,22 +151,21 @@ def client_connection(cs):
                 print("CAPTCHA OK")
                 log_or_create = recv_d(2048)
                 if log_or_create.startswith("NAC:"):
-                    print(log_or_create[4:].split("🱫"))
+                    master_key, user_pass = log_or_create[4:].split("🱫")
                     # todo password checks here
-                    while True:
-                        uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
-                        if uid not in users.ids:
-                            break
-                    mkdir(f"Users/{uid}")
                     user_secret = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXY"
-                                                  "abcdefghijklmnopqrstuvwxyz", k=24))
+                                                  "abcdefghijklmnopqrstuvwxyz", k=8))
+                    #while True:
+                    uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
+                    users.add_user(uid, enc.to_base(96, 16, sha512((master_key+uid).encode()).hexdigest()), user_secret)
+                    # todo check if user_id is unique and the errors associated with that
                     print(user_secret)
                     send_e(f"{uid}🱫{user_secret}")
                     while True:
                         code_challenge = recv_d(2048)
                         if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                                f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
-                            send_e("V") # todo send ip key
+                            send_e("V")  # todo send ip key
                             break
                         else:
                             send_e("N")
