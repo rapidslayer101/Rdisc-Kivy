@@ -77,8 +77,6 @@ default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A
 class Server:
     def __init__(self):
         self.s = socket()
-        self.pub_key = None
-        self.pri_key = None
         self.enc_seed = None
         self.enc_salt = None
         self.enc_key = None
@@ -89,21 +87,20 @@ class Server:
             self.ip = None
 
     def connect(self):
-        if not self.pub_key:
-            self.pub_key, self.pri_key = newkeys(1024)
         try:
             self.s.connect((self.ip[0], int(self.ip[1])))
             print("Connected to server")
             l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
             s_ip, s_port = str(self.s).split("raddr=")[1][2:-2].split("', ")
             print(f" << Server connected via {l_ip}:{l_port} -> {s_ip}:{s_port}")
+            pub_key, pri_key = newkeys(1024)
             try:
-                self.s.send(PublicKey.save_pkcs1(self.pub_key))
+                self.s.send(PublicKey.save_pkcs1(pub_key))
             except ConnectionResetError:
                 return False
             print(" >> Public RSA key sent")
-            enc_seed = decrypt(self.s.recv(128), self.pri_key).decode()
-            enc_salt = decrypt(self.s.recv(128), self.pri_key).decode()
+            enc_seed = decrypt(self.s.recv(128), pri_key).decode()
+            enc_salt = decrypt(self.s.recv(128), pri_key).decode()
             self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
             print(" << Client enc_seed and enc_salt received and loaded\n "
                   "-- RSA Enc bootstrap complete")
@@ -131,6 +128,8 @@ s = Server()
 class key_system:
     def __init__(self):
         self.master_key = None
+        self.uid = None
+        self.secret_code = None
 
 
 keys = key_system()
@@ -145,22 +144,31 @@ class logInOrSignUpScreen(Screen):
             with open(f'userdata\key', 'rb') as f:
                 key_data = f.read()
             print(" - Key data loaded")
-            if key_data.endswith(b"MAKE_KEY"):
-                print(" - MAKE KEY")
-                keys.master_key = str(key_data)[2:-9]
+            if key_data.endswith(b"MAKE_KEY1"):
+                print(" - MAKE KEY FROM CAPTCHA")
+                keys.master_key = str(key_data)[2:-10]
                 if s.ip:
                     sm.switch_to(attemptConnectionScreen(), direction="left")
                 else:
                     sm.switch_to(ipSetScreen(), direction="left")
             else:
-                # ip key route
-                if path.exists(f'{key_location}key_salt'):
-                    with open(f'{key_location}key_salt', encoding="utf-8") as f:
-                        key_salt, uid = f.read().split("🱫")
-                    print(" - Key salt loaded\n - User id loaded")
+                if key_data.endswith(b"MAKE_KEY2"):
+                    print(" - MAKE KEY FROM 2FA")
+                    keys.master_key, keys.uid, keys.secret_code = str(key_data)[2:-10].split("\\xf0\\x9f\\xb1\\xab")
+                    s.connect()
+                    if s.ip:
+                        sm.switch_to(twoFacSetupScreen(), direction="left")
+                    else:
+                        sm.switch_to(ipSetScreen(), direction="left")
                 else:
-                    print("Activation key required")
-                    sm.switch_to(keyUnlockScreen(), direction="left")
+                    # ip key route
+                    if path.exists(f'{key_location}key_salt'):
+                        with open(f'{key_location}key_salt', encoding="utf-8") as f:
+                            key_salt, uid = f.read().split("🱫")
+                        print(" - Key salt loaded\n - User id loaded")
+                    else:
+                        print("Activation key required")
+                        sm.switch_to(keyUnlockScreen(), direction="left")
         else:
             print(" - No keys found")
 
@@ -208,8 +216,8 @@ class createKeyScreen(Screen):
                 except ZeroDivisionError:
                     pass
         master_key = enc.to_base(96, 16, master_key.hex())
-        with open("userdata/key", "w") as f:
-            f.write(f"{master_key}MAKE_KEY")
+        with open("userdata/key", "w", encoding="utf-8") as f:
+            f.write(f"{master_key}MAKE_KEY1")
         keys.master_key = master_key
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Your account pin is: {enc.to_base(36, 10, current_depth)}"
@@ -268,8 +276,8 @@ class reCreateKeyScreen(Screen):
                     self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        with open("userdata/key", "wb") as f:
-            f.write(master_key + b"MAKE_KEY")
+        with open("userdata/key", "w", encoding="utf-8") as f:
+            f.write(f"{master_key}MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Depth pin: {current_depth}"
         self.rand_confirm_text = f"Once you have written down your account code " \
@@ -408,7 +416,15 @@ class twoFacSetupScreen(Screen):
         self.two_fac_wait_text = "Waiting for 2fa QR code..."
 
     def on_enter(self, *args):
-        uid, secret_code = s.recv_d(2048).split("🱫")
+        if not keys.secret_code:
+            uid, secret_code = s.recv_d(2048).split("🱫")
+            print(keys.master_key, uid, secret_code)
+            with open("userdata/key", "w", encoding="utf-8") as f:
+                f.write(f"{keys.master_key}🱫{uid}🱫{secret_code}MAKE_KEY2")
+        else:
+            # todo connection
+            #s.send_e(f"FIP:{keys.master_key}🱫{keys.secret_code}")
+            uid, secret_code = keys.secret_code, keys.uid
         secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
         print(secret_code)
         self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
