@@ -41,9 +41,9 @@
 0.41 captcha human verification, password setting screen, 2fa setup
 0.42 account creation with sql user tables
 
-0.43 ip keys, username setting
+0.43 ip keys, username setting, ack blank images into exe
 
-0.44 login system, pack blank images into exe
+0.44 login system
 0.45 session limit = account compromised
 0.46 venv not tracked but still downloaded, clean app (remove user files)
 

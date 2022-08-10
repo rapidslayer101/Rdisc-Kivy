@@ -2,7 +2,7 @@ import socket
 import sqlite3
 import enclib as enc
 from time import sleep
-from datetime import datetime
+from datetime import datetime, timedelta
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
 from os import listdir, remove, removedirs, rename
@@ -37,7 +37,8 @@ class Users:
         except sqlite3.OperationalError:
             print("No such table: users")
             self.db.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
-                            "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL)")
+                            "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
+                            "user_pass TEXT NOT NULL, last_login DATE NOT NULL)")
         try:
             self.db.execute("SELECT user_id FROM ip_keys")
         except sqlite3.OperationalError:
@@ -45,9 +46,18 @@ class Users:
             self.db.execute("CREATE TABLE ip_keys (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
                             "ip TEXT NOT NULL, ip_key TEXT NOT NULL, expiry_time DATE NOT NULL)")
 
-    def add_user(self, user_id, master_key, secret):
-        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?)",
-                        (user_id, str(datetime.now())[:-7], master_key, secret))
+    def add_user(self, user_id, master_key, secret, user_pass):
+        now = str(datetime.now())[:-7]
+        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)", (user_id, now,
+                        enc.to_base(96, 16, sha512((master_key+user_id).encode()).hexdigest()), secret,
+                        user_pass, now))
+        self.db.commit()
+
+    def add_user_key(self, user_id, ip, ip_key, expiry_time=14):
+        # todo login to remove old keys if more than 5 or 3
+        expiry_time = str(datetime.now() + timedelta(days=expiry_time))[:-7]
+        self.db.execute("INSERT INTO ip_keys VALUES (?, ?, ?, ?)",
+                        (user_id, ip, enc.to_base(96, 16, sha512((ip_key+user_id).encode()).hexdigest()), expiry_time))
         self.db.commit()
 
 
@@ -125,12 +135,14 @@ def client_connection(cs):
                 else:
                     return False
 
-        def fip(secret):
+        def new_ip(uid, secret, user_pass):
             while True:
                 code_challenge = recv_d(2048)
                 if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                        f"Pin={code_challenge}&SecretCode={secret}").content == b"True":
-                    send_e("V")
+                    ip_key = enc.rand_b96_str(24)
+                    users.add_user_key(uid, ip, enc.to_base(96, 16, sha512((ip_key+uid).encode()).hexdigest()))
+                    send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
                     break
                 else:
                     send_e("N")
@@ -169,30 +181,26 @@ def client_connection(cs):
                     while True:
                         uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
                         try:
-                            users.add_user(uid, enc.to_base(96, 16, sha512((master_key+uid).encode()).hexdigest()),
-                                           user_secret)
+                            user_pass = enc.to_base(96, 16, sha512((user_pass+uid).encode()).hexdigest())
+                            users.add_user(uid, master_key, user_secret, user_pass)
                             break
                         except sqlite3.IntegrityError:
                             pass
                     send_e(f"{uid}🱫{user_secret}")
-                    fip(user_secret)
+                    new_ip(uid, user_secret, user_pass)
 
             if login_request.startswith("FIP:"):  # first ip key
-                uid, master_key_c = login_request[4:].split("🱫")
-                try:
-                    master_key, user_secret = users.db.execute("SELECT master_key, secret FROM "
-                                                               "users WHERE user_id = ?", (uid,)).fetchone()
+                uid, master_key_c, = login_request[4:].split("🱫")
+                try:  # todo check that the ip_key table doesnt need to be checked here
+                    master_key, user_secret, user_pass = users.db.execute("SELECT master_key, secret, user_pass FROM "
+                                                                          "users WHERE user_id = ?", (uid,)).fetchone()
                     if master_key_c == master_key_c:
-                        fip(user_secret)
+                        new_ip(uid, user_secret, user_pass)
                     else:
                         send_e("N")
                 except sqlite3.OperationalError:
                     send_e("N")
                     pass
-                input()
-                user_secret = "x"
-                fip(user_secret)
-
                 input()
                 u_pass = recv_d(2048)
                 challenge_int = randint(1, 999999)
@@ -331,12 +339,12 @@ def client_connection(cs):
 
     except ConnectionResetError:
         print(f"{uid}-{ip}:{port} DC")
-        users.logout(uid, ip, cs)
+        #users.logout(uid, ip, cs)
     except ConnectionRefusedError:
         print(f"{uid}-{ip}:{port} DC - 1 session limit")
     except AssertionError:
         print(f"{uid}-{ip}:{port} DC - modified/invalid client request")
-        users.logout(uid, ip, cs)
+        #users.logout(uid, ip, cs)
 
 
 while True:

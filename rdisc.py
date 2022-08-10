@@ -1,4 +1,5 @@
 import enclib as enc
+import rdisc_kv
 from rsa import newkeys, PublicKey, decrypt
 from random import randint, uniform
 from time import perf_counter
@@ -18,12 +19,16 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.config import Config
 
+if not path.exists("resources"):
+    mkdir("resources")
+
+if not path.exists("resources/blank_captcha.png") or not path.exists("resources/blank_qr.png"):
+    rdisc_kv.w_images()
+
 if not path.exists("rdisc.kv"):
-    import rdisc_kv
     rdisc_kv.kv()
 
 if path.exists("rdisc.py"):
-    import rdisc_kv
     rdisc_kv.kv()
 
 if path.exists("rdisc.exe"):
@@ -107,6 +112,7 @@ class key_system:
         self.master_key = None
         self.uid = None
         self.secret_code = None
+        self.ip_key = None
 
 
 keys = key_system()
@@ -115,7 +121,6 @@ keys = key_system()
 class logInOrSignUpScreen(Screen):
     def on_enter(self, *args):
         print("Loading account keys...")
-        key_location = None
         if path.exists(f'userdata\key'):
             print(f" - Found user account keys")
             with open(f'userdata\key', 'rb') as f:
@@ -139,13 +144,8 @@ class logInOrSignUpScreen(Screen):
                         sm.switch_to(ipSetScreen(), direction="left")
                 else:
                     # ip key route
-                    if path.exists(f'{key_location}key_salt'):
-                        with open(f'{key_location}key_salt', encoding="utf-8") as f:
-                            key_salt, uid = f.read().split("🱫")
-                        print(" - Key salt loaded\n - User id loaded")
-                    else:
-                        print("Activation key required")
-                        sm.switch_to(keyUnlockScreen(), direction="left")
+                    keys.uid, keys.ip_key = str(key_data)[2:-2].split("\\xf0\\x9f\\xb1\\xab")
+                    sm.switch_to(keyUnlockScreen(), direction="left")
         else:
             print(" - No keys found")
 
@@ -153,14 +153,24 @@ class logInOrSignUpScreen(Screen):
 # class to accept user info and validate it
 class keyUnlockScreen(Screen):
     pwd = ObjectProperty(None)
+    passcode_prompt_text = StringProperty()
 
-    def validate(self):
-        print("Validating user info")
-        if self.pwd.text:
-            print(self.pwd.text)
+    def on_pre_enter(self, *args):
+        self.passcode_prompt_text = f"Enter passcode for account {keys.uid}"
+
+    def login(self):
+        if self.pwd.text == "":
+            print("Password blank")
         else:
-            sm.current = 'logdata'
-            self.pwd.text = ""
+            print(self.pwd.text)
+            try:  # todo login
+                user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
+                user_pass = enc.to_base(96, 16, sha512((user_pass+keys.uid).encode()).hexdigest())
+                enc.dec_from_pass(keys.ip_key, user_pass[40:], user_pass[:40])
+            except TypeError:
+                print("Invalid password")
+            #sm.current = 'logdata'
+            #self.pwd.text = ""
 
 
 class createKeyScreen(Screen):
@@ -197,7 +207,7 @@ class createKeyScreen(Screen):
             f.write(f"{master_key}MAKE_KEY1")
         keys.master_key = master_key
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Depth pin: {current_depth}"
+        self.pin_code_text = f"Depth pin: {enc.to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your account code " \
                                  f"and pin enter {self.rand_confirmation} below"
 
@@ -377,7 +387,7 @@ class nacPassword(Screen):
                     if self.nac_password_1.text != self.nac_password_2.text:
                         print("Passwords do not match")
                     else:
-                        pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 100000)
+                        pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
                         s.send_e(f"NAC:{keys.master_key}🱫{pass_send}")
                         sm.switch_to(twoFacSetupScreen(), direction="left")
 
@@ -392,19 +402,17 @@ class twoFacSetupScreen(Screen):
 
     def on_enter(self, *args):
         if not keys.secret_code:
-            uid, secret_code = s.recv_d(2048).split("🱫")
-            print(keys.master_key, uid, secret_code)
+            keys.uid, keys.secret_code = s.recv_d(2048).split("🱫")
             with open("userdata/key", "w", encoding="utf-8") as f:
-                f.write(f"{keys.master_key}🱫{uid}🱫{secret_code}MAKE_KEY2")
+                f.write(f"{keys.master_key}🱫{keys.uid}🱫{keys.secret_code}MAKE_KEY2")
         else:
-            uid, secret_code = keys.uid, keys.secret_code
-            s.send_e(f"FIP:{uid}🱫{keys.master_key}")
-        secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
+            s.send_e(f"FIP:{keys.uid}🱫{keys.master_key}")
+        secret_code = b32encode(keys.secret_code.encode()).decode().replace('=', '')
         print(secret_code)
         self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
-                                     f"F%2Ftotp%2F{uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
+                                     f"F%2Ftotp%2F{keys.uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
         self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
-                                 f"Your User ID is {uid}"
+                                 f"Your User ID is {keys.uid}"
 
     def confirm_2fa(self):
         if self.two_fac_confirm.text == "":
@@ -413,7 +421,10 @@ class twoFacSetupScreen(Screen):
             self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
             if len(self.two_fac_confirm.text) == 6:
                 s.send_e(self.two_fac_confirm.text.replace(" ", ""))
-                if s.recv_d(1024) == "V":  # todo save ip key
+                ip_key = s.recv_d(1024)
+                if ip_key != "N":
+                    with open("userdata/key", "wb") as f:
+                        f.write(keys.uid.encode()+"🱫".encode()+ip_key)
                     print("2FA confirmed")
                     sm.switch_to(unameAndFinish(), direction="left")
                 else:
