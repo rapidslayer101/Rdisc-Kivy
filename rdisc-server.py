@@ -5,12 +5,14 @@ from time import sleep
 from datetime import datetime
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
-from os import mkdir, listdir, remove, removedirs, rename
+from os import listdir, remove, removedirs, rename
 from threading import Thread
 from random import choices, randint
 from hashlib import sha512
 from requests import get
 from captcha.image import ImageCaptcha
+
+# TODO MAJOR: REMOVE 1 THREAD PER USER
 
 
 def version_info(hashed):
@@ -41,7 +43,7 @@ class Users:
         except sqlite3.OperationalError:
             print("No such table: ip_keys")
             self.db.execute("CREATE TABLE ip_keys (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
-                            "ip TEXT NOT NULL, ip_key TEXT NOT NULL)")
+                            "ip TEXT NOT NULL, ip_key TEXT NOT NULL, expiry_time DATE NOT NULL)")
 
     def add_user(self, user_id, master_key, secret):
         self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?)",
@@ -123,6 +125,16 @@ def client_connection(cs):
                 else:
                     return False
 
+        def fip(secret):
+            while True:
+                code_challenge = recv_d(2048)
+                if get(f"https://www.authenticatorapi.com/Validate.aspx?"
+                       f"Pin={code_challenge}&SecretCode={secret}").content == b"True":
+                    send_e("V")
+                    break
+                else:
+                    send_e("N")
+
         while True:
             login_request = recv_d(1024)
             print(login_request)  # temp debug for dev
@@ -162,20 +174,25 @@ def client_connection(cs):
                             break
                         except sqlite3.IntegrityError:
                             pass
-                    print(user_secret)
                     send_e(f"{uid}🱫{user_secret}")
-                    while True:
-                        code_challenge = recv_d(2048)
-                        if get(f"https://www.authenticatorapi.com/Validate.aspx?"
-                               f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
-                            send_e("V")  # todo send ip key
-                            break
-                        else:
-                            send_e("N")
+                    fip(user_secret)
 
-            if log_or_create.startswith("FIP:"):  # first ip key
-                # todo connection checking
-                print("first ip key")
+            if login_request.startswith("FIP:"):  # first ip key
+                uid, master_key_c = login_request[4:].split("🱫")
+                try:
+                    master_key, user_secret = users.db.execute("SELECT master_key, secret FROM "
+                                                               "users WHERE user_id = ?", (uid,)).fetchone()
+                    if master_key_c == master_key_c:
+                        fip(user_secret)
+                    else:
+                        send_e("N")
+                except sqlite3.OperationalError:
+                    send_e("N")
+                    pass
+                input()
+                user_secret = "x"
+                fip(user_secret)
+
                 input()
                 u_pass = recv_d(2048)
                 challenge_int = randint(1, 999999)
@@ -183,7 +200,6 @@ def client_connection(cs):
                 send_e(f"{challenge_int}")
                 user_challenge = recv_d(2048)
                 if user_challenge == challenge_hash:
-                    users.v_hash_r(login_request[4:])
                     users.ids_up(uid)
                     send_e(f"{uid}")
                     break

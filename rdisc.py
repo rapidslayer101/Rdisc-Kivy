@@ -51,29 +51,6 @@ default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A
                "G-;|&&rR81!BTElChN|+\"TCM'CNJ+ws@ZQ~7[:¬`-OC8)JCTtI¬k<i#.\"H4tq)p4"
 
 
-#def regenerate_master_key(self, key_location, file_key, salt, depth_to, current_depth=0):
-#    print("\n🱫[COL-GRN] Generating master key...")
-#    start, depth_left, loop_timer = perf_counter(), depth_to-current_depth, perf_counter()
-#    for depth_count in range(1, depth_left+1):
-#        file_key = sha512(file_key+salt).digest()
-#        if perf_counter() - loop_timer > 0.25:
-#            try:
-#                loop_timer = perf_counter()
-#                real_dps = int(round(depth_count/(perf_counter()-start), 0))
-#                print(f"\n Runtime: {round(perf_counter()-start, 2)}s  "
-#                     f"Time Left: {round((depth_left-depth_count)/real_dps, 2)}s  "
-#                     f"DPS: {round(real_dps/1000000, 3)}M  "
-#                     f"Depth: {current_depth+depth_count}/{depth_to}  "
-#                     f"Progress: {round((current_depth+depth_count)/depth_to * 100, 3)}%")
-#                with open(f'{key_location}key', 'wb') as f:
-#                    f.write(file_key + b"RGEN" + salt + b"RGEN" +
-#                            str(depth_to).encode() + b"RGEN" + str(current_depth+depth_count).encode())
-#            except ZeroDivisionError:
-#                pass
-#    with open(f"{key_location}key", "wb") as f:
-#        f.write(file_key+b"MAKE_KEY")
-#    return file_key
-
 class Server:
     def __init__(self):
         self.s = socket()
@@ -212,7 +189,7 @@ class createKeyScreen(Screen):
                           f"DPS: {round(real_dps/1000000, 3)}M  "
                           f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
                           f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
-                    self.pin_code_text = f"Generating keys ({round(time_left, 2)}s left)"
+                    self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
         master_key = enc.to_base(96, 16, master_key.hex())
@@ -220,8 +197,8 @@ class createKeyScreen(Screen):
             f.write(f"{master_key}MAKE_KEY1")
         keys.master_key = master_key
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Your account pin is: {enc.to_base(36, 10, current_depth)}"
-        self.rand_confirm_text = f"Once you have written down your account key " \
+        self.pin_code_text = f"Depth pin: {current_depth}"
+        self.rand_confirm_text = f"Once you have written down your account code " \
                                  f"and pin enter {self.rand_confirmation} below"
 
     def on_pre_enter(self, *args):
@@ -256,31 +233,29 @@ class reCreateKeyScreen(Screen):
     start_time = None
     rand_confirmation = None
 
-    def generate_master_key(self, master_key, salt, depth_time, current_depth=0):
-        start, time_left, loop_timer = perf_counter(), depth_time, perf_counter()
-        if not path.exists("userdata"):
-            mkdir("userdata")
-        while time_left > 0:
-            current_depth += 1
-            master_key = sha512(master_key+salt).digest()
-            if perf_counter()-loop_timer > 0.25:
+    def regenerate_master_key(self, master_key, salt, depth_to, current_depth=0):
+        start, depth_left, loop_timer = perf_counter(), depth_to - current_depth, perf_counter()
+        for depth_count in range(1, depth_left + 1):
+            master_key = sha512(master_key + salt).digest()
+            if perf_counter() - loop_timer > 0.25:
                 try:
-                    time_left -= (perf_counter()-loop_timer)
                     loop_timer = perf_counter()
-                    real_dps = int(round(current_depth/(perf_counter()-start), 0))
-                    print(f"Runtime: {round(perf_counter()-start, 2)}s  "
-                          f"Time Left: {round(time_left, 2)}s  "
-                          f"DPS: {round(real_dps/1000000, 3)}M  "
-                          f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
-                          f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
-                    self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
+                    real_dps = int(round(depth_count / (perf_counter() - start), 0))
+                    print(f"Runtime: {round(perf_counter() - start, 2)}s  "
+                          f"Time Left: {round((depth_left - depth_count) / real_dps, 2)}s  "
+                          f"DPS: {round(real_dps / 1000000, 3)}M  "
+                          f"Depth: {current_depth + depth_count}/{depth_to}  "
+                          f"Progress: {round((current_depth + depth_count) / depth_to * 100, 3)}%")
+                    self.pin_code_text = f"Generating keys ({round((depth_left - depth_count) / real_dps, 2)}s left)"
                 except ZeroDivisionError:
                     pass
+        master_key = enc.to_base(96, 16, master_key.hex())
         with open("userdata/key", "w", encoding="utf-8") as f:
-            f.write(f"{master_key}MAKE_KEY")
+            f.write(f"{master_key}RE_KEY1")
+        keys.master_key = master_key
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Depth pin: {current_depth}"
-        self.rand_confirm_text = f"Once you have written down your account code " \
+        self.pin_code_text = f"Your account pin is: {enc.to_base(36, 10, current_depth)}"
+        self.rand_confirm_text = f"Once you have written down your account key " \
                                  f"and pin enter {self.rand_confirmation} below"
 
     def on_pre_enter(self, *args):
@@ -422,9 +397,8 @@ class twoFacSetupScreen(Screen):
             with open("userdata/key", "w", encoding="utf-8") as f:
                 f.write(f"{keys.master_key}🱫{uid}🱫{secret_code}MAKE_KEY2")
         else:
-            # todo connection
-            #s.send_e(f"FIP:{keys.master_key}🱫{keys.secret_code}")
-            uid, secret_code = keys.secret_code, keys.uid
+            uid, secret_code = keys.uid, keys.secret_code
+            s.send_e(f"FIP:{uid}🱫{keys.master_key}")
         secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
         print(secret_code)
         self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
