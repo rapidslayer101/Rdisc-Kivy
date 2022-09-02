@@ -115,8 +115,6 @@ def client_connection(cs):
 
         def send_e(text):
             try:
-                print("1", text)
-                print("2", enc.enc_from_key(text, enc_key))
                 cs.send(enc.enc_from_key(text, enc_key))
             except zl_error:
                 raise ConnectionResetError
@@ -144,14 +142,7 @@ def client_connection(cs):
                        f"Pin={code_challenge}&SecretCode={secret}").content == b"True":
                     ip_key = enc.rand_b96_str(24)
                     users.add_user_key(uid, ip, enc.to_base(96, 16, sha512((ip_key+uid).encode()).hexdigest()))
-                    pwd = enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:])
-                    if enc.dec_from_pass(pwd, user_pass[:40], user_pass[40:]) == ip_key:
-                        print("success")
-                    else:
-                        print(enc.dec_from_pass(pwd, user_pass[:40], user_pass[40:]))
-                    # todo the output of this is not decryptable. test. (the above test worked)
-                    # check types at both end, check pwd the same and check user_pass also the same
-                    send_e(pwd)
+                    send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
                     break
                 else:
                     send_e("N")

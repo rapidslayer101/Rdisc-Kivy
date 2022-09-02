@@ -18,7 +18,6 @@ windowManager:
     twoFacSetupScreen:
     reCreateKeyScreen:
     mainPageScreen:
-    loginScreen:
     
     
 ### Templates ###
@@ -78,7 +77,7 @@ windowManager:
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.55}
             on_release:
-                app.root.current = 'login'
+                app.root.current = 'recreate_key'
                 root.manager.transition.direction = "left"
         RoundedButton:
             text : "Sign Up"
@@ -437,30 +436,27 @@ windowManager:
             pos_hint : {"x": 0.65,  "top": 1}
 
 <reCreateKeyScreen>:
-    confirmation_code : confirmation_code
     FloatLayout:
+        Button:
+            text : "<< Back"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x" : 0, "top" : 1}
+            on_press :
+                app.root.current = 'login_signup'
+                root.manager.transition.direction = "right"
         Label:
-            text : root.pass_code_text
+            text : "Enter PIN"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.9}
         Label:
-            text : root.pin_code_text
+            text : "Enter PIN"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.8}
-        Label:
-            text : root.rand_confirm_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.7}
-        TextInput:
-            id : confirmation_code
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.55}
         RoundedButton:
-            text : "CONFIRM"
+            text : "Continue"
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.4}
-            on_press : root.continue_confirmation()
+            on_press : root.start_regenerator()
         Button:
             text : "<< Back"
             size_hint : 0.1, 0.05
@@ -468,16 +464,50 @@ windowManager:
             on_press :
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
-
-<loginScreen>:
-    FloatLayout:
-        Button:
-            text : "<< Back"
+        YellowLabel:
+            text : "User keys >>"
             size_hint : 0.1, 0.05
-            pos_hint : {"x" : 0, "top" : 1}
-            on_press :
-                app.root.current = 'login_signup'
-                root.manager.transition.direction = "right"
+            pos_hint : {"x": 0.25,  "top": 1}
+        Label:
+            text : "Set IP >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.35,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.45,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.55,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "2FA Check"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.65,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
             
 # main page

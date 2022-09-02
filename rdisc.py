@@ -1,6 +1,7 @@
 import enclib as enc
 import rdisc_kv
 from rsa import newkeys, PublicKey, decrypt
+from zlib import error as zl_error
 from random import randint, uniform
 from time import perf_counter
 from random import choices
@@ -144,7 +145,7 @@ class logInOrSignUpScreen(Screen):
                         sm.switch_to(ipSetScreen(), direction="left")
                 else:
                     # ip key route
-                    keys.uid, keys.ip_key = str(key_data[:8])[2:-1], str(key_data[8:])[2:-1]
+                    keys.uid, keys.ip_key = str(key_data[:8])[2:-1], key_data[8:]
                     sm.switch_to(keyUnlockScreen(), direction="left")
         else:
             print(" - No keys found")
@@ -166,11 +167,11 @@ class keyUnlockScreen(Screen):
             try:  # todo login
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
                 user_pass = enc.to_base(96, 16, sha512((user_pass+keys.uid).encode()).hexdigest())
-                enc.dec_from_pass(keys.ip_key, user_pass[40:], user_pass[:40])
-            except TypeError:
+                print(keys.ip_key, user_pass[:40], user_pass[40:])
+                enc.dec_from_pass(keys.ip_key, user_pass[:40], user_pass[40:])
+                sm.switch_to(mainPageScreen(), direction="left")
+            except zl_error:
                 print("Invalid password")
-            #sm.current = 'logdata'
-            #self.pwd.text = ""
 
 
 class createKeyScreen(Screen):
@@ -268,7 +269,7 @@ class reCreateKeyScreen(Screen):
         self.rand_confirm_text = f"Once you have written down your account key " \
                                  f"and pin enter {self.rand_confirmation} below"
 
-    def on_pre_enter(self, *args):
+    def start_regenerator(self):
         self.start_time = perf_counter()
         pass_code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(25)))
         time_depth = uniform(3, 10)  # time_depth
@@ -433,15 +434,6 @@ class twoFacSetupScreen(Screen):
                 print("Invalid input")
 
 
-class loginScreen(Screen):
-    name2 = ObjectProperty(None)
-    email = ObjectProperty(None)
-    pwd = ObjectProperty(None)
-
-    def signupbtn(self):
-        print("null")
-
-
 class mainPageScreen(Screen):
     def on_pre_enter(self, *args):
         print("Main page")
@@ -467,7 +459,6 @@ sm.add_widget(attemptConnectionScreen(name='attempt_connect'))
 sm.add_widget(captchaScreen(name='captcha'))
 sm.add_widget(nacPassword(name='new_acc_pass'))
 sm.add_widget(twoFacSetupScreen(name='2fa_setup'))
-sm.add_widget(loginScreen(name='login'))
 sm.add_widget(mainPageScreen(name='main_page'))
 
 
