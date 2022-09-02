@@ -144,7 +144,7 @@ class logInOrSignUpScreen(Screen):
                         sm.switch_to(ipSetScreen(), direction="left")
                 else:
                     # ip key route
-                    keys.uid, keys.ip_key = str(key_data)[2:-2].split("\\xf0\\x9f\\xb1\\xab")
+                    keys.uid, keys.ip_key = str(key_data[:8])[2:-1], str(key_data[8:])[2:-1]
                     sm.switch_to(keyUnlockScreen(), direction="left")
         else:
             print(" - No keys found")
@@ -363,7 +363,7 @@ class captchaScreen(Screen):
         if self.captcha_input.text == "":
             print("No input provided")
         else:
-            s.send_e(self.captcha_input.text.replace(" ", "").upper())
+            s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
             if s.recv_d(1024) == "V":
                 sm.switch_to(nacPassword(), direction="left")
             else:
@@ -424,22 +424,13 @@ class twoFacSetupScreen(Screen):
                 ip_key = s.recv_d(1024)
                 if ip_key != "N":
                     with open("userdata/key", "wb") as f:
-                        f.write(keys.uid.encode()+"🱫".encode()+ip_key)
+                        f.write(keys.uid.encode()+ip_key)
                     print("2FA confirmed")
-                    sm.switch_to(unameAndFinish(), direction="left")
+                    sm.switch_to(mainPageScreen(), direction="left")
                 else:
                     print("2FA failed")
             else:
                 print("Invalid input")
-
-
-class unameAndFinish(Screen):
-    account_finished_details_text = StringProperty()
-    username_setup = ObjectProperty(None)
-
-    def on_pre_enter(self, *args):
-        print("Username setting and account create finished screen")
-        self.account_finished_details_text = "Account created. Please enter a username"
 
 
 class loginScreen(Screen):
@@ -451,8 +442,11 @@ class loginScreen(Screen):
         print("null")
 
 
-class logDataScreen(Screen):
-    pass
+class mainPageScreen(Screen):
+    def on_pre_enter(self, *args):
+        print("Main page")
+        #print("Username setting and account create finished screen")
+        #self.account_finished_details_text = "Account created. Please enter a username"
 
 
 # class for managing screens
@@ -473,9 +467,8 @@ sm.add_widget(attemptConnectionScreen(name='attempt_connect'))
 sm.add_widget(captchaScreen(name='captcha'))
 sm.add_widget(nacPassword(name='new_acc_pass'))
 sm.add_widget(twoFacSetupScreen(name='2fa_setup'))
-sm.add_widget(unameAndFinish(name='uname_and_acc_finish'))
 sm.add_widget(loginScreen(name='login'))
-sm.add_widget(logDataScreen(name='logdata'))
+sm.add_widget(mainPageScreen(name='main_page'))
 
 
 # class that builds gui
