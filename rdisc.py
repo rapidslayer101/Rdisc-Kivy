@@ -3,7 +3,7 @@ import rdisc_kv
 from rsa import newkeys, PublicKey, decrypt
 from zlib import error as zl_error
 from random import randint, uniform
-from time import perf_counter
+from time import perf_counter, sleep
 from random import choices
 from hashlib import sha512
 from os import path, mkdir
@@ -12,6 +12,7 @@ from threading import Thread
 from socket import socket
 from base64 import b32encode
 
+from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
@@ -114,13 +115,17 @@ class key_system:
         self.uid = None
         self.secret_code = None
         self.ip_key = None
+        self.pass_code = None
+        self.pin_code = None
+        self.screen_path = None
 
 
 keys = key_system()
 
 
 class logInOrSignUpScreen(Screen):
-    def on_enter(self, *args):
+    def __init__(self, **kwargs):
+        super(logInOrSignUpScreen, self).__init__(**kwargs)
         print("Loading account keys...")
         if path.exists(f'userdata\key'):
             print(f" - Found user account keys")
@@ -129,14 +134,13 @@ class logInOrSignUpScreen(Screen):
             print(" - Key data loaded")
             if key_data.endswith(b"MAKE_KEY1"):
                 print(" - MAKE KEY FROM CAPTCHA")
+                keys.screen_path = "make"
                 keys.master_key = str(key_data)[2:-10]
-                if s.ip:
-                    sm.switch_to(attemptConnectionScreen(), direction="left")
-                else:
-                    sm.switch_to(ipSetScreen(), direction="left")
+                sm.switch_to(ipSetScreen(), direction="left")  # if ip exists this should have gone to attempt screen
             else:
                 if key_data.endswith(b"MAKE_KEY2"):
                     print(" - MAKE KEY FROM 2FA")
+                    keys.screen_path = "make"
                     keys.master_key, keys.uid, keys.secret_code = str(key_data)[2:-10].split("\\xf0\\x9f\\xb1\\xab")
                     s.connect()
                     if s.ip:
@@ -144,7 +148,7 @@ class logInOrSignUpScreen(Screen):
                     else:
                         sm.switch_to(ipSetScreen(), direction="left")
                 else:
-                    # ip key route
+                    keys.screen_path = "unlock"
                     keys.uid, keys.ip_key = str(key_data[:8])[2:-1], key_data[8:]
                     sm.switch_to(keyUnlockScreen(), direction="left")
         else:
@@ -213,9 +217,10 @@ class createKeyScreen(Screen):
                                  f"and pin enter {self.rand_confirmation} below"
 
     def on_pre_enter(self, *args):
+        keys.screen_path = "make"
         self.start_time = perf_counter()
         acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(20)))
-        time_depth = uniform(3, 10)  # time_depth
+        time_depth = uniform(3, 10)
         Thread(target=self.generate_master_key, args=(acc_key[:15].encode(),
                acc_key[15:].encode(), time_depth,), daemon=True).start()
         self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
@@ -238,11 +243,25 @@ class createKeyScreen(Screen):
 
 
 class reCreateKeyScreen(Screen):
-    pass_code_text = StringProperty()
-    pin_code_text = StringProperty()
-    rand_confirm_text = StringProperty()
-    start_time = None
-    rand_confirmation = None
+    pass_code = ObjectProperty()
+    pin_code = ObjectProperty()
+
+    def on_enter(self, *args):
+        keys.screen_path = "login"
+
+    def start_regenerator(self):
+        if len(self.pass_code.text.replace("-", "")) == 20:  # todo replace with 4 separate boxes
+            if self.pin_code.text != "":
+                keys.pass_code, keys.pin_code = self.pass_code.text, self.pin_code.text
+                sm.switch_to(reCreateGenScreen(), direction="left")
+
+
+class reCreateGenScreen(Screen):
+    gen_left_text = StringProperty()
+
+    #def __init__(self, **kwargs):
+    #    super(reCreateGenScreen, self).__init__(**kwargs)
+    #    Clock.schedule_interval(self.check_key(), 0.2)
 
     def regenerate_master_key(self, master_key, salt, depth_to, current_depth=0):
         start, depth_left, loop_timer = perf_counter(), depth_to - current_depth, perf_counter()
@@ -257,41 +276,22 @@ class reCreateKeyScreen(Screen):
                           f"DPS: {round(real_dps / 1000000, 3)}M  "
                           f"Depth: {current_depth + depth_count}/{depth_to}  "
                           f"Progress: {round((current_depth + depth_count) / depth_to * 100, 3)}%")
-                    self.pin_code_text = f"Generating keys ({round((depth_left - depth_count) / real_dps, 2)}s left)"
+                    self.gen_left_text = f"Generating master key ({round((depth_left-depth_count)/real_dps, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        master_key = enc.to_base(96, 16, master_key.hex())
-        with open("userdata/key", "w", encoding="utf-8") as f:
-            f.write(f"{master_key}RE_KEY1")
-        keys.master_key = master_key
-        self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Your account pin is: {enc.to_base(36, 10, current_depth)}"
-        self.rand_confirm_text = f"Once you have written down your account key " \
-                                 f"and pin enter {self.rand_confirmation} below"
+        keys.master_key = enc.to_base(96, 16, master_key.hex())
 
-    def start_regenerator(self):
-        self.start_time = perf_counter()
-        pass_code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(25)))
-        time_depth = uniform(3, 10)  # time_depth
-        Thread(target=self.generate_master_key, args=(pass_code[:15].encode(),
-               pass_code[15:].encode(), time_depth,), daemon=True).start()
-        self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
-        pass_code_print = f"{pass_code[:5]}-{pass_code[5:10]}-{pass_code[10:15]}-{pass_code[15:20]}-{pass_code[20:]}"
-        self.pass_code_text = f"Your account code is: {pass_code_print}"
-
-    def continue_confirmation(self):
-        if self.rand_confirmation:
-            if self.confirmation_code == "":
-                print("No input provided")
-            else:
-                if self.confirmation_code.text == self.rand_confirmation:
-                    print("Confirmation code correct")
-                    if s.ip:
-                        sm.switch_to(attemptConnectionScreen(), direction="left")
-                    else:
-                        sm.switch_to(ipSetScreen(), direction="left")
+    def on_enter(self, *args):
+        Thread(target=self.regenerate_master_key, args=(keys.pass_code[:15].encode(),
+               keys.pass_code[15:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
+        self.gen_left_text = f"Generating master key"
+        while True:
+            sleep(0.2)
+            if keys.master_key:
+                if s.ip:
+                    sm.switch_to(attemptConnectionScreen(), direction="left")
                 else:
-                    print("Confirmation code incorrect")
+                    sm.switch_to(ipSetScreen(), direction="left")
 
 
 # todo inheritance for login / signup versions of the below screen
@@ -340,7 +340,7 @@ class attemptConnectionScreen(Screen):
             sm.switch_to(ipSetScreen(), direction='right')
 
 
-class captchaScreen(Screen):
+class captchaScreen(Screen):  # todo. redo for login captcha version
     captcha_prompt_text = StringProperty()
     captcha_input = ObjectProperty(None)
 
@@ -453,12 +453,13 @@ sm = windowManager()
 sm.add_widget(logInOrSignUpScreen(name='login_signup'))
 sm.add_widget(keyUnlockScreen(name='unlock_key'))
 sm.add_widget(createKeyScreen(name='create_key'))
-sm.add_widget(reCreateKeyScreen(name='recreate_key'))
 sm.add_widget(ipSetScreen(name='ip_set'))
 sm.add_widget(attemptConnectionScreen(name='attempt_connect'))
 sm.add_widget(captchaScreen(name='captcha'))
 sm.add_widget(nacPassword(name='new_acc_pass'))
 sm.add_widget(twoFacSetupScreen(name='2fa_setup'))
+sm.add_widget(reCreateKeyScreen(name='recreate_key'))
+sm.add_widget(reCreateKeyScreen(name='regen_key'))
 sm.add_widget(mainPageScreen(name='main_page'))
 
 

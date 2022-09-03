@@ -17,6 +17,7 @@ windowManager:
     nacPassword:
     twoFacSetupScreen:
     reCreateKeyScreen:
+    reCreateGenScreen:
     mainPageScreen:
     
     
@@ -143,7 +144,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         Label:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
             canvas.before:
@@ -173,7 +174,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup"
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
             canvas.before:
@@ -205,7 +206,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         YellowLabel:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
         Label:
@@ -229,7 +230,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup"
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
             canvas.before:
@@ -251,7 +252,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         OrangeLabel:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
         Label:
@@ -275,7 +276,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup"
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
             canvas.before:
@@ -311,7 +312,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
         YellowLabel:
@@ -329,7 +330,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Setup"
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
             canvas.before:
@@ -371,7 +372,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
         GreenLabel:
@@ -383,7 +384,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.55,  "top": 1}
         Label:
-            text : "2FA Setup"
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
             canvas.before:
@@ -419,7 +420,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
         GreenLabel:
@@ -431,11 +432,13 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.55,  "top": 1}
         YellowLabel:
-            text : "2FA Setup"
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
 
 <reCreateKeyScreen>:
+    pass_code : pass_code
+    pin_code : pin_code
     FloatLayout:
         Button:
             text : "<< Back"
@@ -445,17 +448,27 @@ windowManager:
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
         Label:
-            text : "Enter PIN"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.9}
-        Label:
-            text : "Enter PIN"
+            text : "Enter account key"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.8}
+        TextInput:
+            id : pass_code
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.7}
+        Label:
+            text : "Enter account pin"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.6}
+        TextInput:
+            id : pin_code
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.5}
         RoundedButton:
             text : "Continue"
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.4}
+            pos_hint : {"x" : 0.35, "top" : 0.30}
             on_press : root.start_regenerator()
         Button:
             text : "<< Back"
@@ -469,7 +482,7 @@ windowManager:
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
         Label:
-            text : "Set IP >>"
+            text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
             canvas.before:
@@ -499,7 +512,58 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA Check"
+            text : "2FA"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.65,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+    
+<reCreateGenScreen>:
+    FloatLayout:
+        Label:
+            text : root.gen_left_text
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.8}
+        OrangeLabel:
+            text : "User keys >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.25,  "top": 1}
+        Label:
+            text : "Server >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.35,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.45,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.55,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
             canvas.before:
