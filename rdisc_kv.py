@@ -437,6 +437,7 @@ windowManager:
             pos_hint : {"x": 0.65,  "top": 1}
 
 <reCreateKeyScreen>:
+    uid : uid
     pass_code : pass_code
     pin_code : pin_code
     FloatLayout:
@@ -448,28 +449,37 @@ windowManager:
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
         Label:
+            text : "Enter UID"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.9}
+        TextInput:
+            id : uid
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.8}
+        Label:
             text : "Enter account key"
             size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.8}
+            pos_hint : {"x": 0.35, "top": 0.7}
         TextInput:
             id : pass_code
             multiline : False
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.7}
+            pos_hint : {"x" : 0.35, "top" : 0.6}
         Label:
             text : "Enter account pin"
             size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.6}
+            pos_hint : {"x": 0.35, "top": 0.5}
         TextInput:
             id : pin_code
             multiline : False
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.5}
+            pos_hint : {"x" : 0.35, "top" : 0.4}
         RoundedButton:
             text : "Continue"
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.30}
-            on_press : root.start_regenerator()
+            pos_hint : {"x" : 0.35, "top" : 0.2}
+            on_press : root.start_regeneration()
         Button:
             text : "<< Back"
             size_hint : 0.1, 0.05

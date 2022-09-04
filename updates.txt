@@ -42,10 +42,11 @@
 0.42 account creation with sql user tables
 0.43 ip keys, pack blank images into exe
 
-0.44 login system, username setting
+0.44 login system and ip key limits
 
-0.45 session limit = account compromised
-0.46 venv not tracked but still downloaded, clean app (remove user files)
+0.45 username setting
+0.46 session limit = account compromised
+0.47 venv not tracked but still downloaded, clean app (remove user files)
 
 planned features:
 - multiple build types:

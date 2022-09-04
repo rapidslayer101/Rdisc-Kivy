@@ -86,8 +86,7 @@ class Server:
             enc_seed = decrypt(self.s.recv(128), pri_key).decode()
             enc_salt = decrypt(self.s.recv(128), pri_key).decode()
             self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
-            print(" << Client enc_seed and enc_salt received and loaded\n "
-                  "-- RSA Enc bootstrap complete")
+            print(" << Client enc_seed and enc_salt received and loaded\n -- RSA Enc bootstrap complete")
             return True
         except ConnectionRefusedError:
             print("Connection refused")
@@ -117,10 +116,17 @@ class key_system:
         self.ip_key = None
         self.pass_code = None
         self.pin_code = None
-        self.screen_path = None
+        self.screen_path = None  # Make, Unlock or Login <- Link flowchart
 
 
 keys = key_system()
+
+
+def connect_system(dt=None):
+    if s.ip:
+        sm.switch_to(attemptConnectionScreen(), direction="left")
+    else:
+        sm.switch_to(ipSetScreen(), direction="left")
 
 
 class logInOrSignUpScreen(Screen):
@@ -128,7 +134,6 @@ class logInOrSignUpScreen(Screen):
         super(logInOrSignUpScreen, self).__init__(**kwargs)
         print("Loading account keys...")
         if path.exists(f'userdata\key'):
-            print(f" - Found user account keys")
             with open(f'userdata\key', 'rb') as f:
                 key_data = f.read()
             print(" - Key data loaded")
@@ -155,7 +160,6 @@ class logInOrSignUpScreen(Screen):
             print(" - No keys found")
 
 
-# class to accept user info and validate it
 class keyUnlockScreen(Screen):
     pwd = ObjectProperty(None)
     passcode_prompt_text = StringProperty()
@@ -234,34 +238,28 @@ class createKeyScreen(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    if s.ip:
-                        sm.switch_to(attemptConnectionScreen(), direction="left")
-                    else:
-                        sm.switch_to(ipSetScreen(), direction="left")
+                    connect_system()
                 else:
                     print("Confirmation code incorrect")
 
 
 class reCreateKeyScreen(Screen):
+    uid = ObjectProperty()
     pass_code = ObjectProperty()
     pin_code = ObjectProperty()
 
     def on_enter(self, *args):
         keys.screen_path = "login"
 
-    def start_regenerator(self):
+    def start_regeneration(self):
         if len(self.pass_code.text.replace("-", "")) == 20:  # todo replace with 4 separate boxes
-            if self.pin_code.text != "":
-                keys.pass_code, keys.pin_code = self.pass_code.text, self.pin_code.text
+            if len(self.uid.text) == 8 and self.pin_code.text != "":
+                keys.uid, keys.pass_code, keys.pin_code = self.uid.text, self.pass_code.text, self.pin_code.text
                 sm.switch_to(reCreateGenScreen(), direction="left")
 
 
 class reCreateGenScreen(Screen):
     gen_left_text = StringProperty()
-
-    #def __init__(self, **kwargs):
-    #    super(reCreateGenScreen, self).__init__(**kwargs)
-    #    Clock.schedule_interval(self.check_key(), 0.2)
 
     def regenerate_master_key(self, master_key, salt, depth_to, current_depth=0):
         start, depth_left, loop_timer = perf_counter(), depth_to - current_depth, perf_counter()
@@ -280,18 +278,12 @@ class reCreateGenScreen(Screen):
                 except ZeroDivisionError:
                     pass
         keys.master_key = enc.to_base(96, 16, master_key.hex())
+        Clock.schedule_once(connect_system)
 
     def on_enter(self, *args):
+        self.gen_left_text = f"Generating master key"
         Thread(target=self.regenerate_master_key, args=(keys.pass_code[:15].encode(),
                keys.pass_code[15:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
-        self.gen_left_text = f"Generating master key"
-        while True:
-            sleep(0.2)
-            if keys.master_key:
-                if s.ip:
-                    sm.switch_to(attemptConnectionScreen(), direction="left")
-                else:
-                    sm.switch_to(ipSetScreen(), direction="left")
 
 
 # todo inheritance for login / signup versions of the below screen
@@ -340,7 +332,7 @@ class attemptConnectionScreen(Screen):
             sm.switch_to(ipSetScreen(), direction='right')
 
 
-class captchaScreen(Screen):  # todo. redo for login captcha version
+class captchaScreen(Screen):
     captcha_prompt_text = StringProperty()
     captcha_input = ObjectProperty(None)
 
@@ -366,7 +358,14 @@ class captchaScreen(Screen):  # todo. redo for login captcha version
         else:
             s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
             if s.recv_d(1024) == "V":
-                sm.switch_to(nacPassword(), direction="left")
+                if keys.screen_path == "make":
+                    sm.switch_to(nacPassword(), direction="left")
+                if keys.screen_path == "login":
+                    s.send_e(f"LOG:{keys.master_key}🱫{keys.uid}")
+                    if s.recv_d(1024) == "V":
+                        sm.switch_to(nacPassword(), direction="left")
+                    else:
+                        print("Invalid master key")
             else:
                 print("Captcha failed")
 

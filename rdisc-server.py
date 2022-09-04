@@ -165,7 +165,7 @@ def client_connection(cs):
                     captcha_attempt = recv_d(2048)
                     if captcha_attempt != captcha_text:
                         send_e("N")
-                        if counter == 3:
+                        if counter > 3:
                             sleep(10)  # rate limit
                     else:
                         send_e("V")
@@ -189,12 +189,41 @@ def client_connection(cs):
                     send_e(f"{uid}🱫{user_secret}")
                     new_ip(uid, user_secret, user_pass)
 
+                # todo from here
+                if log_or_create.startswith("LOG:"):  # login
+                    master_key_c, uid = log_or_create[4:].split("🱫")
+                    try:
+                        master_key, user_secret, user_pass = users.db.execute(
+                            "SELECT master_key, secret, user_pass FROM users WHERE user_id = ?", (uid,)).fetchone()
+                        print(master_key_c, master_key, user_secret, user_pass, uid)
+                        if master_key_c == master_key:
+                            new_ip(uid, user_secret, user_pass)
+                            # check UID exists and get secret
+                            # enc to hashed form and check against stored master key
+                        else:
+                            send_e("N")
+                    except sqlite3.OperationalError:
+                        send_e("N")
+                        pass
+                    # check UID exists and get secret
+                    # enc to hashed form and check against stored master key
+                    input()
+                    while True:
+                        try:
+                            user_pass = enc.to_base(96, 16, sha512((user_pass+uid).encode()).hexdigest())
+                            users.add_user(uid, master_key, user_secret, user_pass)
+                            break
+                        except sqlite3.IntegrityError:
+                            pass
+                    send_e(f"{uid}🱫{user_secret}")
+                    new_ip(uid, user_secret, user_pass)
+
             if login_request.startswith("FIP:"):  # first ip key
                 uid, master_key_c, = login_request[4:].split("🱫")
                 try:  # todo check that the ip_key table doesnt need to be checked here
                     master_key, user_secret, user_pass = users.db.execute("SELECT master_key, secret, user_pass FROM "
                                                                           "users WHERE user_id = ?", (uid,)).fetchone()
-                    if master_key_c == master_key_c:
+                    if master_key_c == master_key_c:  # todo why are these the same
                         new_ip(uid, user_secret, user_pass)
                     else:
                         send_e("N")
@@ -213,6 +242,7 @@ def client_connection(cs):
                     break
                 else:
                     send_e("N")
+            # todo to here
 
             if login_request.startswith("LOG:"):
                 uid = login_request[4:]
