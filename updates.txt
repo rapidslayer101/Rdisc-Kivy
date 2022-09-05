@@ -41,10 +41,10 @@
 0.41 captcha human verification, password setting screen, 2fa setup
 0.42 account creation with sql user tables
 0.43 ip keys, pack blank images into exe
+0.44 login system
 
-0.44 login system and ip key limits
+0.45 login sessions, ip key limits and username setting
 
-0.45 username setting
 0.46 session limit = account compromised
 0.47 venv not tracked but still downloaded, clean app (remove user files)
 
@@ -66,3 +66,5 @@ planned features:
 # master key + 2fa = ip key enc
 # (ip key + password) + challenge depth = login
 # 5 ips at one time
+
+# nfc experiment

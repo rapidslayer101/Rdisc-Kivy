@@ -1,24 +1,25 @@
 from base64 import b64decode
 kv_payload = """# You can edit this file to change the settings of the UI. 
 # To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html
-# other useful links:
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
 ### Window Manager ###
 # [!] DO NOT EDIT THIS SECTION [!] # 
 
 windowManager:
-    logInOrSignUpScreen: 
-    keyUnlockScreen:
-    createKeyScreen:
-    ipSetScreen:
-    attemptConnectionScreen:
-    captchaScreen:
+    logInOrSignUp: 
+    keyUnlock:
+    createKey:
+    ipSet:
+    attemptConnection:
+    captcha:
     nacPassword:
-    twoFacSetupScreen:
-    reCreateKeyScreen:
-    reCreateGenScreen:
-    mainPageScreen:
+    logUnlock:
+    twoFacSetup:
+    twoFacLog:
+    reCreateKey:
+    reCreateGen:
+    mainPage:
     
     
 ### Templates ###
@@ -66,7 +67,7 @@ windowManager:
 
 ### Screens ###
 
-<logInOrSignUpScreen>:
+<logInOrSignUp>:
     FloatLayout:
         size: root.width, root.height
         Label:
@@ -88,7 +89,7 @@ windowManager:
                 app.root.current = 'create_key'
                 root.manager.transition.direction = "left"
 
-<keyUnlockScreen>:
+<keyUnlock>:
     pwd : pwd
     FloatLayout:
         size: root.width, root.height
@@ -110,7 +111,7 @@ windowManager:
                 #root.manager.transition.direction = "left"
 
 
-<createKeyScreen>:
+<createKey>:
     confirmation_code : confirmation_code
     FloatLayout:
         Label:
@@ -183,8 +184,155 @@ windowManager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
+                    
+<reCreateKey>:
+    uid : uid
+    pass_code : pass_code
+    pin_code : pin_code
+    FloatLayout:
+        Button:
+            text : "<< Back"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x" : 0, "top" : 1}
+            on_press :
+                app.root.current = 'login_signup'
+                root.manager.transition.direction = "right"
+        Label:
+            text : "Enter UID"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.9}
+        TextInput:
+            id : uid
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.8}
+        Label:
+            text : "Enter account key"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.7}
+        TextInput:
+            id : pass_code
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.6}
+        Label:
+            text : "Enter account pin"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.5}
+        TextInput:
+            id : pin_code
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.4}
+        RoundedButton:
+            text : "Continue"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.2}
+            on_press : root.start_regeneration()
+        Button:
+            text : "<< Back"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x" : 0, "top" : 1}
+            on_press :
+                app.root.current = 'login_signup'
+                root.manager.transition.direction = "right"
+        YellowLabel:
+            text : "User keys >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.25,  "top": 1}
+        Label:
+            text : "Server >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.35,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.45,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.55,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "2FA"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.65,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+    
+<reCreateGen>:
+    FloatLayout:
+        Label:
+            text : root.gen_left_text
+            size_hint : 0.3, 0.1
+            pos_hint : {"x": 0.35, "top": 0.8}
+        OrangeLabel:
+            text : "User keys >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.25,  "top": 1}
+        Label:
+            text : "Server >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.35,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.45,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.55,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+        Label:
+            text : "2FA"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.65,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
-<ipSetScreen>:
+<ipSet>:
     ip_address : ip_address
     FloatLayout:
         Label:
@@ -240,8 +388,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
 
-
-<attemptConnectionScreen>:
+<attemptConnection>:
     FloatLayout:
         Label:
             text : "Attempting to connect to server..."
@@ -286,7 +433,7 @@ windowManager:
                     size: self.size
                     pos: self.pos
 
-<captchaScreen>:
+<captcha>:
     captcha_input : captcha_input
     FloatLayout:
         Label:
@@ -393,8 +540,55 @@ windowManager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
+                    
+<logUnlock>:
+    pwd : pwd
+    FloatLayout:
+        size: root.width, root.height
+        Label:
+            text : root.passcode_prompt_text
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.8}
+        TextInput:
+            id : pwd
+            multiline :False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.65}
+        RoundedButton:
+            text : "LOGIN"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.5}
+            on_release:
+                root.login()
+                #root.manager.transition.direction = "left"
+        GreenLabel:
+            text : "User keys >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.25,  "top": 1}
+        GreenLabel:
+            text : "Server >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.35,  "top": 1}
+        GreenLabel:
+            text : "CAPTCHA >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.45,  "top": 1}
+        YellowLabel:
+            text : "Password >>"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.55,  "top": 1}
+        Label:
+            text : "2FA"
+            size_hint : 0.1, 0.05
+            pos_hint : {"x": 0.65,  "top": 1}
+            canvas.before:
+                Color:
+                    rgba: (60/255, 60/255, 50/255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
-<twoFacSetupScreen>:
+<twoFacSetup>:
     two_fac_confirm : two_fac_confirm
     FloatLayout:
         Label:
@@ -435,157 +629,47 @@ windowManager:
             text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
-
-<reCreateKeyScreen>:
-    uid : uid
-    pass_code : pass_code
-    pin_code : pin_code
-    FloatLayout:
-        Button:
-            text : "<< Back"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x" : 0, "top" : 1}
-            on_press :
-                app.root.current = 'login_signup'
-                root.manager.transition.direction = "right"
-        Label:
-            text : "Enter UID"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.9}
-        TextInput:
-            id : uid
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.8}
-        Label:
-            text : "Enter account key"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.7}
-        TextInput:
-            id : pass_code
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.6}
-        Label:
-            text : "Enter account pin"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.5}
-        TextInput:
-            id : pin_code
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.4}
-        RoundedButton:
-            text : "Continue"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.2}
-            on_press : root.start_regeneration()
-        Button:
-            text : "<< Back"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x" : 0, "top" : 1}
-            on_press :
-                app.root.current = 'login_signup'
-                root.manager.transition.direction = "right"
-        YellowLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
-        Label:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-    
-<reCreateGenScreen>:
+            
+<twoFacLog>:
+    two_fac_confirm : two_fac_confirm
     FloatLayout:
         Label:
-            text : root.gen_left_text
+            text : "Enter 2FA code"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.8}
-        OrangeLabel:
+        TextInput:
+            id : two_fac_confirm
+            multiline : False
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.65}
+        RoundedButton:
+            text : "Confirm"
+            size_hint : 0.3, 0.1
+            pos_hint : {"x" : 0.35, "top" : 0.4}
+            on_press : root.confirm_2fa()
+        GreenLabel:
             text : "User keys >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.25,  "top": 1}
-        Label:
+        GreenLabel:
             text : "Server >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.35,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreenLabel:
             text : "CAPTCHA >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreenLabel:
             text : "Password >>"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        YellowLabel:
             text : "2FA"
             size_hint : 0.1, 0.05
             pos_hint : {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: (60/255, 60/255, 50/255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-
             
 # main page
-<mainPageScreen>:
+<mainPage>:
     FloatLayout:
         Label:
             text : "MAIN PAGE PLACEHOLDER"
@@ -652,20 +736,18 @@ def w_images():
                "AOqlvbwIELgkIrEtcLiZA4KTA2cDyJyAne29vAukEzgZWOi4FEyBwUmB5YHmJOtlee28VMOzLuZcH1vIT2IAAgTYCAqtNqyMc1CtI" \
                "hC5krkFgZe6e2hMJCOsZzRJYMxStQYDAFgGBtYXZJgRGBLyFfaUksL4S8s8JEAgjILDCtKJRIV4kGjV77lEF1lxPqxEgsFDgHyi8l" \
                "ce3oyHnAAAAAElFTkSuQmCC"
-    blank_captcha = "/9j/4AAQSkZJRgABAQAAAQABAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAQwAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAA" \
-                    "AABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAA" \
-                    "ABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAA" \
-                    "AAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAA" \
-                    "GNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA" \
-                    "9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/b" \
-                    "AEMAAwICAwICAwMDAwQDAwQFCAUFBAQFCgcHBggMCgwMCwoLCw0OEhANDhEOCwsQFhARExQVFRUMDxcYFhQYEhQVFP/bAEMB" \
-                    "AwQEBQQFCQUFCRQNCw0UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFP/AABEIAFoB" \
-                    "GAMBIgACEQEDEQH/xAAWAAEBAQAAAAAAAAAAAAAAAAAAAQn/xAAWEAEBAQAAAAAAAAAAAAAAAAAAARH/xAAUAQEAAAAAAAAA" \
-                    "AAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A1TAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
-                    "AAAAAAAAAAAAABJdVJMUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/2Q=="
+
+    blank_captcha = "/9j/4AAQSkZJRgABAQAAAQABAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAQwAABtbnRyUkdCIFhZWi"+"A"*16+"BhY3" \
+                    "Nw"+"A"*37+"QAA9tYAAQAAAADTLQ"+"A"*68+"lkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAA" \
+                    "BjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAA" \
+                    "AAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEI"+"A"*106+"FhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAA" \
+                    "C3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAA" \
+                    "AAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwAD" \
+                    "EANv/bAEMAAwICAwICAwMDAwQDAwQFCAUFBAQFCgcHBggMCgwMCwoLCw0OEhANDhEOCwsQFhARExQVFRUMDxcYFhQYEhQVFP" \
+                    "/bAEMBAwQEBQQFCQUFCRQNCw0U"+"FBQU"*16+"FP/AABEIAFoBGAMBIgACEQEDEQH/xAAWAAEBAQ"+"A"*19+"Qn/xAAWEA" \
+                    "EBAQ"+"A"*19+"RH/xAAUAQE"+"A"*21+"/8QAFBEB"+"A"*21+"P/aAAwDAQACEQMRAD8A1T"+"A"*143+"BJdVJMU"+ \
+                    "A"*70+"H/2Q=="
+
     with open("resources/blank_qr.png", "wb") as f:
         f.write(b64decode(blank_qr))
     with open("resources/blank_captcha.jpg", "wb") as f:

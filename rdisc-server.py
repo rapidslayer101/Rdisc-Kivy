@@ -43,7 +43,7 @@ class Users:
             self.db.execute("SELECT user_id FROM ip_keys")
         except sqlite3.OperationalError:
             print("No such table: ip_keys")
-            self.db.execute("CREATE TABLE ip_keys (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
+            self.db.execute("CREATE TABLE ip_keys (user_id TEXT NOT NULL, "
                             "ip TEXT NOT NULL, ip_key TEXT NOT NULL, expiry_time DATE NOT NULL)")
 
     def add_user(self, user_id, master_key, secret, user_pass):
@@ -55,7 +55,7 @@ class Users:
 
     def add_user_key(self, user_id, ip, ip_key, expiry_time=14):
         # todo login to remove old keys if more than 5 or 3
-        expiry_time = str(datetime.now() + timedelta(days=expiry_time))[:-7]
+        expiry_time = str(datetime.now()+timedelta(days=expiry_time))[:-7]
         self.db.execute("INSERT INTO ip_keys VALUES (?, ?, ?, ?)",
                         (user_id, ip, enc.to_base(96, 16, sha512((ip_key+user_id).encode()).hexdigest()), expiry_time))
         self.db.commit()
@@ -189,48 +189,50 @@ def client_connection(cs):
                     send_e(f"{uid}🱫{user_secret}")
                     new_ip(uid, user_secret, user_pass)
 
-                # todo from here
-                if log_or_create.startswith("LOG:"):  # login
+                if log_or_create.startswith("LOG:"):  # login # todo remove below duplicated code and check ip key limit
                     master_key_c, uid = log_or_create[4:].split("🱫")
+                    print("enter")
                     try:
                         master_key, user_secret, user_pass = users.db.execute(
                             "SELECT master_key, secret, user_pass FROM users WHERE user_id = ?", (uid,)).fetchone()
-                        print(master_key_c, master_key, user_secret, user_pass, uid)
-                        if master_key_c == master_key:
-                            new_ip(uid, user_secret, user_pass)
-                            # check UID exists and get secret
-                            # enc to hashed form and check against stored master key
+                        print(enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()))
+                        if enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()) == master_key:
+                            print("valid")
+                            ip_key = enc.rand_b96_str(24)
+                            send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
+                            while True:
+                                ip_key_c = recv_d(2048)
+                                if ip_key_c == ip_key:
+                                    send_e("V")
+                                    break
+                                else:
+                                    send_e("N")
+                            while True:
+                                code_challenge = recv_d(2048)
+                                if get(f"https://www.authenticatorapi.com/Validate.aspx?"
+                                       f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
+                                    send_e("V")
+                                    users.add_user_key(uid, ip, enc.to_base(96, 16, sha512((ip_key+uid)
+                                                       .encode()).hexdigest()))
+                                    break  # todo logged in from here.
+                                else:
+                                    send_e("N")
                         else:
-                            send_e("N")
+                            send_e("IMK")  # master key wrong
                     except sqlite3.OperationalError:
-                        send_e("N")
-                        pass
-                    # check UID exists and get secret
-                    # enc to hashed form and check against stored master key
-                    input()
-                    while True:
-                        try:
-                            user_pass = enc.to_base(96, 16, sha512((user_pass+uid).encode()).hexdigest())
-                            users.add_user(uid, master_key, user_secret, user_pass)
-                            break
-                        except sqlite3.IntegrityError:
-                            pass
-                    send_e(f"{uid}🱫{user_secret}")
-                    new_ip(uid, user_secret, user_pass)
+                        send_e("NU")  # user does not exist
 
-            if login_request.startswith("FIP:"):  # first ip key
+            if login_request.startswith("FIP:"):  # first ip key  # todo not allow if ip key already exists
                 uid, master_key_c, = login_request[4:].split("🱫")
-                try:  # todo check that the ip_key table doesnt need to be checked here
+                try:
                     master_key, user_secret, user_pass = users.db.execute("SELECT master_key, secret, user_pass FROM "
                                                                           "users WHERE user_id = ?", (uid,)).fetchone()
-                    if master_key_c == master_key_c:  # todo why are these the same
+                    if enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()) == master_key:
                         new_ip(uid, user_secret, user_pass)
                     else:
-                        send_e("N")
+                        send_e("IMK")  # master key wrong
                 except sqlite3.OperationalError:
-                    send_e("N")
-                    pass
-                input()
+                    send_e("NU")  # user does not exist
                 u_pass = recv_d(2048)
                 challenge_int = randint(1, 999999)
                 challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
@@ -242,7 +244,6 @@ def client_connection(cs):
                     break
                 else:
                     send_e("N")
-            # todo to here
 
             if login_request.startswith("LOG:"):
                 uid = login_request[4:]
