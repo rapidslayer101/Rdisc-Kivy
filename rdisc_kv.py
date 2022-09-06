@@ -36,6 +36,39 @@ windowManager:
             pos: self.pos
             radius: [10]
             
+<RoundedTextInput@TextInput>:
+    font_size: '14dp'
+    multiline : False
+    halign : "center"
+    background_color: 0,0,0,0
+    cursor_color: (37/255, 190/255, 150/255,1)
+    canvas.before:
+        Color:
+            rgba: (37/255, 190/255, 150/255,1)
+    canvas.after:
+        Color:
+            rgba: (104/255, 84/255, 252/255,0)
+        Ellipse:
+            angle_start:180
+            angle_end:360
+            pos:(self.pos[0] - self.size[1]/2.0, self.pos[1])
+            size: (self.size[1], self.size[1])
+        Ellipse:
+            angle_start:360
+            angle_end:540
+            pos: (self.size[0] + self.pos[0] - self.size[1]/2.0, self.pos[1])
+            size: (self.size[1], self.size[1])
+        Color:
+            rgba: (104/255, 84/255, 252/255,1)
+        Line:
+            points: self.pos[0], self.pos[1], self.pos[0]+self.size[0], self.pos[1]
+        Line:
+            points: self.pos[0], self.pos[1]+self.size[1], self.pos[0]+self.size[0], self.pos[1]+self.size[1]
+        Line:
+            ellipse: self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 180, 360
+        Line:
+            ellipse: self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 360, 540
+            
 # colored labels
 <YellowLabel@Label>
     color : 0, 0, 0, 1
@@ -201,33 +234,40 @@ windowManager:
             text : "Enter UID"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.9}
-        TextInput:
+        RoundedTextInput:
             id : uid
-            multiline : False
-            size_hint : 0.3, 0.1
+            hint_text : "UID"
+            size_hint : 0.3, 0.05
             pos_hint : {"x" : 0.35, "top" : 0.8}
+            on_text: self.text = self.text[:9].upper()
+            on_text_validate: pass_code.focus = True
         Label:
             text : "Enter account key"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.7}
-        TextInput:
+        RoundedTextInput:
             id : pass_code
-            multiline : False
-            size_hint : 0.3, 0.1
+            hint_text : "Account key"
+            password : True
+            size_hint : 0.3, 0.05
             pos_hint : {"x" : 0.35, "top" : 0.6}
+            ###on_text: function_to_edit 
+            on_text_validate: pin_code.focus = True
         Label:
             text : "Enter account pin"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.5}
-        TextInput:
+        RoundedTextInput:
             id : pin_code
-            multiline : False
-            size_hint : 0.3, 0.1
+            hint_text : "Account pin"
+            password : True
+            size_hint : 0.3, 0.05
             pos_hint : {"x" : 0.35, "top" : 0.4}
+            on_text_validate: root.start_regeneration()
         RoundedButton:
             text : "Continue"
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.2}
+            pos_hint : {"x" : 0.35, "top" : 0.25}
             on_press : root.start_regeneration()
         Button:
             text : "<< Back"

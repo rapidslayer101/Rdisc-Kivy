@@ -8,8 +8,12 @@ with open("sha.txt", encoding="utf-8") as f:
     print(latest_sha, version, tme, bld_num, run_num)
     release_major, major, build, run = version.replace("V", "").split(".")
 
+#startfile("android_build.bat")
+#system(".\\android_build.bat")
+#input()
 system("python -m PyInstaller rdisc.spec")
 hashed = hash_a_file("dist/rdisc.exe")
+#print("Windows Hash:", hashed)
 
 if latest_sha == hashed:
     print("This build is identical to the previous, no changes to sha.txt have been made")

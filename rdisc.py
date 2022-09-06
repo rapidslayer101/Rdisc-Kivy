@@ -1,6 +1,7 @@
 import enclib as enc
 import rdisc_kv
 from rsa import newkeys, PublicKey, decrypt
+from sys import platform
 from zlib import error as zl_error
 from random import randint, uniform
 from time import perf_counter
@@ -33,10 +34,7 @@ if not path.exists("rdisc.kv"):
 if path.exists("rdisc.py"):
     rdisc_kv.kv()
 
-if path.exists("rdisc.exe"):
-    app_hash = enc.hash_a_file("rdisc.exe")
-else:
-    app_hash = enc.hash_a_file("rdisc.py")
+app_hash = enc.hash_a_file(path.abspath(__file__))
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
         latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
@@ -45,13 +43,12 @@ if path.exists("sha.txt"):
     if latest_sha_ != app_hash:
         run = int(run) + 1
         with open("sha.txt", "a+", encoding="utf-8") as f:
-            write = f"\n{app_hash}§V{release_major}.{major}.{build}.{run}" \
-                    f"§TME-{str(datetime.now())[:-4].replace(' ', '_')}" \
-                    f"§BLD_NM-{bld_num_[7:]}§RUN_NM-{int(run_num_[7:])+1}"
+            f.write(f"\n{app_hash}§V{release_major}.{major}.{build}.{run}"
+                    f"§TME-{str(datetime.now())[:-4].replace(' ', '_')}"
+                    f"§BLD_NM-{bld_num_[7:]}§RUN_NM-{int(run_num_[7:]) + 1}")
             print(f"crnt V{release_major}.{major}.{build}.{run} "
                   f"TME-{str(datetime.now())[:-4].replace(' ', '_')} "
                   f"BLD_NM-{bld_num_[7:]} RUN_NM-{int(run_num_[7:])+1}")
-            f.write(write)
     print(f"Running rdisc V{release_major}.{major}.{build}.{run}")
 
 default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=" \
@@ -105,7 +102,7 @@ class Server:
 s = Server()
 
 
-class key_system:
+class KeySystem:
     def __init__(self):
         self.master_key = None
         self.uid = None
@@ -116,7 +113,7 @@ class key_system:
         self.path = None  # Make, Unlock or Login <- Link flowchart
 
 
-keys = key_system()
+keys = KeySystem()
 
 
 def connect_system(dt=None):
@@ -209,7 +206,7 @@ class createKey(Screen):
         with open("userdata/key", "w", encoding="utf-8") as f:
             f.write(f"{keys.master_key}MAKE_KEY1")
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Depth pin: {enc.to_base(36, 10, current_depth)}"
+        self.pin_code_text = f"Account pin: {enc.to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your account code " \
                                  f"and pin enter {self.rand_confirmation} below"
 
@@ -501,7 +498,8 @@ sm.add_widget(mainPage(name='main_page'))
 class Rdisc(App):
     def build(self):
         Window.clearcolor = (50/255, 50/255, 50/255, 1)
-        Window.size = (1264, 681)
+        if platform == "win32":
+            Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.set('kivy', 'exit_on_escape', '0')
         return sm
