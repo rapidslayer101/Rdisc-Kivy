@@ -238,8 +238,14 @@ class reCreateKey(Screen):
     pass_code = ObjectProperty()
     pin_code = ObjectProperty()
 
+    def toggle_button(self):
+        if len(self.uid.text) == 8 and len(self.pass_code.text) == 20 and self.pin_code.text:
+            self.ids.start_regen_button.disabled = False
+        else:
+            self.ids.start_regen_button.disabled = True
+
     def start_regeneration(self):
-        if len(self.pass_code.text.replace("-", "")) == 20:  # todo replace with 4 separate boxes
+        if len(self.pass_code.text) == 20:  # todo replace with 4 separate boxes
             if len(self.uid.text) == 8 and self.pin_code.text != "":
                 keys.path = "login"
                 keys.uid, keys.pass_code, keys.pin_code = self.uid.text, self.pass_code.text, self.pin_code.text
@@ -337,9 +343,7 @@ class captcha(Screen):
         self.ids.captcha_image.source = 'captcha.jpg'
 
     def try_captcha(self):
-        if self.captcha_input.text == "":
-            print("No input provided")
-        else:
+        if len(self.captcha_input.text) == 10:
             s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
             if s.recv_d(1024) == "V":
                 if keys.path == "make":

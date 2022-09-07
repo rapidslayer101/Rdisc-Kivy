@@ -130,11 +130,13 @@ windowManager:
             text : root.passcode_prompt_text
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.8}
-        TextInput:
+        RoundedTextInput:
             id : pwd
-            multiline :False
+            multiline: False
+            password: True
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.65}
+            on_text_validate: root.login()
         RoundedButton:
             text : "LOGIN"
             size_hint : 0.3, 0.1
@@ -157,17 +159,19 @@ windowManager:
             pos_hint : {"x": 0.35, "top": 0.8}
         Label:
             text : "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you do not store these keys digitally"
+            color: (37/255, 190/255, 150/255,1)
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.7}
         Label:
             text : root.rand_confirm_text
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.6}
-        TextInput:
+        RoundedTextInput:
             id : confirmation_code
             multiline : False
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.45}
+            on_text_validate: root.continue_confirmation()
         RoundedButton:
             text : "Next"
             size_hint : 0.3, 0.1
@@ -227,7 +231,7 @@ windowManager:
             text : "<< Back"
             size_hint : 0.1, 0.05
             pos_hint : {"x" : 0, "top" : 1}
-            on_press :
+            on_press:
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
         Label:
@@ -239,7 +243,7 @@ windowManager:
             hint_text : "UID"
             size_hint : 0.3, 0.05
             pos_hint : {"x" : 0.35, "top" : 0.8}
-            on_text: self.text = self.text[:9].upper()
+            on_text: self.text = self.text[:8].upper()
             on_text_validate: pass_code.focus = True
         Label:
             text : "Enter account key"
@@ -248,10 +252,10 @@ windowManager:
         RoundedTextInput:
             id : pass_code
             hint_text : "Account key"
-            password : True
             size_hint : 0.3, 0.05
+            password : True
             pos_hint : {"x" : 0.35, "top" : 0.6}
-            ###on_text: function_to_edit 
+            on_text: self.text = self.text[:20].upper().replace("-", "") 
             on_text_validate: pin_code.focus = True
         Label:
             text : "Enter account pin"
@@ -260,13 +264,16 @@ windowManager:
         RoundedTextInput:
             id : pin_code
             hint_text : "Account pin"
-            password : True
             size_hint : 0.3, 0.05
+            password : True
             pos_hint : {"x" : 0.35, "top" : 0.4}
+            on_text: root.toggle_button()
             on_text_validate: root.start_regeneration()
         RoundedButton:
+            id : start_regen_button
             text : "Continue"
             size_hint : 0.3, 0.1
+            disabled : True
             pos_hint : {"x" : 0.35, "top" : 0.25}
             on_press : root.start_regeneration()
         Button:
@@ -379,11 +386,12 @@ windowManager:
             text : "Enter server IP address"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.85}
-        TextInput:
+        RoundedTextInput:
             id : ip_address
             multiline : False
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.65}
+            on_text_validate: root.try_connect()
         RoundedButton:
             text : "Connect"
             size_hint : 0.3, 0.1
@@ -484,11 +492,13 @@ windowManager:
             id: captcha_image
             source: 'resources/blank_captcha.jpg'
             pos_hint : {"x": 0, "top": 1.15}
-        TextInput:
+        RoundedTextInput:
             id : captcha_input
             multiline : False
             size_hint : 0.3, 0.1
             pos_hint : {"x" : 0.35, "top" : 0.5}
+            on_text: self.text = self.text[:10].upper()
+            on_text_validate: root.try_captcha()
         RoundedButton:
             text : "Next"
             size_hint : 0.3, 0.1
@@ -535,20 +545,24 @@ windowManager:
             text : "Enter new password"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.80}
-        TextInput:
+        RoundedTextInput:
             id : nac_password_1
             multiline : False
             size_hint : 0.3, 0.1
+            password : True
             pos_hint : {"x" : 0.35, "top" : 0.70}
+            on_text_validate: nac_password_2.focus = True
         Label:
             text : "Repeat password"
             size_hint : 0.3, 0.1
             pos_hint : {"x": 0.35, "top": 0.60}
-        TextInput:
+        RoundedTextInput:
             id : nac_password_2
             multiline : False
             size_hint : 0.3, 0.1
+            password : True
             pos_hint : {"x" : 0.35, "top" : 0.50}
+            on_text_validate: root.set_nac_password()
         RoundedButton:
             text : "Next"
             size_hint : 0.3, 0.1
@@ -639,15 +653,17 @@ windowManager:
             id: two_fac_qr
             source: 'resources/blank_qr.png'
             pos_hint : {"x": 0, "top": 1.10}
-        TextInput:
+        RoundedTextInput:
             id : two_fac_confirm
             multiline : False
-            size_hint : 0.3, 0.1
+            hint_text: "2FA code"
+            size_hint : 0.3, 0.05
             pos_hint : {"x" : 0.35, "top" : 0.34}
+            on_text_validate: root.confirm_2fa()
         RoundedButton:
             text : "Confirm"
             size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.20}
+            pos_hint : {"x" : 0.35, "top" : 0.25}
             on_press : root.confirm_2fa()
         GreenLabel:
             text : "User keys >>"
