@@ -31,6 +31,8 @@ def version_info(hashed):
 
 class Users:
     def __init__(self):
+        self.logged_in_users = []
+        self.sockets = []
         self.db = sqlite3.connect('rdisc_server.db', check_same_thread=False)
         try:
             self.db.execute("SELECT user_id FROM users")
@@ -38,7 +40,8 @@ class Users:
             print("No such table: users")
             self.db.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
                             "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
-                            "user_pass TEXT NOT NULL, last_login DATE NOT NULL)")
+                            "user_pass TEXT NOT NULL, last_login DATE NOT NULL, r_coin FLOAT NOT NULL,"
+                            "d_coin FLOAT NOT NULL)")
         try:
             self.db.execute("SELECT user_id FROM ip_keys")
         except sqlite3.OperationalError:
@@ -46,11 +49,24 @@ class Users:
             self.db.execute("CREATE TABLE ip_keys (user_id TEXT NOT NULL, "
                             "ip TEXT NOT NULL, ip_key TEXT NOT NULL, expiry_time DATE NOT NULL)")
 
+    def login(self, u_id, ip, cs):
+        self.logged_in_users.append(u_id)
+        self.logged_in_users.append(ip)
+        self.sockets.append(cs)
+
+    def logout(self, u_id, ip, cs):
+        try:
+            self.logged_in_users.pop(self.logged_in_users.index(u_id))
+            self.logged_in_users.pop(self.logged_in_users.index(ip))
+            self.sockets.pop(self.sockets.index(cs))
+        except ValueError:
+            pass
+
     def add_user(self, user_id, master_key, secret, user_pass):
         now = str(datetime.now())[:-7]
-        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)", (user_id, now,
+        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (user_id, now,
                         enc.to_base(96, 16, sha512((master_key+user_id).encode()).hexdigest()), secret,
-                        user_pass, now))
+                        user_pass, now, 0, 1000))
         self.db.commit()
 
     def add_user_key(self, user_id, ip, ip_key, expiry_time=14):
@@ -62,35 +78,6 @@ class Users:
 
 
 users = Users()
-
-
-#class Users:
-#    def __init__(self):
-#        self.logged_in_users = []
-#        self.sockets = []
-#
-#    def ids_up(self, u_id):
-#        self.ids.append(u_id)
-#        self.ids.sort()
-#
-#    def ids_r(self, u_id):
-#        self.ids.pop(self.ids.index(u_id))
-#
-#    def login(self, u_id, ip, cs):
-#        self.logged_in_users.append(u_id)
-#        self.logged_in_users.append(ip)
-#        self.sockets.append(cs)
-#
-#    def logout(self, u_id, ip, cs):
-#        try:
-#            self.logged_in_users.pop(self.logged_in_users.index(u_id))
-#            self.logged_in_users.pop(self.logged_in_users.index(ip))
-#            self.sockets.pop(self.sockets.index(cs))
-#        except ValueError:
-#            pass
-
-
-#users = Users()
 client_sockets = set()
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -141,7 +128,7 @@ def client_connection(cs):
                 if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                        f"Pin={code_challenge}&SecretCode={secret}").content == b"True":
                     ip_key = enc.rand_b96_str(24)
-                    users.add_user_key(uid, ip, enc.to_base(96, 16, sha512((ip_key+uid).encode()).hexdigest()))
+                    users.add_user_key(uid, ip, ip_key)
                     send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
                     break
                 else:
@@ -188,16 +175,38 @@ def client_connection(cs):
                             pass
                     send_e(f"{uid}🱫{user_secret}")
                     new_ip(uid, user_secret, user_pass)
+                    break
 
-                if log_or_create.startswith("LOG:"):  # login # todo remove below duplicated code and check ip key limit
+                if login_request.startswith("FIP:"):  # first ip key  # todo not allow if ip key already exists
+                    uid, master_key_c, = login_request[4:].split("🱫")
+                    try:
+                        master_key, user_secret, user_pass = users.db.execute(
+                            "SELECT master_key, secret, user_pass FROM "
+                            "users WHERE user_id = ?", (uid,)).fetchone()
+                        if enc.to_base(96, 16, sha512((master_key_c + uid).encode()).hexdigest()) == master_key:
+                            new_ip(uid, user_secret, user_pass)
+                        else:
+                            send_e("IMK")  # master key wrong
+                    except sqlite3.OperationalError:
+                        send_e("NU")  # user does not exist
+                    u_pass = recv_d(2048)
+                    challenge_int = randint(1, 999999)
+                    challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
+                    send_e(f"{challenge_int}")
+                    user_challenge = recv_d(2048)
+                    if user_challenge == challenge_hash:
+                        users.ids_up(uid)
+                        send_e(f"{uid}")
+                        break
+                    else:
+                        send_e("N")
+
+                if log_or_create.startswith("LOG:"):  # todo remove duplicated code, ip key limit and replace same ips
                     master_key_c, uid = log_or_create[4:].split("🱫")
-                    print("enter")
                     try:
                         master_key, user_secret, user_pass = users.db.execute(
                             "SELECT master_key, secret, user_pass FROM users WHERE user_id = ?", (uid,)).fetchone()
-                        print(enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()))
                         if enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()) == master_key:
-                            print("valid")
                             ip_key = enc.rand_b96_str(24)
                             send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
                             while True:
@@ -214,69 +223,52 @@ def client_connection(cs):
                                     send_e("V")
                                     users.add_user_key(uid, ip, enc.to_base(96, 16, sha512((ip_key+uid)
                                                        .encode()).hexdigest()))
-                                    break  # todo logged in from here.
+                                    break
                                 else:
                                     send_e("N")
+                            break
                         else:
                             send_e("IMK")  # master key wrong
                     except sqlite3.OperationalError:
                         send_e("NU")  # user does not exist
 
-            if login_request.startswith("FIP:"):  # first ip key  # todo not allow if ip key already exists
-                uid, master_key_c, = login_request[4:].split("🱫")
-                try:
-                    master_key, user_secret, user_pass = users.db.execute("SELECT master_key, secret, user_pass FROM "
-                                                                          "users WHERE user_id = ?", (uid,)).fetchone()
-                    if enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()) == master_key:
-                        new_ip(uid, user_secret, user_pass)
-                    else:
-                        send_e("IMK")  # master key wrong
-                except sqlite3.OperationalError:
-                    send_e("NU")  # user does not exist
-                u_pass = recv_d(2048)
-                challenge_int = randint(1, 999999)
-                challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
-                send_e(f"{challenge_int}")
-                user_challenge = recv_d(2048)
-                if user_challenge == challenge_hash:
-                    users.ids_up(uid)
-                    send_e(f"{uid}")
-                    break
-                else:
-                    send_e("N")
-
-            if login_request.startswith("LOG:"):
+            if login_request.startswith("ULK:"):
                 uid = login_request[4:]
                 if check_logged_in(uid):
                     send_e("SESH_T")
                     raise ConnectionRefusedError
                 else:
-                    try:
-                        users.ids.index(uid)
-                    except ValueError:
+                    #try:
+                        #r_coin, d_coin = users.db.execute("SELECT 1 FROM users WHERE user_id = ?", (uid,)).fetchone()
+                    #except ValueError:
+                    if not users.db.execute("SELECT 1 FROM users WHERE user_id = ?", (uid,)).fetchone():
                         send_e("N")  # User ID not found
                     else:
                         try:
-                            with open(f"Users/{uid}/{uid}-keys.txt", "r", encoding="utf-8") as f:
-                                u_pass, u_salt = f.read().split("🱫")
-                            while True:
-                                challenge_int = randint(1, 999999)
-                                challenge_hash = sha512(enc.pass_to_key(u_pass, u_salt, challenge_int).encode()).hexdigest()
-                                send_e(f"{challenge_int}")
-                                user_challenge = recv_d(2048)
-                                if user_challenge != challenge_hash:
-                                    send_e("N")
-                                else:
+                            ip_keys = users.db.execute("SELECT ip, ip_key FROM ip_keys WHERE user_id = ?", (uid,)).fetchall()
+                        except ValueError:
+                            send_e("N")  # No IP keys found
+                        else:
+                            for ip_c, ip_key in ip_keys:
+                                if ip_c == ip:
+                                    while True:
+                                        challenge_int = randint(99999, 499999)
+                                        challenge_hash = sha512(
+                                            enc.pass_to_key(ip_key, uid, challenge_int).encode()).hexdigest()
+                                        send_e(f"{challenge_int}")
+                                        user_challenge = recv_d(2048)
+                                        if user_challenge != challenge_hash:
+                                            send_e("N")
+                                        else:
+                                            break
+                                    send_e("V")
                                     break
-                            send_e("V")
-                            break
-                        except FileNotFoundError:
-                            send_e("N")
 
-        version_response = version_info(recv_d(512))
-        send_e(version_response)
+        print(f"{uid} reached version checking")  # debug, remove later
+        #version_response = version_info(recv_d(512))
+        #send_e(version_response)
         users.login(uid, ip, cs)
-        print(f"{uid} logged in with IP-{ip}:{port} and version-{version_response}")
+        print(f"{uid} logged in with IP-{ip}:{port} and version-")#{version_response}")
         while True:  # main loop
             request = recv_d(1024)
             print(request)  # temp debug for dev

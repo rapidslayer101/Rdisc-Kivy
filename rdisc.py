@@ -1,6 +1,7 @@
 import enclib as enc
 import rdisc_kv
 from rsa import newkeys, PublicKey, decrypt
+from time import sleep
 from sys import platform
 from zlib import error as zl_error
 from random import randint, uniform
@@ -159,17 +160,30 @@ class keyUnlock(Screen):
     passcode_prompt_text = StringProperty()
 
     def on_pre_enter(self, *args):
+        s.connect()
         self.passcode_prompt_text = f"Enter passcode for account {keys.uid}"
 
     def login(self):
         if self.pwd.text == "":
             print("Password blank")
         else:
-            try:  # todo login
+            try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
                 user_pass = enc.to_base(96, 16, sha512((user_pass+keys.uid).encode()).hexdigest())
-                enc.dec_from_pass(keys.ip_key, user_pass[:40], user_pass[40:])
-                sm.switch_to(mainPage(), direction="left")
+                ip_key = enc.dec_from_pass(keys.ip_key, user_pass[:40], user_pass[40:])
+                ip_key = enc.to_base(96, 16, sha512((ip_key+keys.uid).encode()).hexdigest())
+                s.send_e(f"ULK:{keys.uid}")
+                ulk_resp = s.recv_d(128)
+                if ulk_resp == "SESH_T":
+                    print("Session taken")
+                else:
+                    if ulk_resp == "N":
+                        print("User not found")  # or no IP keys found
+                    else:
+                        user_challenge = sha512(enc.pass_to_key(ip_key, keys.uid, int(ulk_resp)).encode()).hexdigest()
+                        s.send_e(user_challenge)
+                        if s.recv_d(128) == "V":
+                            sm.switch_to(mainPage(), direction="left")
             except zl_error:
                 print("Invalid password")
 
@@ -182,6 +196,7 @@ class createKey(Screen):
     rand_confirmation = None
 
     def generate_master_key(self, master_key, salt, depth_time, current_depth=0):
+        sleep(0.2)
         start, time_left, loop_timer = perf_counter(), depth_time, perf_counter()
         if not path.exists("userdata"):
             mkdir("userdata")
@@ -212,13 +227,13 @@ class createKey(Screen):
 
     def on_pre_enter(self, *args):
         keys.path = "make"
-        acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(20)))
+        acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
         time_depth = uniform(3, 10)
         print(acc_key)  # debug
-        Thread(target=self.generate_master_key, args=(acc_key[:15].encode(),
-               acc_key[15:].encode(), time_depth,), daemon=True).start()
+        Thread(target=self.generate_master_key, args=(acc_key[:6].encode(),
+               acc_key[6:].encode(), time_depth,), daemon=True).start()
         self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
-        acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}-{acc_key[15:]}"
+        acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}"
         self.pass_code_text = f"Your account key is: {acc_key_print}"
 
     def continue_confirmation(self):
@@ -239,17 +254,16 @@ class reCreateKey(Screen):
     pin_code = ObjectProperty()
 
     def toggle_button(self):
-        if len(self.uid.text) == 8 and len(self.pass_code.text) == 20 and self.pin_code.text:
+        if len(self.uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
             self.ids.start_regen_button.disabled = False
         else:
             self.ids.start_regen_button.disabled = True
 
     def start_regeneration(self):
-        if len(self.pass_code.text) == 20:  # todo replace with 4 separate boxes
-            if len(self.uid.text) == 8 and self.pin_code.text != "":
-                keys.path = "login"
-                keys.uid, keys.pass_code, keys.pin_code = self.uid.text, self.pass_code.text, self.pin_code.text
-                sm.switch_to(reCreateGen(), direction="left")
+        if len(self.uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
+            keys.path = "login"
+            keys.uid, keys.pass_code, keys.pin_code = self.uid.text, self.pass_code.text, self.pin_code.text
+            sm.switch_to(reCreateGen(), direction="left")
 
 
 class reCreateGen(Screen):
@@ -276,8 +290,8 @@ class reCreateGen(Screen):
 
     def on_enter(self, *args):
         self.gen_left_text = f"Generating master key"
-        Thread(target=self.regenerate_master_key, args=(keys.pass_code[:15].encode(),
-               keys.pass_code[15:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
+        Thread(target=self.regenerate_master_key, args=(keys.pass_code[:6].encode(),
+               keys.pass_code[6:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
 
 
 class ipSet(Screen):
@@ -403,6 +417,8 @@ class logUnlock(Screen):
                 s.send_e(ip_key)
                 if s.recv_d(1024) == "V":
                     sm.switch_to(twoFacLog(), direction="left")
+                else:
+                    print("Invalid password")
             except zl_error:
                 print("Invalid password")
 

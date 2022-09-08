@@ -42,18 +42,15 @@
 0.42 account creation with sql user tables
 0.43 ip keys, pack blank images into exe
 0.44 login system
-
 0.45 android support, UI work
 
 0.46 login sessions, ip key limits and username setting
-0.47 session limit = account compromised
-0.48 editable code distros
+0.47 editable code distros
 
 planned features:
 - multiple distro types:
   - downloadable exe, apk
   - runnable updating rdisc client code <- includes build scripts
-  - runnable updating rdisc full repo code <- includes build scripts
 
 - console toggle
 - tell people what is required to make an account before starting

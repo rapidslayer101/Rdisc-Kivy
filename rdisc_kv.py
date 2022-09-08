@@ -37,9 +37,11 @@ windowManager:
             radius: [10]
             
 <RoundedTextInput@TextInput>:
-    font_size: '14dp'
-    multiline : False
-    halign : "center"
+    font_size: '16dp'
+    multiline: False
+    halign: "center"
+    padding_y: [self.height/2.0-(self.line_height / 2.0)*len(self._lines), 0]
+    write_tab: False
     background_color: 0,0,0,0
     cursor_color: (37/255, 190/255, 150/255,1)
     canvas.before:
@@ -71,7 +73,7 @@ windowManager:
             
 # colored labels
 <YellowLabel@Label>
-    color : 0, 0, 0, 1
+    color: 0, 0, 0, 1
     canvas.before:
         Color:
             rgba: (243/255, 240/255, 51/255,1)
@@ -80,7 +82,7 @@ windowManager:
             pos: self.pos
 
 <OrangeLabel@Label>
-    color : 0, 0, 0, 1
+    color: 0, 0, 0, 1
     canvas.before:
         Color:
             rgba: (243/255, 132/255, 1/255,1)
@@ -89,7 +91,7 @@ windowManager:
             pos: self.pos
             
 <GreenLabel@Label>
-    color : 0, 0, 0, 1
+    color: 0, 0, 0, 1
     canvas.before:
         Color:
             rgba: (20/255, 228/255, 43/255,1)
@@ -104,87 +106,80 @@ windowManager:
     FloatLayout:
         size: root.width, root.height
         Label:
-            text : "Welcome to Rdisc!"
-            #size_hint : 0.2, 0.1
-            pos_hint : {"x" : 0, "top" : 1.25}
+            text: "Welcome to Rdisc!"
+            #size_hint: 0.2, 0.1
+            pos_hint: {"x": 0, "top": 1.25}
         RoundedButton:
-            text : "Login"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.55}
+            text: "Login"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.55}
             on_release:
                 app.root.current = 'recreate_key'
                 root.manager.transition.direction = "left"
         RoundedButton:
-            text : "Sign Up"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.35}
+            text: "Sign Up"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.35}
             on_release:
                 app.root.current = 'create_key'
                 root.manager.transition.direction = "left"
 
 <keyUnlock>:
-    pwd : pwd
+    pwd: pwd
     FloatLayout:
         size: root.width, root.height
         Label:
-            text : root.passcode_prompt_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.8}
+            text: root.passcode_prompt_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.8}
         RoundedTextInput:
-            id : pwd
-            multiline: False
+            id: pwd
             password: True
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.65}
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.65}
             on_text_validate: root.login()
         RoundedButton:
-            text : "LOGIN"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.5}
+            text: "LOGIN"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.5}
             on_release:
                 root.login()
                 #root.manager.transition.direction = "left"
 
 
 <createKey>:
-    confirmation_code : confirmation_code
+    confirmation_code: confirmation_code
     FloatLayout:
         Label:
-            text : root.pass_code_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.9}
+            text: root.pass_code_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.9}
         Label:
-            text : root.pin_code_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.8}
+            text: root.pin_code_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.8}
         Label:
-            text : "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you do not store these keys digitally"
+            text: "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you do not store these keys digitally"
             color: (37/255, 190/255, 150/255,1)
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.7}
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
         Label:
-            text : root.rand_confirm_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.6}
+            text: root.rand_confirm_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.6}
         RoundedTextInput:
-            id : confirmation_code
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.45}
-            on_text_validate: root.continue_confirmation()
-        RoundedButton:
-            text : "Next"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.3}
-            on_press : root.continue_confirmation()
+            id: confirmation_code
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.45}
+            on_text: root.continue_confirmation()
         YellowLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         Label:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -192,9 +187,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -202,9 +197,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -212,9 +207,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -223,74 +218,74 @@ windowManager:
                     pos: self.pos
                     
 <reCreateKey>:
-    uid : uid
-    pass_code : pass_code
-    pin_code : pin_code
+    uid: uid
+    pass_code: pass_code
+    pin_code: pin_code
     FloatLayout:
         Button:
-            text : "<< Back"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x" : 0, "top" : 1}
+            text: "<< Back"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
             on_press:
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
         Label:
-            text : "Enter UID"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.9}
+            text: "Enter UID"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.9}
         RoundedTextInput:
-            id : uid
-            hint_text : "UID"
-            size_hint : 0.3, 0.05
-            pos_hint : {"x" : 0.35, "top" : 0.8}
+            id: uid
+            hint_text: "UID"
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.35, "top": 0.8}
             on_text: self.text = self.text[:8].upper()
             on_text_validate: pass_code.focus = True
         Label:
-            text : "Enter account key"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.7}
+            text: "Enter account key"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
         RoundedTextInput:
-            id : pass_code
-            hint_text : "Account key"
-            size_hint : 0.3, 0.05
-            password : True
-            pos_hint : {"x" : 0.35, "top" : 0.6}
-            on_text: self.text = self.text[:20].upper().replace("-", "") 
+            id: pass_code
+            hint_text: "Account key"
+            size_hint: 0.3, 0.05
+            password: True
+            pos_hint: {"x": 0.35, "top": 0.6}
+            on_text: self.text = self.text[:15].upper().replace("-", "") 
             on_text_validate: pin_code.focus = True
         Label:
-            text : "Enter account pin"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.5}
+            text: "Enter account pin"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.5}
         RoundedTextInput:
-            id : pin_code
-            hint_text : "Account pin"
-            size_hint : 0.3, 0.05
-            password : True
-            pos_hint : {"x" : 0.35, "top" : 0.4}
+            id: pin_code
+            hint_text: "Account pin"
+            size_hint: 0.3, 0.05
+            password: True
+            pos_hint: {"x": 0.35, "top": 0.4}
             on_text: root.toggle_button()
             on_text_validate: root.start_regeneration()
         RoundedButton:
-            id : start_regen_button
-            text : "Continue"
-            size_hint : 0.3, 0.1
-            disabled : True
-            pos_hint : {"x" : 0.35, "top" : 0.25}
-            on_press : root.start_regeneration()
+            id: start_regen_button
+            text: "Continue"
+            size_hint: 0.3, 0.1
+            disabled: True
+            pos_hint: {"x": 0.35, "top": 0.25}
+            on_press: root.start_regeneration()
         Button:
-            text : "<< Back"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x" : 0, "top" : 1}
-            on_press :
+            text: "<< Back"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
+            on_press:
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
         YellowLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         Label:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -298,9 +293,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -308,9 +303,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -318,9 +313,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -331,17 +326,17 @@ windowManager:
 <reCreateGen>:
     FloatLayout:
         Label:
-            text : root.gen_left_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.8}
+            text: root.gen_left_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.8}
         OrangeLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         Label:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -349,9 +344,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -359,9 +354,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -369,9 +364,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -380,35 +375,34 @@ windowManager:
                     pos: self.pos
 
 <ipSet>:
-    ip_address : ip_address
+    ip_address: ip_address
     FloatLayout:
         Label:
-            text : "Enter server IP address"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.85}
+            text: "Enter server IP address"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.85}
         RoundedTextInput:
-            id : ip_address
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.65}
+            id: ip_address
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.65}
             on_text_validate: root.try_connect()
         RoundedButton:
-            text : "Connect"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.45}
-            on_press : root.try_connect()
+            text: "Connect"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.45}
+            on_press: root.try_connect()
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         YellowLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         Label:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -416,9 +410,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -426,9 +420,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -439,21 +433,21 @@ windowManager:
 <attemptConnection>:
     FloatLayout:
         Label:
-            text : "Attempting to connect to server..."
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.85}
+            text: "Attempting to connect to server..."
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.85}
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         OrangeLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         Label:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -461,9 +455,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -471,9 +465,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -482,44 +476,43 @@ windowManager:
                     pos: self.pos
 
 <captcha>:
-    captcha_input : captcha_input
+    captcha_input: captcha_input
     FloatLayout:
         Label:
-            text : root.captcha_prompt_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.85}
+            text: root.captcha_prompt_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.85}
         Image:
             id: captcha_image
             source: 'resources/blank_captcha.jpg'
-            pos_hint : {"x": 0, "top": 1.15}
+            pos_hint: {"x": 0, "top": 1.15}
         RoundedTextInput:
-            id : captcha_input
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.5}
+            id: captcha_input
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.5}
             on_text: self.text = self.text[:10].upper()
             on_text_validate: root.try_captcha()
         RoundedButton:
-            text : "Next"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.35}
-            on_press : root.try_captcha()
+            text: "Next"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.35}
+            on_press: root.try_captcha()
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         YellowLabel:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
         Label:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -527,9 +520,9 @@ windowManager:
                     size: self.size
                     pos: self.pos
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -538,56 +531,54 @@ windowManager:
                     pos: self.pos
 
 <nacPassword>:
-    nac_password_1 : nac_password_1
-    nac_password_2 : nac_password_2
+    nac_password_1: nac_password_1
+    nac_password_2: nac_password_2
     FloatLayout:
         Label:
-            text : "Enter new password"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.80}
+            text: "Enter new password"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.80}
         RoundedTextInput:
-            id : nac_password_1
-            multiline : False
-            size_hint : 0.3, 0.1
-            password : True
-            pos_hint : {"x" : 0.35, "top" : 0.70}
+            id: nac_password_1
+            size_hint: 0.3, 0.1
+            password: True
+            pos_hint: {"x": 0.35, "top": 0.70}
             on_text_validate: nac_password_2.focus = True
         Label:
-            text : "Repeat password"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.60}
+            text: "Repeat password"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.60}
         RoundedTextInput:
-            id : nac_password_2
-            multiline : False
-            size_hint : 0.3, 0.1
-            password : True
-            pos_hint : {"x" : 0.35, "top" : 0.50}
+            id: nac_password_2
+            size_hint: 0.3, 0.1
+            password: True
+            pos_hint: {"x": 0.35, "top": 0.50}
             on_text_validate: root.set_nac_password()
         RoundedButton:
-            text : "Next"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.30}
-            on_press : root.set_nac_password()
+            text: "Next"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.30}
+            on_press: root.set_nac_password()
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         GreenLabel:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
         YellowLabel:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -596,45 +587,45 @@ windowManager:
                     pos: self.pos
                     
 <logUnlock>:
-    pwd : pwd
+    pwd: pwd
     FloatLayout:
         size: root.width, root.height
         Label:
-            text : root.passcode_prompt_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.8}
-        TextInput:
-            id : pwd
-            multiline :False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.65}
+            text: root.passcode_prompt_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.8}
+        RoundedTextInput:
+            id: pwd
+            password: True
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.65}
+            on_text_validate: root.login()
         RoundedButton:
-            text : "LOGIN"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.5}
+            text: "LOGIN"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.5}
             on_release:
                 root.login()
-                #root.manager.transition.direction = "left"
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         GreenLabel:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
         YellowLabel:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
         Label:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
                     rgba: (60/255, 60/255, 50/255,1)
@@ -643,94 +634,93 @@ windowManager:
                     pos: self.pos
 
 <twoFacSetup>:
-    two_fac_confirm : two_fac_confirm
+    two_fac_confirm: two_fac_confirm
     FloatLayout:
         Label:
-            text : root.two_fac_wait_text
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.93}
+            text: root.two_fac_wait_text
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.93}
         AsyncImage:
             id: two_fac_qr
             source: 'resources/blank_qr.png'
-            pos_hint : {"x": 0, "top": 1.10}
+            pos_hint: {"x": 0, "top": 1.10}
         RoundedTextInput:
-            id : two_fac_confirm
-            multiline : False
+            id: two_fac_confirm
             hint_text: "2FA code"
-            size_hint : 0.3, 0.05
-            pos_hint : {"x" : 0.35, "top" : 0.34}
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.35, "top": 0.34}
             on_text_validate: root.confirm_2fa()
         RoundedButton:
-            text : "Confirm"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.25}
-            on_press : root.confirm_2fa()
+            text: "Confirm"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.25}
+            on_press: root.confirm_2fa()
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         GreenLabel:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
         GreenLabel:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
         YellowLabel:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             
 <twoFacLog>:
-    two_fac_confirm : two_fac_confirm
+    two_fac_confirm: two_fac_confirm
     FloatLayout:
         Label:
-            text : "Enter 2FA code"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.8}
-        TextInput:
-            id : two_fac_confirm
-            multiline : False
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.65}
+            text: "Enter 2FA code"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.8}
+        RoundedTextInput:
+            id: two_fac_confirm
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.65}
+            on_text_validate: root.confirm_2fa()
         RoundedButton:
-            text : "Confirm"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x" : 0.35, "top" : 0.4}
-            on_press : root.confirm_2fa()
+            text: "Confirm"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.4}
+            on_press: root.confirm_2fa()
         GreenLabel:
-            text : "User keys >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.25,  "top": 1}
+            text: "User keys >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.25,  "top": 1}
         GreenLabel:
-            text : "Server >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.35,  "top": 1}
+            text: "Server >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.35,  "top": 1}
         GreenLabel:
-            text : "CAPTCHA >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.45,  "top": 1}
+            text: "CAPTCHA >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45,  "top": 1}
         GreenLabel:
-            text : "Password >>"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.55,  "top": 1}
+            text: "Password >>"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.55,  "top": 1}
         YellowLabel:
-            text : "2FA"
-            size_hint : 0.1, 0.05
-            pos_hint : {"x": 0.65,  "top": 1}
+            text: "2FA"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.65,  "top": 1}
             
 # main page
 <mainPage>:
     FloatLayout:
         Label:
-            text : "MAIN PAGE PLACEHOLDER"
-            size_hint : 0.3, 0.1
-            pos_hint : {"x": 0.35, "top": 0.7}
+            text: "MAIN PAGE PLACEHOLDER"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
 
 
 """
