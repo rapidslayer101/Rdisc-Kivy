@@ -16,4 +16,10 @@ Where you wish to install Rdisc, open a new powershell terminal and run the foll
 ```
 wget -O install.bat https://raw.githubusercontent.com/rapidslayer101/Rdisc-Kivy/master/install.bat; .\install.bat
 ```
-After installing, Rdisc should launch automatically, to relaunch in the future simply run launch.bat
+
+To force Rdisc (Dev) to update run the following commands:
+
+```
+git reset --hard
+git pull origin master
+```
