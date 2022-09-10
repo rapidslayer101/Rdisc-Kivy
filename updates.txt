@@ -44,18 +44,24 @@
 0.44 login system
 0.45 android support, UI work
 
-0.46 login sessions, ip key limits and username setting
-0.47 editable code distros
+0.46 login sessions, ip key limits, editable code distro
+
+0.47 username setting, games tab
 
 planned features:
 - multiple distro types:
   - downloadable exe, apk
   - runnable updating rdisc client code <- includes build scripts
 
-- console toggle
+- show debug to users in UI
 - tell people what is required to make an account before starting
-  - mobile phone
-
+- rate limits and checks for entire login paths
+- updater for exe only
+- username setting
+- separate server code and client code
+- nfc experiment
+- check if errors occur when not in order requests made through login paths
+- ip_key expiry check and deal with that as well as other invalid keys
 
 # account key + account pin = master key
 # MASTER KEY NEVER SAVED TO CLIENTS DEVICE
@@ -63,5 +69,3 @@ planned features:
 # master key + 2fa = ip key enc
 # (ip key + password) + challenge depth = login
 # 5 ips at one time
-
-# nfc experiment

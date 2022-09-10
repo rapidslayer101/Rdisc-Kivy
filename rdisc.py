@@ -433,7 +433,7 @@ class twoFacSetup(Screen):
 
     def on_enter(self, *args):
         if not keys.secret_code:
-            keys.uid, keys.secret_code = s.recv_d(2048).split("🱫")
+            keys.uid, keys.secret_code = s.recv_d(1024).split("🱫")
             with open("userdata/key", "w", encoding="utf-8") as f:
                 f.write(f"{keys.master_key}🱫{keys.uid}🱫{keys.secret_code}MAKE_KEY2")
         else:
