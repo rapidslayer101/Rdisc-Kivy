@@ -1,5 +1,5 @@
 from base64 import b64decode
-kv_payload = """# You can edit this file to change the settings.png of the UI. 
+kv_payload = """# You can edit this file to change the UI. 
 # To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
@@ -7,16 +7,16 @@ kv_payload = """# You can edit this file to change the settings.png of the UI.
 # [!] DO NOT EDIT THIS SECTION [!] # 
 
 windowManager:
-    logInOrSignUp: 
+    logInOrSignUp:
     keyUnlock:
     createKey:
     ipSet:
     attemptConnection:
     captcha:
     nacPassword:
-    logUnlock:
+    logUnlock: 
     twoFacSetup:
-    twoFacLog:
+    twoFacLog: 
     reCreateKey:
     reCreateGen:
     home:
@@ -38,7 +38,7 @@ windowManager:
 #:set bk_grey_3 (60/255, 60/255, 60/255,1)
 
 #:set r_coin_orange (245/255, 112/255, 15/255,1)
-#:set d_coin_grey (150/255, 150/255, 150/255,1)
+#:set d_coin_blue (93/255, 93255, 218/255,1)
     
     
 ### Templates ### 
@@ -60,7 +60,7 @@ windowManager:
     font_size: '16dp'
     multiline: False
     halign: "center"
-    padding_y: [self.height/2.0-(self.line_height / 2.0)*len(self._lines), 0]
+    padding_y: [self.height/2.0-(self.line_height/2.0)*len(self._lines), 0]
     write_tab: False
     background_color: 0,0,0,0
     cursor_color: cyan
@@ -90,8 +90,16 @@ windowManager:
             ellipse: self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 180, 360
         Line:
             ellipse: self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 360, 540
-            
+
 # colored labels
+<GreyLabel@Label>
+    canvas.before:
+        Color:
+            rgba: grey
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
 <YellowLabel@Label>
     color: 0, 0, 0, 1
     canvas.before:
@@ -118,6 +126,15 @@ windowManager:
         Rectangle:
             size: self.size
             pos: self.pos
+            
+<BackingLabel@Label>:
+    canvas.before:
+        Color: 
+            rgba: bk_grey_3
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [10]
     
 
 ### Screens ###
@@ -196,46 +213,22 @@ windowManager:
             text: "User keys >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.25,  "top": 1}
-        Label:
+        GreyLabel:
             text: "Server >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.35,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
                     
 <reCreateKey>:
     uid: uid
@@ -250,12 +243,12 @@ windowManager:
                 app.root.current = 'login_signup'
                 root.manager.transition.direction = "right"
         Label:
-            text: "Enter UID"
+            text: "Enter User ID"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.9}
         RoundedTextInput:
             id: uid
-            hint_text: "UID"
+            hint_text: "User ID"
             size_hint: 0.3, 0.05
             pos_hint: {"x": 0.35, "top": 0.8}
             on_text: self.text = self.text[:8].upper()
@@ -302,26 +295,14 @@ windowManager:
             text: "User keys >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.25,  "top": 1}
-        Label:
+        GreyLabel:
             text: "Server >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.35,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
         Label:
             text: "Password >>"
             size_hint: 0.1, 0.05
@@ -419,36 +400,18 @@ windowManager:
             text: "Server >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.35,  "top": 1}
-        Label:
+        GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
 
 <attemptConnection>:
     FloatLayout:
@@ -464,36 +427,18 @@ windowManager:
             text: "Server >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.35,  "top": 1}
-        Label:
+        GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
 
 <captcha>:
     captcha_input: captcha_input
@@ -529,26 +474,14 @@ windowManager:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45,  "top": 1}
-        Label:
+        GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
 
 <nacPassword>:
     nac_password_1: nac_password_1
@@ -595,16 +528,10 @@ windowManager:
             text: "Password >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.55,  "top": 1}
-        Label:
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
                     
 <logUnlock>:
     pwd: pwd
@@ -642,16 +569,10 @@ windowManager:
             text: "Password >>"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.55,  "top": 1}
-        Label:
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
 
 <twoFacSetup>:
     two_fac_confirm: two_fac_confirm
@@ -763,46 +684,32 @@ windowManager:
             on_press: 
                 root.manager.current = 'games'
                 root.manager.transition.direction = 'left'
-        Label:
+        BackingLabel:
             text: root.r_coins
             color: r_coin_orange
-            size_hint: 0.3, 0.05
-            pos_hint: {"x": 0.8, "top": 0.99}
-        Label:
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.85, "top": 0.99}
+        BackingLabel:
             text: root.d_coins
-            color: d_coin_grey
-            size_hint: 0.3, 0.05
-            pos_hint: {"x": 0.7, "top": 0.99}
-        Label:
+            color: d_coin_blue
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.74, "top": 0.99}
+        BackingLabel:
             text: root.welcome_text
             size_hint: 0.30, 0.15
-            pos_hint: {"x": 0.02, "top": 0.92}
-            canvas.before:
-                Color: 
-                    rgba: bk_grey_3
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [10]
-        Label:
+            pos_hint: {"x": 0.01, "top": 0.92}
+        BackingLabel:
             size_hint: 0.30, 0.6
-            pos_hint: {"x": 0.02, "top": 0.76}
-            canvas.before:
-                Color: 
-                    rgba: bk_grey_3
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [10]
+            pos_hint: {"x": 0.01, "top": 0.76}
         Label:
             text: "Transfer R-coins"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.12, "top": 0.76}
+            pos_hint: {"x": 0.11, "top": 0.76}
         RoundedTextInput:
             id: transfer_uid
             hint_text: "User ID or Username"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.07, "top": 0.66}
+            pos_hint: {"x": 0.06, "top": 0.66}
             on_text: self.text = self.text[:8].upper()
             on_text_validate: transfer_amount.focus = True
         RoundedTextInput
@@ -810,49 +717,49 @@ windowManager:
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.07, "top": 0.51}
+            pos_hint: {"x": 0.06, "top": 0.51}
             on_text: root.check_transfer()
         Label:
             text: f"Cost: {root.transfer_cost}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.02, "top": 0.4}
+            pos_hint: {"x": 0.01, "top": 0.4}
         Label:
             text: f"Send: {root.transfer_send}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.12, "top": 0.4}
+            pos_hint: {"x": 0.11, "top": 0.4}
         Label:
             text: f"Fee: {root.transfer_fee}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.22, "top": 0.4}
+            pos_hint: {"x": 0.21, "top": 0.4}
         RoundedButton:
             text: "Transfer"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.07, "top": 0.3}
-        Label:
+            pos_hint: {"x": 0.06, "top": 0.3}
+        BackingLabel:
             size_hint: 0.30, 0.13
-            pos_hint: {"x": 0.02, "top": 0.15}
-            canvas.before:
-                Color: 
-                    rgba: bk_grey_3
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [10]
+            pos_hint: {"x": 0.01, "top": 0.15}
         Label:
             text: "Conversion Calculator (£->R)"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.12, "top": 0.17}
+            pos_hint: {"x": 0.11, "top": 0.17}
         RoundedTextInput
             id: amount_pounds
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.07, "top": 0.09}
+            pos_hint: {"x": 0.06, "top": 0.09}
             on_text: root.convert_pounds()
         Label:
             text: f"R-coins: {root.r_coin_conversion}"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.2, "top": 0.09}
+            pos_hint: {"x": 0.19, "top": 0.09}
+        BackingLabel:
+            size_hint: 0.30, 0.6
+            pos_hint: {"x": 0.69, "top": 0.76}
+        Label:
+            text: "0 Notifications"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.80, "top": 0.74}
                 
             
 <store>:
@@ -881,16 +788,16 @@ windowManager:
             on_press: 
                 root.manager.current = 'games'
                 root.manager.transition.direction = 'left'
-        Label:
+        BackingLabel:
             text: root.r_coins
             color: r_coin_orange
-            size_hint: 0.3, 0.05
-            pos_hint: {"x": 0.8, "top": 0.99}
-        Label:
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.85, "top": 0.99}
+        BackingLabel:
             text: root.d_coins
-            color: d_coin_grey
-            size_hint: 0.3, 0.05
-            pos_hint: {"x": 0.7, "top": 0.99}
+            color: d_coin_blue
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.74, "top": 0.99}
         Label:
             text: root.welcome_text
             size_hint: 0.3, 0.1
@@ -923,16 +830,16 @@ windowManager:
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.40, "top": 0.99}
             disabled: True
-        Label:
+        BackingLabel:
             text: root.r_coins
             color: r_coin_orange
-            size_hint: 0.3, 0.05
-            pos_hint: {"x": 0.8, "top": 0.99}
-        Label:
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.85, "top": 0.99}
+        BackingLabel:
             text: root.d_coins
-            color: d_coin_grey
-            size_hint: 0.3, 0.05
-            pos_hint: {"x": 0.7, "top": 0.99}
+            color: d_coin_blue
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.74, "top": 0.99}
         Label:
             text: "Games"
             size_hint: 0.3, 0.1

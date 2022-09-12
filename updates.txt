@@ -46,19 +46,18 @@
 0.46 login sessions, ip key limits, editable code distro
 0.47 dynamic UI work on home page
 
-0.48 loading and saving of currencies, username setting, coinflip
+0.48 saving of currencies, username setting, coinflip
 
 - distro types:
   - downloadable exe, apk
-  - runnable updating rdisc client code <- includes build scripts
+  - rdisc client code <- todo proper checkout and maybe build scrips
 
 - show debug to users in UI
 - tell people what is required to make an account before starting
 - rate limits and checks for entire login paths
 - updater for exe only
-- username setting
-- separate server code and client code
-- nfc experiment
+- separate server code and client code <- possibly
+- nfc experiment <- unlikely, mobile support not a priority
 - check if errors occur when not in order requests made through login paths
 - ip_key expiry check and deal with that as well as other invalid keys
 
@@ -68,7 +67,3 @@
 # master key + 2fa = ip key enc
 # (ip key + password) + challenge depth = login
 # 5 ips at one time
-
-# distro types:
-  - downloadable exe, apk
-  - rdisc client code <- todo proper checkout and maybe build scrips
