@@ -38,15 +38,16 @@ class Users:
             self.db.execute("SELECT user_id FROM users")
         except sqlite3.OperationalError:
             print("No such table: users")
-            self.db.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE, "
+            self.db.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE,"
                             "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
-                            "user_pass TEXT NOT NULL, last_online DATE NOT NULL, xp FLOAT NOT NULL, "
+                            "user_pass TEXT NOT NULL, username TEXT NOT NULL,"
+                            "last_online DATE NOT NULL, xp FLOAT NOT NULL,"
                             "r_coin FLOAT NOT NULL, d_coin FLOAT NOT NULL)")
         try:
             self.db.execute("SELECT user_id FROM ip_keys")
         except sqlite3.OperationalError:
             print("No such table: ip_keys")
-            self.db.execute("CREATE TABLE ip_keys (user_id TEXT NOT NULL, "
+            self.db.execute("CREATE TABLE ip_keys (user_id TEXT NOT NULL,"
                             "ip TEXT NOT NULL, ip_key TEXT NOT NULL, expiry_time DATE NOT NULL)")
 
     def login(self, u_id, ip, cs):
@@ -65,9 +66,9 @@ class Users:
 
     def add_user(self, user_id, master_key, secret, user_pass):
         now = str(datetime.now())[:-7]
-        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (user_id, now,
+        self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (user_id, now,
                         enc.to_base(96, 16, sha512((master_key+user_id).encode()).hexdigest()), secret,
-                        user_pass, now, 0, 0, 1000))
+                        user_pass, "NULL", now, 0, 0, 1000))
         self.db.commit()
 
     def add_user_key(self, user_id, ip, ip_key, expiry_time=14):
@@ -75,6 +76,15 @@ class Users:
         self.db.execute("INSERT INTO ip_keys VALUES (?, ?, ?, ?)",
                         (user_id, ip, enc.to_base(96, 16, sha512((ip_key+user_id).encode()).hexdigest()), expiry_time))
         self.db.commit()
+
+    def check_logged_in(self, uid, ip):
+        if uid in self.logged_in_users:
+            return True
+        else:
+            if ip in self.logged_in_users:
+                return True
+            else:
+                return False
 
 
 users = Users()
@@ -112,17 +122,7 @@ def client_connection(cs):
             except zl_error:
                 raise ConnectionResetError
 
-        def check_logged_in(uid_):
-            l_users = users.logged_in_users
-            if uid_ in l_users:
-                return True
-            else:
-                if ip in l_users:
-                    return True
-                else:
-                    return False
-
-        def new_ip(uid, secret, user_pass):
+        def new_ip(uid, secret, user_pass, xp, r_coin, d_coin):
             while True:
                 code_challenge = recv_d(1024)
                 if get(f"https://www.authenticatorapi.com/Validate.aspx?"
@@ -130,6 +130,7 @@ def client_connection(cs):
                     ip_key = enc.rand_b96_str(24)
                     users.add_user_key(uid, ip, ip_key)
                     send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
+                    send_e(f"{xp}🱫{r_coin}🱫{d_coin}")
                     break
                 else:
                     send_e("N")
@@ -137,6 +138,7 @@ def client_connection(cs):
         while True:
             login_request = recv_d(1024)
             print(login_request)  # temp debug for dev
+
             if login_request.startswith("CAP"):
                 img = ImageCaptcha(width=280, height=90)
                 captcha_text = "".join(choices("23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(10)))
@@ -172,18 +174,18 @@ def client_connection(cs):
                         except sqlite3.IntegrityError:
                             pass
                     send_e(f"{uid}🱫{user_secret}")
-                    new_ip(uid, user_secret, user_pass)
+                    new_ip(uid, user_secret, user_pass, 0, 0, 1000)
                     break
 
                 if login_request.startswith("FIP:"):  # first ip key
                     uid, master_key_c, = login_request[4:].split("🱫")
                     try:
-                        master_key, user_secret, user_pass = users.db.execute(
-                            "SELECT master_key, secret, user_pass FROM "
+                        master_key, user_secret, user_pass, xp, r_coin, d_coin = users.db.execute(
+                            "SELECT master_key, secret, user_pass, xp, r_coin, d_coin FROM "
                             "users WHERE user_id = ?", (uid,)).fetchone()
                         if enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()) == master_key:
                             if users.db.execute("SELECT * FROM ip_keys WHERE user_id = ?", (uid,)).fetchone() is None:
-                                new_ip(uid, user_secret, user_pass)
+                                new_ip(uid, user_secret, user_pass, xp, r_coin, d_coin)
                             else:
                                 raise AssertionError
                         else:
@@ -205,8 +207,9 @@ def client_connection(cs):
                 if log_or_create.startswith("LOG:"):
                     master_key_c, uid = log_or_create[4:].split("🱫")
                     try:
-                        master_key, user_secret, user_pass = users.db.execute(
-                            "SELECT master_key, secret, user_pass FROM users WHERE user_id = ?", (uid,)).fetchone()
+                        master_key, user_secret, user_pass, xp, r_coin, d_coin = users.db.execute(
+                            "SELECT master_key, secret, user_pass, xp, r_coin, d_coin "
+                            "FROM users WHERE user_id = ?", (uid,)).fetchone()
                         if enc.to_base(96, 16, sha512((master_key_c+uid).encode()).hexdigest()) == master_key:
                             ip_key = enc.rand_b96_str(24)
                             send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
@@ -221,7 +224,7 @@ def client_connection(cs):
                                 code_challenge = recv_d(1024)
                                 if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                                        f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
-                                    send_e("V")
+                                    send_e(f"{xp}🱫{r_coin}🱫{d_coin}")
                                     if users.db.execute("SELECT * FROM ip_keys WHERE ip = ?",
                                                         (ip,)).fetchone() is not None:
                                         users.db.execute("DELETE FROM ip_keys WHERE ip = ?", (ip,))
@@ -243,14 +246,14 @@ def client_connection(cs):
 
             if login_request.startswith("ULK:"):
                 uid = login_request[4:]
-                if check_logged_in(uid):
+                if users.check_logged_in(uid, ip):
                     send_e("SESH_T")
                     raise ConnectionRefusedError
                 else:
-                    #try:
-                        #r_coin, d_coin = users.db.execute("SELECT 1 FROM users WHERE user_id = ?", (uid,)).fetchone()
-                    #except ValueError:
-                    if not users.db.execute("SELECT 1 FROM users WHERE user_id = ?", (uid,)).fetchone():
+                    try:
+                        xp, r_coin, d_coin = users.db.execute("SELECT xp, r_coin, d_coin FROM users "
+                                                              "WHERE user_id = ?", (uid,)).fetchone()
+                    except ValueError:
                         send_e("N")  # User ID not found
                     else:
                         try:
@@ -272,14 +275,14 @@ def client_connection(cs):
                                     send_e(f"{challenge_int}")
                                     user_challenge = recv_d(2048)
                                     if user_challenge == challenge_hash:
-                                        send_e("V")
+                                        send_e(f"{xp}🱫{r_coin}🱫{d_coin}")
                                         break
                                     else:
                                         send_e("N")
                                 break
 
         print(f"{uid} reached version checking")  # debug, remove later
-        #version_response = version_info(recv_d(1024))
+        #version_response = version_info(recv_d(1024))  # todo trigger from client if on exe
         #send_e(version_response)
         users.login(uid, ip, cs)
         print(f"{uid} logged in with IP-{ip}:{port} and version-")#{version_response}")

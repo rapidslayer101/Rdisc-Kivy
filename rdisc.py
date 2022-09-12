@@ -35,7 +35,10 @@ if not path.exists("rdisc.kv"):
 if path.exists("rdisc.py"):
     rdisc_kv.kv()
 
-app_hash = enc.hash_a_file(path.abspath(__file__))
+if path.exists("rdisc.exe"):
+    app_hash = enc.hash_a_file("rdisc.exe")
+if path.exists("rdisc.py"):
+    app_hash = enc.hash_a_file("rdisc.py")
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
         latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
@@ -112,6 +115,9 @@ class KeySystem:
         self.pass_code = None
         self.pin_code = None
         self.path = None  # Make, Unlock or Login <- Link flowchart
+        self.xp = None
+        self.r_coin = None
+        self.d_coin = None
 
 
 keys = KeySystem()
@@ -182,8 +188,10 @@ class keyUnlock(Screen):
                     else:
                         user_challenge = sha512(enc.pass_to_key(ip_key, keys.uid, int(ulk_resp)).encode()).hexdigest()
                         s.send_e(user_challenge)
-                        if s.recv_d(128) == "V":
-                            sm.switch_to(mainPage(), direction="left")
+                        ulk_resp = s.recv_d(1024)
+                        if ulk_resp != "N":
+                            keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
+                            sm.switch_to(home(), direction="left")
             except zl_error:
                 print("Invalid password")
 
@@ -457,7 +465,8 @@ class twoFacSetup(Screen):
                     with open("userdata/key", "wb") as f:
                         f.write(keys.uid.encode()+ip_key)
                     print("2FA confirmed")
-                    sm.switch_to(mainPage(), direction="left")
+                    keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
+                    sm.switch_to(home(), direction="left")
                 else:
                     print("2FA failed")
             else:
@@ -475,20 +484,99 @@ class twoFacLog(Screen):
             if len(self.two_fac_confirm.text) == 6:
                 s.send_e(self.two_fac_confirm.text.replace(" ", ""))
                 two_fa_valid = s.recv_d(1024)
-                if two_fa_valid == "V":
+                if two_fa_valid != "N":
                     with open("userdata/key", "wb") as f:
                         f.write(keys.uid.encode()+keys.ip_key)
                     print("2FA confirmed")
-                    sm.switch_to(mainPage(), direction="left")
+                    keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
+                    sm.switch_to(home(), direction="left")
                 else:
                     print("2FA failed")
             else:
                 print("Invalid input")
 
 
-class mainPage(Screen):
+class home(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+    welcome_text = StringProperty()
+    transfer_uid = ObjectProperty(None)
+    transfer_amount = ObjectProperty(None)
+    transfer_cost = StringProperty()
+    transfer_send = StringProperty()
+    transfer_fee = StringProperty()
+    amount_pounds = ObjectProperty(None)
+    r_coin_conversion = StringProperty()
+
     def on_pre_enter(self, *args):
-        print("Main page")
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+        self.welcome_text = f"Welcome back {keys.uid}"
+        self.transfer_cost = "0.00"
+        self.transfer_send = "0.00"
+        self.transfer_fee = "0.00"
+        self.r_coin_conversion = "0.00"
+
+    def check_transfer(self):
+        if self.transfer_amount.text not in ["", "."]:
+            if float(self.transfer_amount.text) > float(keys.r_coin)*0.995:
+                self.transfer_amount.text = str(float(keys.r_coin)*0.995)
+            if "." in self.transfer_amount.text:
+                if len(self.transfer_amount.text.split(".")[1]) > 2:
+                    self.transfer_amount.text = self.transfer_amount.text[:-1]
+            self.transfer_cost = str(round(float(self.transfer_amount.text)/0.995, 2))
+            self.transfer_send = self.transfer_amount.text
+            self.transfer_fee = str(round(float(self.transfer_cost)-float(self.transfer_amount.text), 2))
+        if self.transfer_amount.text == ".":
+            self.transfer_amount.text = ""
+        if self.transfer_amount.text == "":
+            self.transfer_cost = "0.00"
+            self.transfer_send = "0.00"
+            self.transfer_fee = "0.00"
+
+    def convert_pounds(self):
+        if self.amount_pounds.text not in ["", "."]:
+            self.amount_pounds.text = self.amount_pounds.text[:7]
+            if "." in self.amount_pounds.text:
+                if len(self.amount_pounds.text.split(".")[1]) > 2:
+                    self.amount_pounds.text = self.amount_pounds.text[:-1]
+            self.r_coin_conversion = str(round(float(self.amount_pounds.text)/0.06, 2))
+        if self.amount_pounds.text == "":
+            self.r_coin_conversion = "0.00"
+
+
+class store(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+    welcome_text = StringProperty()
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+        self.welcome_text = f"Store"
+
+
+class games(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+    welcome_text = StringProperty()
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+        self.welcome_text = f"Store"
 
 
 class windowManager(ScreenManager):
@@ -511,7 +599,9 @@ sm.add_widget(nacPassword(name='new_acc_pass'))
 sm.add_widget(logUnlock(name='login_unlock'))
 sm.add_widget(twoFacSetup(name='2fa_setup'))
 sm.add_widget(twoFacLog(name='2fa_login'))
-sm.add_widget(mainPage(name='main_page'))
+sm.add_widget(home(name='home'))
+sm.add_widget(store(name='store'))
+sm.add_widget(games(name='games'))
 
 
 # class that builds gui

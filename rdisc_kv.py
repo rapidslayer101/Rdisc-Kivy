@@ -1,5 +1,5 @@
 from base64 import b64decode
-kv_payload = """# You can edit this file to change the settings of the UI. 
+kv_payload = """# You can edit this file to change the settings.png of the UI. 
 # To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
@@ -19,18 +19,38 @@ windowManager:
     twoFacLog:
     reCreateKey:
     reCreateGen:
-    mainPage:
+    home:
+    store:
+    games:
+    
+
+### Colors ###
+# edits the color scheme of the UI
+
+#:set purple (104/255, 84/255, 252/255,1)
+#:set green (20/255, 228/255, 43/255,1)
+#:set yellow (243/255, 240/255, 51/255,1)
+#:set orange (243/255, 132/255, 1/255,1)
+#:set cyan (37/255, 190/255, 150/255,1)
+#:set grey (60/255, 60/255, 50/255,1)
+
+#:set bk_grey_2 (55/255, 55/255, 55/255,1)
+#:set bk_grey_3 (60/255, 60/255, 60/255,1)
+
+#:set r_coin_orange (245/255, 112/255, 15/255,1)
+#:set d_coin_grey (150/255, 150/255, 150/255,1)
     
     
-### Templates ###
-    
-# editing this will change most buttons 
+### Templates ### 
+# editing templates will change key elements of the UI
+
+# rounded elements
 <RoundedButton@Button>
     background_color: (0,0,0,0)
     background_normal: ''
     canvas.before:
         Color:
-            rgba: (104/255, 84/255, 252/255,1)
+            rgba: purple
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -43,25 +63,25 @@ windowManager:
     padding_y: [self.height/2.0-(self.line_height / 2.0)*len(self._lines), 0]
     write_tab: False
     background_color: 0,0,0,0
-    cursor_color: (37/255, 190/255, 150/255,1)
+    cursor_color: cyan
     canvas.before:
         Color:
-            rgba: (37/255, 190/255, 150/255,1)
+            rgba: cyan
     canvas.after:
         Color:
-            rgba: (104/255, 84/255, 252/255,0)
+            rgba: (1/255, 1/255, 1/255,0)
         Ellipse:
             angle_start:180
             angle_end:360
-            pos:(self.pos[0] - self.size[1]/2.0, self.pos[1])
+            pos:(self.pos[0]-self.size[1]/2.0, self.pos[1])
             size: (self.size[1], self.size[1])
         Ellipse:
             angle_start:360
             angle_end:540
-            pos: (self.size[0] + self.pos[0] - self.size[1]/2.0, self.pos[1])
+            pos: (self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1])
             size: (self.size[1], self.size[1])
         Color:
-            rgba: (104/255, 84/255, 252/255,1)
+            rgba: purple
         Line:
             points: self.pos[0], self.pos[1], self.pos[0]+self.size[0], self.pos[1]
         Line:
@@ -76,7 +96,7 @@ windowManager:
     color: 0, 0, 0, 1
     canvas.before:
         Color:
-            rgba: (243/255, 240/255, 51/255,1)
+            rgba: yellow
         Rectangle:
             size: self.size
             pos: self.pos
@@ -85,7 +105,7 @@ windowManager:
     color: 0, 0, 0, 1
     canvas.before:
         Color:
-            rgba: (243/255, 132/255, 1/255,1)
+            rgba: orange
         Rectangle:
             size: self.size
             pos: self.pos
@@ -94,7 +114,7 @@ windowManager:
     color: 0, 0, 0, 1
     canvas.before:
         Color:
-            rgba: (20/255, 228/255, 43/255,1)
+            rgba: green
         Rectangle:
             size: self.size
             pos: self.pos
@@ -182,7 +202,7 @@ windowManager:
             pos_hint: {"x": 0.35,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -192,7 +212,7 @@ windowManager:
             pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -202,7 +222,7 @@ windowManager:
             pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -212,7 +232,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -288,7 +308,7 @@ windowManager:
             pos_hint: {"x": 0.35,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -298,7 +318,7 @@ windowManager:
             pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -308,7 +328,7 @@ windowManager:
             pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -318,7 +338,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -339,7 +359,7 @@ windowManager:
             pos_hint: {"x": 0.35,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -349,7 +369,7 @@ windowManager:
             pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -359,7 +379,7 @@ windowManager:
             pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -369,7 +389,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -405,7 +425,7 @@ windowManager:
             pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -415,7 +435,7 @@ windowManager:
             pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -425,7 +445,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -450,7 +470,7 @@ windowManager:
             pos_hint: {"x": 0.45,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -460,7 +480,7 @@ windowManager:
             pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -470,7 +490,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -515,7 +535,7 @@ windowManager:
             pos_hint: {"x": 0.55,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -525,7 +545,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -581,7 +601,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -628,7 +648,7 @@ windowManager:
             pos_hint: {"x": 0.65,  "top": 1}
             canvas.before:
                 Color:
-                    rgba: (60/255, 60/255, 50/255,1)
+                    rgba: grey
                 Rectangle:
                     size: self.size
                     pos: self.pos
@@ -714,15 +734,211 @@ windowManager:
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.65,  "top": 1}
             
-# main page
-<mainPage>:
+<home>:
+    transfer_uid: transfer_uid
+    transfer_amount: transfer_amount
+    amount_pounds: amount_pounds
     FloatLayout:
+        Button:
+            text: "Home"
+            size_hint: 0.10, 0.05
+            pos_hint: {"x": 0, "top": 0.99}
+            disabled: True
+        Button:
+            text: "Chat"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.10, "top": 0.99}
+            disabled: True
+        Button:
+            text: "Store"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.25, "top": 0.99}
+            on_press: 
+                root.manager.current = 'store'
+                root.manager.transition.direction = 'left'
+        Button:
+            text: "Games"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.40, "top": 0.99}
+            on_press: 
+                root.manager.current = 'games'
+                root.manager.transition.direction = 'left'
         Label:
-            text: "MAIN PAGE PLACEHOLDER"
+            text: root.r_coins
+            color: r_coin_orange
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.8, "top": 0.99}
+        Label:
+            text: root.d_coins
+            color: d_coin_grey
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.7, "top": 0.99}
+        Label:
+            text: root.welcome_text
+            size_hint: 0.30, 0.15
+            pos_hint: {"x": 0.02, "top": 0.92}
+            canvas.before:
+                Color: 
+                    rgba: bk_grey_3
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        Label:
+            size_hint: 0.30, 0.6
+            pos_hint: {"x": 0.02, "top": 0.76}
+            canvas.before:
+                Color: 
+                    rgba: bk_grey_3
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        Label:
+            text: "Transfer R-coins"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.12, "top": 0.76}
+        RoundedTextInput:
+            id: transfer_uid
+            hint_text: "User ID or Username"
+            size_hint: 0.2, 0.1
+            pos_hint: {"x": 0.07, "top": 0.66}
+            on_text: self.text = self.text[:8].upper()
+            on_text_validate: transfer_amount.focus = True
+        RoundedTextInput
+            id: transfer_amount
+            input_filter: "float"
+            hint_text: "0.00"
+            size_hint: 0.2, 0.1
+            pos_hint: {"x": 0.07, "top": 0.51}
+            on_text: root.check_transfer()
+        Label:
+            text: f"Cost: {root.transfer_cost}R"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.02, "top": 0.4}
+        Label:
+            text: f"Send: {root.transfer_send}R"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.12, "top": 0.4}
+        Label:
+            text: f"Fee: {root.transfer_fee}R"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.22, "top": 0.4}
+        RoundedButton:
+            text: "Transfer"
+            size_hint: 0.2, 0.1
+            pos_hint: {"x": 0.07, "top": 0.3}
+        Label:
+            size_hint: 0.30, 0.13
+            pos_hint: {"x": 0.02, "top": 0.15}
+            canvas.before:
+                Color: 
+                    rgba: bk_grey_3
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        Label:
+            text: "Conversion Calculator (£->R)"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.12, "top": 0.17}
+        RoundedTextInput
+            id: amount_pounds
+            input_filter: "float"
+            hint_text: "0.00"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.07, "top": 0.09}
+            on_text: root.convert_pounds()
+        Label:
+            text: f"R-coins: {root.r_coin_conversion}"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.2, "top": 0.09}
+                
+            
+<store>:
+    FloatLayout:
+        Button:
+            text: "Home"
+            size_hint: 0.10, 0.05
+            pos_hint: {"x": 0, "top": 0.99}
+            on_press: 
+                root.manager.current = 'home'
+                root.manager.transition.direction = 'right'
+        Button:
+            text: "Chat"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.10, "top": 0.99}
+            disabled: True
+        Button:
+            text: "Store"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.25, "top": 0.99}
+            disabled: True
+        Button:
+            text: "Games"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.40, "top": 0.99}
+            on_press: 
+                root.manager.current = 'games'
+                root.manager.transition.direction = 'left'
+        Label:
+            text: root.r_coins
+            color: r_coin_orange
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.8, "top": 0.99}
+        Label:
+            text: root.d_coins
+            color: d_coin_grey
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.7, "top": 0.99}
+        Label:
+            text: root.welcome_text
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
-
-
+            
+            
+<games>:
+    FloatLayout:
+        Button:
+            text: "Home"
+            size_hint: 0.10, 0.05
+            pos_hint: {"x": 0, "top": 0.99}
+            on_press: 
+                root.manager.current = 'home'
+                root.manager.transition.direction = 'right'
+        Button:
+            text: "Chat"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.10, "top": 0.99}
+            disabled: True
+        Button:
+            text: "Store"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.25, "top": 0.99}
+            on_press: 
+                root.manager.current = 'store'
+                root.manager.transition.direction = 'right'
+        Button:
+            text: "Games"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.40, "top": 0.99}
+            disabled: True
+        Label:
+            text: root.r_coins
+            color: r_coin_orange
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.8, "top": 0.99}
+        Label:
+            text: root.d_coins
+            color: d_coin_grey
+            size_hint: 0.3, 0.05
+            pos_hint: {"x": 0.7, "top": 0.99}
+        Label:
+            text: "Games"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
+    
+            
 """
 
 

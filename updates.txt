@@ -43,13 +43,12 @@
 0.43 ip keys, pack blank images into exe
 0.44 login system
 0.45 android support, UI work
-
 0.46 login sessions, ip key limits, editable code distro
+0.47 dynamic UI work on home page
 
-0.47 username setting, games tab
+0.48 loading and saving of currencies, username setting, coinflip
 
-planned features:
-- multiple distro types:
+- distro types:
   - downloadable exe, apk
   - runnable updating rdisc client code <- includes build scripts
 
@@ -69,3 +68,7 @@ planned features:
 # master key + 2fa = ip key enc
 # (ip key + password) + challenge depth = login
 # 5 ips at one time
+
+# distro types:
+  - downloadable exe, apk
+  - rdisc client code <- todo proper checkout and maybe build scrips
