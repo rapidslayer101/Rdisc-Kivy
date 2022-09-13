@@ -3,27 +3,6 @@ kv_payload = """# You can edit this file to change the UI.
 # To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
-### Window Manager ###
-# [!] DO NOT EDIT THIS SECTION [!] # 
-
-windowManager:
-    logInOrSignUp:
-    keyUnlock:
-    createKey:
-    ipSet:
-    attemptConnection:
-    captcha:
-    nacPassword:
-    logUnlock: 
-    twoFacSetup:
-    twoFacLog: 
-    reCreateKey:
-    reCreateGen:
-    home:
-    store:
-    games:
-    
-
 ### Colors ###
 # edits the color scheme of the UI
 
@@ -139,6 +118,32 @@ windowManager:
 
 ### Screens ###
 
+<attemptConnection>:
+    FloatLayout:
+        Label:
+            text: "Attempting to connect to server..."
+            font_size: '18dp'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.6}
+
+<ipSet>:
+    ip_address: ip_address
+    FloatLayout:
+        Label:
+            text: "Enter server IP address"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.85}
+        RoundedTextInput:
+            id: ip_address
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.65}
+            on_text_validate: root.try_connect()
+        RoundedButton:
+            text: "Connect"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.45}
+            on_press: root.try_connect()
+
 <logInOrSignUp>:
     FloatLayout:
         size: root.width, root.height
@@ -151,14 +156,14 @@ windowManager:
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.55}
             on_release:
-                app.root.current = 'recreate_key'
+                root.manager.current = 'reCreateKey'
                 root.manager.transition.direction = "left"
         RoundedButton:
             text: "Sign Up"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.35}
             on_release:
-                app.root.current = 'create_key'
+                root.manager.current = 'createKey'
                 root.manager.transition.direction = "left"
 
 <keyUnlock>:
@@ -212,23 +217,19 @@ windowManager:
         YellowLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreyLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
                     
 <reCreateKey>:
     uid: uid
@@ -240,7 +241,7 @@ windowManager:
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press:
-                app.root.current = 'login_signup'
+                root.manager.current = 'logInOrSignUp'
                 root.manager.transition.direction = "right"
         Label:
             text: "Enter User ID"
@@ -289,40 +290,24 @@ windowManager:
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press:
-                app.root.current = 'login_signup'
+                root.manager.current = 'logInOrSignUp'
                 root.manager.transition.direction = "right"
         YellowLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreyLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
-        Label:
+            pos_hint: {"x": 0.4,  "top": 1}
+        GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
+            pos_hint: {"x": 0.5,  "top": 1}
+        GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
+            pos_hint: {"x": 0.6,  "top": 1}
     
 <reCreateGen>:
     FloatLayout:
@@ -333,112 +318,19 @@ windowManager:
         OrangeLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        Label:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
-            text: "CAPTCHA >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
-            text: "Password >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-        Label:
-            text: "2FA"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
-            canvas.before:
-                Color:
-                    rgba: grey
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-
-<ipSet>:
-    ip_address: ip_address
-    FloatLayout:
-        Label:
-            text: "Enter server IP address"
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.85}
-        RoundedTextInput:
-            id: ip_address
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.65}
-            on_text_validate: root.try_connect()
-        RoundedButton:
-            text: "Connect"
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.45}
-            on_press: root.try_connect()
-        GreenLabel:
-            text: "User keys >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        YellowLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
-
-<attemptConnection>:
-    FloatLayout:
-        Label:
-            text: "Attempting to connect to server..."
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.85}
-        GreenLabel:
-            text: "User keys >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        OrangeLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
-        GreyLabel:
-            text: "CAPTCHA >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
-        GreyLabel:
-            text: "Password >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
-        GreyLabel:
-            text: "2FA"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
 
 <captcha>:
     captcha_input: captcha_input
@@ -465,23 +357,19 @@ windowManager:
         GreenLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreenLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         YellowLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         GreyLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
 
 <nacPassword>:
     nac_password_1: nac_password_1
@@ -515,23 +403,19 @@ windowManager:
         GreenLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreenLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         YellowLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
                     
 <logUnlock>:
     pwd: pwd
@@ -556,23 +440,19 @@ windowManager:
         GreenLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreenLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         YellowLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         GreyLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
 
 <twoFacSetup>:
     two_fac_confirm: two_fac_confirm
@@ -599,23 +479,19 @@ windowManager:
         GreenLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreenLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         GreenLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         YellowLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
             
 <twoFacLog>:
     two_fac_confirm: two_fac_confirm
@@ -637,23 +513,19 @@ windowManager:
         GreenLabel:
             text: "User keys >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.25,  "top": 1}
-        GreenLabel:
-            text: "Server >>"
-            size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.35,  "top": 1}
+            pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.45,  "top": 1}
+            pos_hint: {"x": 0.4,  "top": 1}
         GreenLabel:
             text: "Password >>"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.55,  "top": 1}
+            pos_hint: {"x": 0.5,  "top": 1}
         YellowLabel:
             text: "2FA"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.65,  "top": 1}
+            pos_hint: {"x": 0.6,  "top": 1}
             
 <home>:
     transfer_uid: transfer_uid

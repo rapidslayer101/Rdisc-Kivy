@@ -124,15 +124,20 @@ keys = KeySystem()
 
 
 def connect_system(dt=None):
-    if s.ip:
-        sm.switch_to(attemptConnection(), direction="left")
+    if s.ip and s.connect():
+        sm.switch_to(logInOrSignUp(), direction="left")
     else:
         sm.switch_to(ipSet(), direction="left")
 
 
-class logInOrSignUp(Screen):
+class attemptConnection(Screen):
     def __init__(self, **kwargs):
-        super(logInOrSignUp, self).__init__(**kwargs)
+        super(attemptConnection, self).__init__(**kwargs)
+        Clock.schedule_once(connect_system, 1)  # todo make this retry
+
+
+class logInOrSignUp(Screen):
+    def on_enter(self, **kwargs):
         print("Loading account keys...")
         if path.exists(f'userdata/key'):
             with open(f'userdata/key', 'rb') as f:
@@ -143,17 +148,13 @@ class logInOrSignUp(Screen):
                 if key_data.endswith("MAKE_KEY1"):
                     print(" - MAKE KEY FROM CAPTCHA")
                     keys.path, keys.master_key = "make", key_data[:-9]
-                    sm.switch_to(ipSet(), direction="left")  # if ip exists this should have gone to attempt screen
+                    sm.switch_to(captcha(), direction="left")
                 else:
                     if key_data.endswith("MAKE_KEY2"):
                         print(" - MAKE KEY FROM 2FA")
                         keys.path = "make"
                         keys.master_key, keys.uid, keys.secret_code = key_data[:-9].split("🱫")
-                        s.connect()
-                        if s.ip:
-                            sm.switch_to(twoFacSetup(), direction="left")
-                        else:
-                            sm.switch_to(ipSet(), direction="left")
+                        sm.switch_to(twoFacSetup(), direction="left")
             else:
                 keys.path, keys.uid, keys.ip_key = "unlock", str(key_data[:8])[2:-1], key_data[8:]
                 sm.switch_to(keyUnlock(), direction="left")
@@ -166,7 +167,6 @@ class keyUnlock(Screen):
     passcode_prompt_text = StringProperty()
 
     def on_pre_enter(self, *args):
-        s.connect()
         self.passcode_prompt_text = f"Enter passcode for account {keys.uid}"
 
     def login(self):
@@ -251,7 +251,7 @@ class createKey(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    connect_system()
+                    sm.switch_to(captcha(), direction="left")
                 else:
                     print("Confirmation code incorrect")
 
@@ -274,6 +274,10 @@ class reCreateKey(Screen):
             sm.switch_to(reCreateGen(), direction="left")
 
 
+def switch_to_captcha(dt=None):
+    sm.switch_to(captcha(), direction="left")
+
+
 class reCreateGen(Screen):
     gen_left_text = StringProperty()
 
@@ -294,7 +298,7 @@ class reCreateGen(Screen):
                 except ZeroDivisionError:
                     pass
         keys.master_key = enc.to_base(96, 16, master_key.hex())
-        Clock.schedule_once(connect_system)
+        Clock.schedule_once(switch_to_captcha)
 
     def on_enter(self, *args):
         self.gen_left_text = f"Generating master key"
@@ -330,18 +334,6 @@ class ipSet(Screen):
                             print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
                     except NameError:
                         print("\n🱫[COL-RED] IP address must be in the form of 'xxx.xxx.xxx.xxx'")
-
-
-class attemptConnection(Screen):
-    def on_enter(self, *args):
-        if s.connect():
-            if not path.exists("userdata/server_ip"):
-                with open("userdata/server_ip", "w", encoding="utf-8") as f:
-                    f.write(f"{s.ip[0]}:{s.ip[1]}")
-            sm.switch_to(captcha(), direction="left")
-        else:
-            print("Failed to connect to set IP")
-            sm.switch_to(ipSet(), direction='right')
 
 
 class captcha(Screen):
@@ -583,30 +575,21 @@ class windowManager(ScreenManager):
     pass
 
 
-kv = Builder.load_file("rdisc.kv")
+# loading UI and screens
+Builder.load_file("rdisc.kv")
 sm = windowManager()
-
-# adding screens
-sm.add_widget(logInOrSignUp(name='login_signup'))
-sm.add_widget(keyUnlock(name='unlock_key'))
-sm.add_widget(createKey(name='create_key'))
-sm.add_widget(reCreateKey(name='recreate_key'))
-sm.add_widget(reCreateKey(name='regen_key'))
-sm.add_widget(ipSet(name='ip_set'))
-sm.add_widget(attemptConnection(name='attempt_connect'))
-sm.add_widget(captcha(name='captcha'))
-sm.add_widget(nacPassword(name='new_acc_pass'))
-sm.add_widget(logUnlock(name='login_unlock'))
-sm.add_widget(twoFacSetup(name='2fa_setup'))
-sm.add_widget(twoFacLog(name='2fa_login'))
-sm.add_widget(home(name='home'))
-sm.add_widget(store(name='store'))
-sm.add_widget(games(name='games'))
+screens = [attemptConnection(name="attemptConnection"), ipSet(name="ipSet"), logInOrSignUp(name="logInOrSignUp"),
+           keyUnlock(name="keyUnlock"), createKey(name="createKey"), reCreateKey(name="reCreateKey"),
+           reCreateGen(name="reCreateGen"), captcha(name="captcha"), nacPassword(name="nacPassword"),
+           logUnlock(name="logUnlock"), twoFacSetup(name="twoFacSetup"), twoFacLog(name="twoFacLog"),
+           home(name="home"), store(name="store"), games(name="games")]
+[sm.add_widget(screen) for screen in screens]
 
 
-# class that builds gui
+# build gui
 class Rdisc(App):
     def build(self):
+        self.title = f"Rdisc - {version_}"
         Window.clearcolor = (50/255, 50/255, 50/255, 1)
         if platform == "win32":
             Window.size = (1264, 681)

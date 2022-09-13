@@ -52,6 +52,7 @@
   - downloadable exe, apk
   - rdisc client code <- todo proper checkout and maybe build scrips
 
+- possible FIP: error, check
 - show debug to users in UI
 - tell people what is required to make an account before starting
 - rate limits and checks for entire login paths
