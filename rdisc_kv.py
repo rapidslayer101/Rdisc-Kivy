@@ -3,16 +3,20 @@ kv_payload = """# You can edit this file to change the UI.
 # To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
+#: import WipeTransition kivy.uix.screenmanager.WipeTransition
+
 ### Colors ###
 # edits the color scheme of the UI
 
-#:set purple (104/255, 84/255, 252/255,1)
+#:set rdisc_purple (104/255, 84/255, 252/255,1)
+#:set rdisc_cyan (37/255, 190/255, 150/255,1)
+
 #:set green (20/255, 228/255, 43/255,1)
 #:set yellow (243/255, 240/255, 51/255,1)
 #:set orange (243/255, 132/255, 1/255,1)
-#:set cyan (37/255, 190/255, 150/255,1)
 #:set grey (60/255, 60/255, 50/255,1)
 
+#:set bk_grey_1 (50/255, 50/255, 50/255,1)
 #:set bk_grey_2 (55/255, 55/255, 55/255,1)
 #:set bk_grey_3 (60/255, 60/255, 60/255,1)
 
@@ -23,13 +27,21 @@ kv_payload = """# You can edit this file to change the UI.
 ### Templates ### 
 # editing templates will change key elements of the UI
 
+<GreyFloatLayout@FloatLayout>:
+    canvas.before:
+        Color:
+            rgba: bk_grey_1
+        Rectangle:
+            pos: self.pos
+            size: self.size    
+
 # rounded elements
 <RoundedButton@Button>
     background_color: (0,0,0,0)
     background_normal: ''
     canvas.before:
         Color:
-            rgba: purple
+            rgba: rdisc_purple
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -42,10 +54,10 @@ kv_payload = """# You can edit this file to change the UI.
     padding_y: [self.height/2.0-(self.line_height/2.0)*len(self._lines), 0]
     write_tab: False
     background_color: 0,0,0,0
-    cursor_color: cyan
+    cursor_color: rdisc_cyan
     canvas.before:
         Color:
-            rgba: cyan
+            rgba: rdisc_cyan
     canvas.after:
         Color:
             rgba: (1/255, 1/255, 1/255,0)
@@ -60,7 +72,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos: (self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1])
             size: (self.size[1], self.size[1])
         Color:
-            rgba: purple
+            rgba: rdisc_purple
         Line:
             points: self.pos[0], self.pos[1], self.pos[0]+self.size[0], self.pos[1]
         Line:
@@ -118,17 +130,17 @@ kv_payload = """# You can edit this file to change the UI.
 
 ### Screens ###
 
-<attemptConnection>:
-    FloatLayout:
+<AttemptConnection>:
+    GreyFloatLayout:
         Label:
             text: "Attempting to connect to server..."
             font_size: '18dp'
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.6}
 
-<ipSet>:
+<IpSet>:
     ip_address: ip_address
-    FloatLayout:
+    GreyFloatLayout:
         Label:
             text: "Enter server IP address"
             size_hint: 0.3, 0.1
@@ -144,8 +156,8 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.45}
             on_press: root.try_connect()
 
-<logInOrSignUp>:
-    FloatLayout:
+<LogInOrSignUp>:
+    GreyFloatLayout:
         size: root.width, root.height
         Label:
             text: "Welcome to Rdisc!"
@@ -156,19 +168,19 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.55}
             on_release:
-                root.manager.current = 'reCreateKey'
+                root.manager.current = 'ReCreateKey'
                 root.manager.transition.direction = "left"
         RoundedButton:
             text: "Sign Up"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.35}
             on_release:
-                root.manager.current = 'createKey'
+                root.manager.current = 'CreateKey'
                 root.manager.transition.direction = "left"
 
-<keyUnlock>:
+<KeyUnlock>:
     pwd: pwd
-    FloatLayout:
+    GreyFloatLayout:
         size: root.width, root.height
         Label:
             text: root.passcode_prompt_text
@@ -184,14 +196,11 @@ kv_payload = """# You can edit this file to change the UI.
             text: "LOGIN"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.5}
-            on_release:
-                root.login()
-                #root.manager.transition.direction = "left"
+            on_release: root.login()
 
-
-<createKey>:
+<CreateKey>:
     confirmation_code: confirmation_code
-    FloatLayout:
+    GreyFloatLayout:
         Label:
             text: root.pass_code_text
             size_hint: 0.3, 0.1
@@ -231,17 +240,17 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
                     
-<reCreateKey>:
+<ReCreateKey>:
     uid: uid
     pass_code: pass_code
     pin_code: pin_code
-    FloatLayout:
+    GreyFloatLayout:
         Button:
             text: "<< Back"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press:
-                root.manager.current = 'logInOrSignUp'
+                root.manager.current = 'LogInOrSignUp'
                 root.manager.transition.direction = "right"
         Label:
             text: "Enter User ID"
@@ -290,7 +299,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press:
-                root.manager.current = 'logInOrSignUp'
+                root.manager.current = 'LogInOrSignUp'
                 root.manager.transition.direction = "right"
         YellowLabel:
             text: "User keys >>"
@@ -309,8 +318,8 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
     
-<reCreateGen>:
-    FloatLayout:
+<ReCreateGen>:
+    GreyFloatLayout:
         Label:
             text: root.gen_left_text
             size_hint: 0.3, 0.1
@@ -332,9 +341,9 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
 
-<captcha>:
+<Captcha>:
     captcha_input: captcha_input
-    FloatLayout:
+    GreyFloatLayout:
         Label:
             text: root.captcha_prompt_text
             size_hint: 0.3, 0.1
@@ -371,10 +380,10 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
 
-<nacPassword>:
+<NacPassword>:
     nac_password_1: nac_password_1
     nac_password_2: nac_password_2
-    FloatLayout:
+    GreyFloatLayout:
         Label:
             text: "Enter new password"
             size_hint: 0.3, 0.1
@@ -417,9 +426,9 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
                     
-<logUnlock>:
+<LogUnlock>:
     pwd: pwd
-    FloatLayout:
+    GreyFloatLayout:
         size: root.width, root.height
         Label:
             text: root.passcode_prompt_text
@@ -454,9 +463,9 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
 
-<twoFacSetup>:
+<TwoFacSetup>:
     two_fac_confirm: two_fac_confirm
-    FloatLayout:
+    GreyFloatLayout:
         Label:
             text: root.two_fac_wait_text
             size_hint: 0.3, 0.1
@@ -493,9 +502,9 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
             
-<twoFacLog>:
+<TwoFacLog>:
     two_fac_confirm: two_fac_confirm
-    FloatLayout:
+    GreyFloatLayout:
         Label:
             text: "Enter 2FA code"
             size_hint: 0.3, 0.1
@@ -527,11 +536,11 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.6,  "top": 1}
             
-<home>:
+<Home>:
     transfer_uid: transfer_uid
     transfer_amount: transfer_amount
     amount_pounds: amount_pounds
-    FloatLayout:
+    GreyFloatLayout:
         Button:
             text: "Home"
             size_hint: 0.10, 0.05
@@ -541,21 +550,30 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Chat"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.10, "top": 0.99}
-            disabled: True
+            on_press: 
+                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.current = 'Chat'
         Button:
             text: "Store"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.25, "top": 0.99}
             on_press: 
-                root.manager.current = 'store'
-                root.manager.transition.direction = 'left'
+                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.current = 'Store'
         Button:
             text: "Games"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.40, "top": 0.99}
             on_press: 
-                root.manager.current = 'games'
-                root.manager.transition.direction = 'left'
+                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.current = 'Games'
+        Button:
+            text: "Inventory"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.55, "top": 0.99}
+            on_press: 
+                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.current = 'Inventory'
         BackingLabel:
             text: root.r_coins
             color: r_coin_orange
@@ -632,17 +650,15 @@ kv_payload = """# You can edit this file to change the UI.
             text: "0 Notifications"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.80, "top": 0.74}
-                
             
-<store>:
-    FloatLayout:
+
+<Chat>:
+    GreyFloatLayout:
         Button:
             text: "Home"
             size_hint: 0.10, 0.05
             pos_hint: {"x": 0, "top": 0.99}
-            on_press: 
-                root.manager.current = 'home'
-                root.manager.transition.direction = 'right'
+            on_press: root.manager.current = 'Home'
         Button:
             text: "Chat"
             size_hint: 0.15, 0.05
@@ -652,14 +668,17 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Store"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.25, "top": 0.99}
-            disabled: True
+            on_press: root.manager.current = 'Store'
         Button:
             text: "Games"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.40, "top": 0.99}
-            on_press: 
-                root.manager.current = 'games'
-                root.manager.transition.direction = 'left'
+            on_press: root.manager.current = 'Games'
+        Button:
+            text: "Inventory"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.55, "top": 0.99}
+            on_press: root.manager.current = 'Inventory'
         BackingLabel:
             text: root.r_coins
             color: r_coin_orange
@@ -671,37 +690,81 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.74, "top": 0.99}
         Label:
-            text: root.welcome_text
+            text: "Chat"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
+                        
             
-            
-<games>:
-    FloatLayout:
+<Store>:
+    GreyFloatLayout:
         Button:
             text: "Home"
             size_hint: 0.10, 0.05
             pos_hint: {"x": 0, "top": 0.99}
-            on_press: 
-                root.manager.current = 'home'
-                root.manager.transition.direction = 'right'
+            on_press: root.manager.current = 'Home'
         Button:
             text: "Chat"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.10, "top": 0.99}
-            disabled: True
+            on_press: root.manager.current = 'Chat'
         Button:
             text: "Store"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.25, "top": 0.99}
-            on_press: 
-                root.manager.current = 'store'
-                root.manager.transition.direction = 'right'
+            disabled: True
+        Button:
+            text: "Games"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.40, "top": 0.99}
+            on_press: root.manager.current = 'Games'
+        Button:
+            text: "Inventory"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.55, "top": 0.99}
+            on_press: root.manager.current = 'Inventory'
+        BackingLabel:
+            text: root.r_coins
+            color: r_coin_orange
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.85, "top": 0.99}
+        BackingLabel:
+            text: root.d_coins
+            color: d_coin_blue
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.74, "top": 0.99}
+        Label:
+            text: "Store"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
+            
+            
+<Games>:
+    GreyFloatLayout:
+        Button:
+            text: "Home"
+            size_hint: 0.10, 0.05
+            pos_hint: {"x": 0, "top": 0.99}
+            on_press: root.manager.current = 'Home'
+        Button:
+            text: "Chat"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.10, "top": 0.99}
+            on_press: root.manager.current = 'Chat'
+        Button:
+            text: "Store"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.25, "top": 0.99}
+            on_press: root.manager.current = 'Store'
         Button:
             text: "Games"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.40, "top": 0.99}
             disabled: True
+        Button:
+            text: "Inventory"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.55, "top": 0.99}
+            on_press: root.manager.current = 'Inventory'
         BackingLabel:
             text: root.r_coins
             color: r_coin_orange
@@ -716,6 +779,49 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Games"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
+            
+<Inventory>:
+    GreyFloatLayout:
+        Button:
+            text: "Home"
+            size_hint: 0.10, 0.05
+            pos_hint: {"x": 0, "top": 0.99}
+            on_press: root.manager.current = 'Home'
+        Button:
+            text: "Chat"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.10, "top": 0.99}
+            on_press: root.manager.current = 'Chat'
+        Button:
+            text: "Store"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.25, "top": 0.99}
+            on_press: root.manager.current = 'Store'
+        Button:
+            text: "Games"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.40, "top": 0.99}
+            on_press: root.manager.current = 'Games'
+        Button:
+            text: "Inventory"
+            size_hint: 0.15, 0.05
+            pos_hint: {"x": 0.55, "top": 0.99}
+            disabled: True
+        BackingLabel:
+            text: root.r_coins
+            color: r_coin_orange
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.85, "top": 0.99}
+        BackingLabel:
+            text: root.d_coins
+            color: d_coin_blue
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.74, "top": 0.99}
+        Label:
+            text: "Inventory"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
+
     
             
 """

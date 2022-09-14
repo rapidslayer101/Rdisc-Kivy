@@ -125,18 +125,18 @@ keys = KeySystem()
 
 def connect_system(dt=None):
     if s.ip and s.connect():
-        sm.switch_to(logInOrSignUp(), direction="left")
+        sm.switch_to(LogInOrSignUp(), direction="left")
     else:
-        sm.switch_to(ipSet(), direction="left")
+        sm.switch_to(IpSet(), direction="left")
 
 
-class attemptConnection(Screen):
+class AttemptConnection(Screen):
     def __init__(self, **kwargs):
-        super(attemptConnection, self).__init__(**kwargs)
+        super(AttemptConnection, self).__init__(**kwargs)
         Clock.schedule_once(connect_system, 1)  # todo make this retry
 
 
-class logInOrSignUp(Screen):
+class LogInOrSignUp(Screen):
     def on_enter(self, **kwargs):
         print("Loading account keys...")
         if path.exists(f'userdata/key'):
@@ -148,21 +148,21 @@ class logInOrSignUp(Screen):
                 if key_data.endswith("MAKE_KEY1"):
                     print(" - MAKE KEY FROM CAPTCHA")
                     keys.path, keys.master_key = "make", key_data[:-9]
-                    sm.switch_to(captcha(), direction="left")
+                    sm.switch_to(Captcha(), direction="left")
                 else:
                     if key_data.endswith("MAKE_KEY2"):
                         print(" - MAKE KEY FROM 2FA")
                         keys.path = "make"
                         keys.master_key, keys.uid, keys.secret_code = key_data[:-9].split("🱫")
-                        sm.switch_to(twoFacSetup(), direction="left")
+                        sm.switch_to(TwoFacSetup(), direction="left")
             else:
                 keys.path, keys.uid, keys.ip_key = "unlock", str(key_data[:8])[2:-1], key_data[8:]
-                sm.switch_to(keyUnlock(), direction="left")
+                sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
 
 
-class keyUnlock(Screen):
+class KeyUnlock(Screen):
     pwd = ObjectProperty(None)
     passcode_prompt_text = StringProperty()
 
@@ -191,12 +191,12 @@ class keyUnlock(Screen):
                         ulk_resp = s.recv_d(1024)
                         if ulk_resp != "N":
                             keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
-                            sm.switch_to(home(), direction="left")
+                            sm.switch_to(Home(), direction="left")
             except zl_error:
                 print("Invalid password")
 
 
-class createKey(Screen):
+class CreateKey(Screen):
     confirmation_code = ObjectProperty(None)
     pass_code_text = StringProperty()
     pin_code_text = StringProperty()
@@ -251,12 +251,12 @@ class createKey(Screen):
             else:
                 if self.confirmation_code.text == self.rand_confirmation:
                     print("Confirmation code correct")
-                    sm.switch_to(captcha(), direction="left")
+                    sm.switch_to(Captcha(), direction="left")
                 else:
                     print("Confirmation code incorrect")
 
 
-class reCreateKey(Screen):
+class ReCreateKey(Screen):
     uid = ObjectProperty()
     pass_code = ObjectProperty()
     pin_code = ObjectProperty()
@@ -271,14 +271,14 @@ class reCreateKey(Screen):
         if len(self.uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
             keys.path = "login"
             keys.uid, keys.pass_code, keys.pin_code = self.uid.text, self.pass_code.text, self.pin_code.text
-            sm.switch_to(reCreateGen(), direction="left")
+            sm.switch_to(ReCreateGen(), direction="left")
 
 
 def switch_to_captcha(dt=None):
-    sm.switch_to(captcha(), direction="left")
+    sm.switch_to(Captcha(), direction="left")
 
 
-class reCreateGen(Screen):
+class ReCreateGen(Screen):
     gen_left_text = StringProperty()
 
     def regenerate_master_key(self, master_key, salt, depth_to, current_depth=0):
@@ -306,7 +306,7 @@ class reCreateGen(Screen):
                keys.pass_code[6:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
 
 
-class ipSet(Screen):
+class IpSet(Screen):
     ip_address = ObjectProperty(None)
 
     def try_connect(self):
@@ -329,14 +329,14 @@ class ipSet(Screen):
                     try:
                         if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
                             s.ip = [server_ip, server_port]
-                            sm.switch_to(attemptConnection(), direction="left")
+                            sm.switch_to(AttemptConnection(), direction="left")
                         else:
                             print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
                     except NameError:
                         print("\n🱫[COL-RED] IP address must be in the form of 'xxx.xxx.xxx.xxx'")
 
 
-class captcha(Screen):
+class Captcha(Screen):
     captcha_prompt_text = StringProperty()
     captcha_input = ObjectProperty(None)
 
@@ -361,7 +361,7 @@ class captcha(Screen):
             s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
             if s.recv_d(1024) == "V":
                 if keys.path == "make":
-                    sm.switch_to(nacPassword(), direction="left")
+                    sm.switch_to(NacPassword(), direction="left")
                 if keys.path == "login":
                     s.send_e(f"LOG:{keys.master_key}🱫{keys.uid}")
                     log_resp = s.recv_d(1024)
@@ -372,12 +372,12 @@ class captcha(Screen):
                             print("UID does not exist")
                         else:
                             keys.ip_key = log_resp
-                            sm.switch_to(logUnlock(), direction="left")
+                            sm.switch_to(LogUnlock(), direction="left")
             else:
                 print("Captcha failed")
 
 
-class nacPassword(Screen):
+class NacPassword(Screen):
     nac_password_1 = ObjectProperty(None)
     nac_password_2 = ObjectProperty(None)
 
@@ -396,10 +396,10 @@ class nacPassword(Screen):
                     else:
                         pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
                         s.send_e(f"NAC:{keys.master_key}🱫{pass_send}")
-                        sm.switch_to(twoFacSetup(), direction="left")
+                        sm.switch_to(TwoFacSetup(), direction="left")
 
 
-class logUnlock(Screen):
+class LogUnlock(Screen):
     pwd = ObjectProperty(None)
     passcode_prompt_text = StringProperty()
 
@@ -416,14 +416,14 @@ class logUnlock(Screen):
                 ip_key = enc.dec_from_pass(keys.ip_key, user_pass[:40], user_pass[40:])
                 s.send_e(ip_key)
                 if s.recv_d(1024) == "V":
-                    sm.switch_to(twoFacLog(), direction="left")
+                    sm.switch_to(TwoFacLog(), direction="left")
                 else:
                     print("Invalid password")
             except zl_error:
                 print("Invalid password")
 
 
-class twoFacSetup(Screen):
+class TwoFacSetup(Screen):
     two_fac_wait_text = StringProperty()
     two_fac_confirm = ObjectProperty(None)
 
@@ -458,14 +458,14 @@ class twoFacSetup(Screen):
                         f.write(keys.uid.encode()+ip_key)
                     print("2FA confirmed")
                     keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
-                    sm.switch_to(home(), direction="left")
+                    sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
             else:
                 print("Invalid input")
 
 
-class twoFacLog(Screen):
+class TwoFacLog(Screen):
     two_fac_confirm = ObjectProperty(None)
 
     def confirm_2fa(self):
@@ -481,14 +481,14 @@ class twoFacLog(Screen):
                         f.write(keys.uid.encode()+keys.ip_key)
                     print("2FA confirmed")
                     keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
-                    sm.switch_to(home(), direction="left")
+                    sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
             else:
                 print("Invalid input")
 
 
-class home(Screen):
+class Home(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
     welcome_text = StringProperty()
@@ -536,15 +536,17 @@ class home(Screen):
             if "." in self.amount_pounds.text:
                 if len(self.amount_pounds.text.split(".")[1]) > 2:
                     self.amount_pounds.text = self.amount_pounds.text[:-1]
-            self.r_coin_conversion = str(round(float(self.amount_pounds.text)/0.06, 2))
+            amount_converted = str(float(self.amount_pounds.text)/0.06)
+            if "." in amount_converted:
+                amount_converted = amount_converted[:amount_converted.index(".")+3]
+            self.r_coin_conversion = amount_converted
         if self.amount_pounds.text == "":
             self.r_coin_conversion = "0.00"
 
 
-class store(Screen):
+class Chat(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
-    welcome_text = StringProperty()
 
     def on_pre_enter(self, *args):
         if keys.r_coin.endswith(".0"):
@@ -553,13 +555,11 @@ class store(Screen):
             keys.d_coin = keys.d_coin[:-2]
         self.r_coins = keys.r_coin+" R"
         self.d_coins = keys.d_coin+" D"
-        self.welcome_text = f"Store"
 
 
-class games(Screen):
+class Store(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
-    welcome_text = StringProperty()
 
     def on_pre_enter(self, *args):
         if keys.r_coin.endswith(".0"):
@@ -568,29 +568,57 @@ class games(Screen):
             keys.d_coin = keys.d_coin[:-2]
         self.r_coins = keys.r_coin+" R"
         self.d_coins = keys.d_coin+" D"
-        self.welcome_text = f"Store"
 
 
-class windowManager(ScreenManager):
+class Games(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+
+
+class Inventory(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+
+
+class WindowManager(ScreenManager):
     pass
 
 
 # loading UI and screens
 Builder.load_file("rdisc.kv")
-sm = windowManager()
-screens = [attemptConnection(name="attemptConnection"), ipSet(name="ipSet"), logInOrSignUp(name="logInOrSignUp"),
-           keyUnlock(name="keyUnlock"), createKey(name="createKey"), reCreateKey(name="reCreateKey"),
-           reCreateGen(name="reCreateGen"), captcha(name="captcha"), nacPassword(name="nacPassword"),
-           logUnlock(name="logUnlock"), twoFacSetup(name="twoFacSetup"), twoFacLog(name="twoFacLog"),
-           home(name="home"), store(name="store"), games(name="games")]
+sm = WindowManager()
+screens = [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"),
+           KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"), ReCreateKey(name="ReCreateKey"),
+           ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPassword(name="NacPassword"),
+           LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
+           Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
+           Inventory(name="Inventory")]
 [sm.add_widget(screen) for screen in screens]
 
 
 # build gui
 class Rdisc(App):
     def build(self):
-        self.title = f"Rdisc - {version_}"
-        Window.clearcolor = (50/255, 50/255, 50/255, 1)
+        if version_:
+            self.title = f"Rdisc - {version_}"
+        else:
+            self.title = "Rdisc - V0.X.X.X"
         if platform == "win32":
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
