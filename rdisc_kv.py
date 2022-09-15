@@ -539,7 +539,7 @@ kv_payload = """# You can edit this file to change the UI.
 <Home>:
     transfer_uid: transfer_uid
     transfer_amount: transfer_amount
-    amount_pounds: amount_pounds
+    amount_convert: amount_convert
     GreyFloatLayout:
         Button:
             text: "Home"
@@ -551,28 +551,28 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.10, "top": 0.99}
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
                 root.manager.current = 'Chat'
         Button:
             text: "Store"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.25, "top": 0.99}
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
                 root.manager.current = 'Store'
         Button:
             text: "Games"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.40, "top": 0.99}
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
                 root.manager.current = 'Games'
         Button:
             text: "Inventory"
             size_hint: 0.15, 0.05
             pos_hint: {"x": 0.55, "top": 0.99}
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=(50/255, 50/255, 50/255, 1))
+                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
                 root.manager.current = 'Inventory'
         BackingLabel:
             text: root.r_coins
@@ -587,19 +587,19 @@ kv_payload = """# You can edit this file to change the UI.
         BackingLabel:
             text: root.welcome_text
             size_hint: 0.30, 0.15
-            pos_hint: {"x": 0.01, "top": 0.92}
+            pos_hint: {"x": 0.69, "top": 0.92}
         BackingLabel:
             size_hint: 0.30, 0.6
-            pos_hint: {"x": 0.01, "top": 0.76}
+            pos_hint: {"x": 0.01, "top": 0.92}
         Label:
             text: "Transfer R-coins"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.11, "top": 0.76}
+            pos_hint: {"x": 0.11, "top": 0.92}
         RoundedTextInput:
             id: transfer_uid
             hint_text: "User ID or Username"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.66}
+            pos_hint: {"x": 0.06, "top": 0.82}
             on_text: self.text = self.text[:8].upper()
             on_text_validate: transfer_amount.focus = True
         RoundedTextInput
@@ -607,42 +607,47 @@ kv_payload = """# You can edit this file to change the UI.
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.51}
+            pos_hint: {"x": 0.06, "top": 0.67}
             on_text: root.check_transfer()
         Label:
             text: f"Cost: {root.transfer_cost}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.01, "top": 0.4}
+            pos_hint: {"x": 0.01, "top": 0.56}
         Label:
             text: f"Send: {root.transfer_send}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.11, "top": 0.4}
+            pos_hint: {"x": 0.11, "top": 0.56}
         Label:
             text: f"Fee: {root.transfer_fee}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.21, "top": 0.4}
+            pos_hint: {"x": 0.21, "top": 0.56}
         RoundedButton:
             text: "Transfer"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.3}
+            pos_hint: {"x": 0.06, "top": 0.46}
         BackingLabel:
             size_hint: 0.30, 0.13
-            pos_hint: {"x": 0.01, "top": 0.15}
+            pos_hint: {"x": 0.69, "top": 0.15}
         Label:
-            text: "Conversion Calculator (£->R)"
+            text: root.direction_text
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.11, "top": 0.17}
+            pos_hint: {"x": 0.79, "top": 0.17}
+        RoundedButton:
+            text: "<>"
+            size_hint: 0.04, 0.04
+            pos_hint: {"x": 0.95, "top": 0.15}
+            on_press: root.change_transfer_direction()
         RoundedTextInput
-            id: amount_pounds
+            id: amount_convert
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.06, "top": 0.09}
-            on_text: root.convert_pounds()
+            pos_hint: {"x": 0.74, "top": 0.09}
+            on_text: root.convert_coins()
         Label:
-            text: f"R-coins: {root.r_coin_conversion}"
+            text: root.coin_conversion
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.19, "top": 0.09}
+            pos_hint: {"x": 0.87, "top": 0.09}
         BackingLabel:
             size_hint: 0.30, 0.6
             pos_hint: {"x": 0.69, "top": 0.76}
@@ -650,6 +655,25 @@ kv_payload = """# You can edit this file to change the UI.
             text: "0 Notifications"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.80, "top": 0.74}
+        BackingLabel:
+            size_hint: 0.30, 0.29
+            pos_hint: {"x": 0.01, "top": 0.31}
+        Label:
+            text: "Claim Code"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.11, "top": 0.29}
+        RoundedTextInput
+            id: code
+            hint_text: "XXXX-XXXX-XXXX-XXXX"
+            size_hint: 0.2, 0.1
+            pos_hint: {"x": 0.06, "top": 0.23}
+            on_text: self.text = self.text[:19].upper()
+            on_text_validate: root.claim_code()
+        RoundedButton:
+            text: "Claim"
+            size_hint: 0.16, 0.05
+            pos_hint: {"x": 0.08, "top": 0.09}
+            on_press: root.claim_code()
             
 
 <Chat>:

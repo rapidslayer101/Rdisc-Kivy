@@ -497,8 +497,10 @@ class Home(Screen):
     transfer_cost = StringProperty()
     transfer_send = StringProperty()
     transfer_fee = StringProperty()
-    amount_pounds = ObjectProperty(None)
-    r_coin_conversion = StringProperty()
+    transfer_direction = "R"
+    direction_text = StringProperty()
+    amount_convert = ObjectProperty(None)
+    coin_conversion = StringProperty()
 
     def on_pre_enter(self, *args):
         if keys.r_coin.endswith(".0"):
@@ -511,7 +513,8 @@ class Home(Screen):
         self.transfer_cost = "0.00"
         self.transfer_send = "0.00"
         self.transfer_fee = "0.00"
-        self.r_coin_conversion = "0.00"
+        self.coin_conversion = "0.00"
+        self.direction_text = "Conversion Calculator (£->R)"
 
     def check_transfer(self):
         if self.transfer_amount.text not in ["", "."]:
@@ -530,18 +533,39 @@ class Home(Screen):
             self.transfer_send = "0.00"
             self.transfer_fee = "0.00"
 
-    def convert_pounds(self):
-        if self.amount_pounds.text not in ["", "."]:
-            self.amount_pounds.text = self.amount_pounds.text[:7]
-            if "." in self.amount_pounds.text:
-                if len(self.amount_pounds.text.split(".")[1]) > 2:
-                    self.amount_pounds.text = self.amount_pounds.text[:-1]
-            amount_converted = str(float(self.amount_pounds.text)/0.06)
+    def claim_code(self):
+        print("claim code")
+
+    def convert_coins(self):
+        if self.amount_convert.text not in ["", "."]:
+            self.amount_convert.text = self.amount_convert.text[:7]
+            if "." in self.amount_convert.text:
+                if len(self.amount_convert.text.split(".")[1]) > 2:
+                    self.amount_convert.text = self.amount_convert.text[:-1]
+            if self.transfer_direction == "R":
+                amount_converted = str(float(self.amount_convert.text)/0.06)
+            else:
+                amount_converted = str(float(self.amount_convert.text)*0.0585)
             if "." in amount_converted:
                 amount_converted = amount_converted[:amount_converted.index(".")+3]
-            self.r_coin_conversion = amount_converted
-        if self.amount_pounds.text == "":
-            self.r_coin_conversion = "0.00"
+            if self.transfer_direction == "R":
+                self.coin_conversion = f"{amount_converted} R"
+            else:
+                self.coin_conversion = f"£{amount_converted}"
+        else:
+            if self.amount_convert.text == "":
+                if self.transfer_direction == "R":
+                    self.coin_conversion = "0.00 R"
+                else:
+                    self.coin_conversion = "£0.00"
+
+    def change_transfer_direction(self):
+        if self.transfer_direction == "R":
+            self.transfer_direction = "D"
+            self.direction_text = "Conversion Calculator (R->£)"
+        else:
+            self.transfer_direction = "R"
+            self.direction_text = "Conversion Calculator (£->R)"
 
 
 class Chat(Screen):
