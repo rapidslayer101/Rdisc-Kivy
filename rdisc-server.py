@@ -13,6 +13,7 @@ from requests import get
 from captcha.image import ImageCaptcha
 
 # TODO MAJOR: REMOVE 1 THREAD PER USER, Disconnect inactive not logged in users?
+#  async, sesh_key front of enc to identify user
 
 
 def version_info(hashed):

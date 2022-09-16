@@ -156,7 +156,7 @@ class LogInOrSignUp(Screen):
                         keys.master_key, keys.uid, keys.secret_code = key_data[:-9].split("🱫")
                         sm.switch_to(TwoFacSetup(), direction="left")
             else:
-                keys.path, keys.uid, keys.ip_key = "unlock", str(key_data[:8])[2:-1], key_data[8:]
+                keys.uid, keys.ip_key = str(key_data[:8])[2:-1], key_data[8:]
                 sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
