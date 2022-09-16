@@ -23,8 +23,8 @@ def version_info(hashed):
             if hashed == _hash_.split("§")[0]:
                 version_data = _hash_
     if not version_data:
-        return f"UNKNOWN"
         print(f"UNKNOWN: {hashed}")
+        return f"UNKNOWN"
     version_, tme_, run_num = version_data.split("§")[1:]
     print(f"{version_}🱫{tme_}🱫{run_num}")
     return f"{version_}🱫{tme_}🱫{run_num}"
@@ -199,7 +199,7 @@ def client_connection(cs):
                     send_e(f"{challenge_int}")
                     user_challenge = recv_d(1024)
                     if user_challenge == challenge_hash:
-                        users.ids_up(uid)
+                        users.ids_up(uid)  # todo check
                         send_e(f"{uid}")
                         break
                     else:
@@ -311,7 +311,7 @@ def client_connection(cs):
                             for file in listdir(f"Users/{uid}"):
                                 remove(f"Users/{uid}/{file}")
                             removedirs(f"Users/{uid}")
-                            users.ids_r(uid)
+                            #users.ids_r(uid)
                             send_e(f"V")
                             raise ConnectionResetError
                 else:
@@ -339,7 +339,6 @@ def client_connection(cs):
 
             if request.startswith("CUSRN:"):
                 u_name = request[6:]
-                u_dir = users.dirs(0)[uid]
                 u_dir = f"{uid} {u_dir[0]} {u_dir[1]}"
                 if not 4 < len(u_name) < 33:
                     raise AssertionError

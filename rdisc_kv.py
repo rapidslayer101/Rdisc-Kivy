@@ -82,10 +82,13 @@ kv_payload = """# You can edit this file to change the UI.
             ellipse: self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 180, 360
         Line:
             ellipse: self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 360, 540
+            
+
+<SizeLabel@Label>:
+    size_hint: 0.1, 0.05
 
 # colored labels
-<GreyLabel@Label>
-    size_hint: 0.1, 0.05
+<GreyLabel@SizeLabel>
     canvas.before:
         Color:
             rgba: grey
@@ -93,8 +96,7 @@ kv_payload = """# You can edit this file to change the UI.
             size: self.size
             pos: self.pos
 
-<YellowLabel@Label>
-    color: 0,0,0,1
+<YellowLabel@SizeLabel>
     size_hint: 0.1, 0.05
     canvas.before:
         Color:
@@ -103,7 +105,7 @@ kv_payload = """# You can edit this file to change the UI.
             size: self.size
             pos: self.pos
 
-<OrangeLabel@YellowLabel>
+<OrangeLabel@SizeLabel>
     canvas.before:
         Color:
             rgba: orange
@@ -111,7 +113,7 @@ kv_payload = """# You can edit this file to change the UI.
             size: self.size
             pos: self.pos
             
-<GreenLabel@YellowLabel>
+<GreenLabel@SizeLabel>
     canvas.before:
         Color:
             rgba: green
@@ -119,8 +121,7 @@ kv_payload = """# You can edit this file to change the UI.
             size: self.size
             pos: self.pos
             
-<BackingLabel@Label>:
-    size_hint: 0.1, 0.05
+<BackingLabel@SizeLabel>:
     canvas.before:
         Color: 
             rgba: bk_grey_3
@@ -158,11 +159,10 @@ kv_payload = """# You can edit this file to change the UI.
 
 <LogInOrSignUp>:
     GreyFloatLayout:
-        Label:
+        SizeLabel:
             text: "Welcome to Rdisc!"
             font_size: "18dp"
-            size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.4, "top": 0.8}
+            pos_hint: {"x": 0.45, "top": 0.8}
         RoundedButton:
             text: "Login"
             pos_hint: {"x": 0.35, "top": 0.55}
@@ -513,6 +513,14 @@ kv_payload = """# You can edit this file to change the UI.
     text: "Inventory"
     size_hint: 0.15, 0.05
     pos_hint: {"x": 0.55, "top": 0.99}
+    
+<R_coin_label@BackingLabel>:
+    color: r_coin_orange
+    pos_hint: {"x": 0.85, "top": 0.99}
+    
+<D_coin_label@BackingLabel>:
+    color: d_coin_blue
+    pos_hint: {"x": 0.74, "top": 0.99}
             
 <Home>:
     transfer_uid: transfer_uid
@@ -537,14 +545,10 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: 
                 root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
                 root.manager.current = 'Inventory'
-        BackingLabel:
+        R_coin_label:
             text: root.r_coins
-            color: r_coin_orange
-            pos_hint: {"x": 0.85, "top": 0.99}
-        BackingLabel:
+        D_coin_label:
             text: root.d_coins
-            color: d_coin_blue
-            pos_hint: {"x": 0.74, "top": 0.99}
         BackingLabel:
             text: root.welcome_text
             size_hint: 0.30, 0.15
@@ -605,23 +609,21 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.74, "top": 0.09}
             on_text: root.convert_coins()
-        Label:
+        SizeLabel:
             text: root.coin_conversion
-            size_hint: 0.1, 0.05
             pos_hint: {"x": 0.87, "top": 0.09}
         BackingLabel:
             size_hint: 0.30, 0.6
             pos_hint: {"x": 0.69, "top": 0.76}
-        Label:
+        SizeLabel:
             text: "0 Notifications"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.80, "top": 0.74}
+            pos_hint: {"x": 0.79, "top": 0.74}
         BackingLabel:
             size_hint: 0.30, 0.29
             pos_hint: {"x": 0.01, "top": 0.31}
-        Label:
+        SizeLabel:
             text: "Claim Code"
-            size_hint: 0.1, 0.05
             pos_hint: {"x": 0.11, "top": 0.29}
         RoundedTextInput
             id: code
@@ -649,14 +651,10 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.manager.current = 'Games'
         InventoryButton:
             on_press: root.manager.current = 'Inventory'
-        BackingLabel:
+        R_coin_label:
             text: root.r_coins
-            color: r_coin_orange
-            pos_hint: {"x": 0.85, "top": 0.99}
-        BackingLabel:
+        D_coin_label:
             text: root.d_coins
-            color: d_coin_blue
-            pos_hint: {"x": 0.74, "top": 0.99}
         Label:
             text: "Chat"
             size_hint: 0.3, 0.1
@@ -675,14 +673,10 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.manager.current = 'Games'
         InventoryButton:
             on_press: root.manager.current = 'Inventory'
-        BackingLabel:
+        R_coin_label:
             text: root.r_coins
-            color: r_coin_orange
-            pos_hint: {"x": 0.85, "top": 0.99}
-        BackingLabel:
+        D_coin_label:
             text: root.d_coins
-            color: d_coin_blue
-            pos_hint: {"x": 0.74, "top": 0.99}
         Label:
             text: "Store"
             size_hint: 0.3, 0.1
@@ -701,14 +695,10 @@ kv_payload = """# You can edit this file to change the UI.
             disabled: True
         InventoryButton:
             on_press: root.manager.current = 'Inventory'
-        BackingLabel:
+        R_coin_label:
             text: root.r_coins
-            color: r_coin_orange
-            pos_hint: {"x": 0.85, "top": 0.99}
-        BackingLabel:
+        D_coin_label:
             text: root.d_coins
-            color: d_coin_blue
-            pos_hint: {"x": 0.74, "top": 0.99}
         Label:
             text: "Games"
             size_hint: 0.3, 0.1
@@ -726,14 +716,10 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.manager.current = 'Games'
         InventoryButton:
             disabled: True
-        BackingLabel:
+        R_coin_label:
             text: root.r_coins
-            color: r_coin_orange
-            pos_hint: {"x": 0.85, "top": 0.99}
-        BackingLabel:
+        D_coin_label:
             text: root.d_coins
-            color: d_coin_blue
-            pos_hint: {"x": 0.74, "top": 0.99}
         Label:
             text: "Inventory"
             size_hint: 0.3, 0.1
@@ -807,7 +793,7 @@ def w_images():
                     "AAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwAD" \
                     "EANv/bAEMAAwICAwICAwMDAwQDAwQFCAUFBAQFCgcHBggMCgwMCwoLCw0OEhANDhEOCwsQFhARExQVFRUMDxcYFhQYEhQVFP" \
                     "/bAEMBAwQEBQQFCQUFCRQNCw0U"+"FBQU"*16+"FP/AABEIAFoBGAMBIgACEQEDEQH/xAAWAAEBAQ"+"A"*19+"Qn/xAAWEA" \
-                    "EBAQ"+"A"*19+"RH/xAAUAQE"+"A"*21+"/8QAFBEB"+"A"*21+"P/aAAwDAQACEQMRAD8A1T"+"A"*143+"BJdVJMU"+ \
+                    "EBAQ"+"A"*19+"RH/xAAUAQE"+"A"*21+"/8QAFBEB"+"A"*21+"P/aAAwDAQACEQMRAD8A1T"+"A"*143+"BJdVJMU" + \
                     "A"*70+"H/2Q=="
 
     with open("resources/blank_qr.png", "wb") as f:

@@ -37,8 +37,11 @@ if path.exists("rdisc.py"):
 
 if path.exists("rdisc.exe"):
     app_hash = enc.hash_a_file("rdisc.exe")
-if path.exists("rdisc.py"):
-    app_hash = enc.hash_a_file("rdisc.py")
+else:
+    if path.exists("rdisc.py"):
+        app_hash = enc.hash_a_file("rdisc.py")
+    else:
+        app_hash = f"Unknown platform: {platform}"
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
         latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
@@ -324,16 +327,13 @@ class IpSet(Screen):
                 else:
                     try:
                         ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
-                    except ValueError:
-                        print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
-                    try:
                         if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
                             s.ip = [server_ip, server_port]
                             sm.switch_to(AttemptConnection(), direction="left")
                         else:
                             print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
-                    except NameError:
-                        print("\n🱫[COL-RED] IP address must be in the form of 'xxx.xxx.xxx.xxx'")
+                    except ValueError or NameError:
+                        print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
 
 
 class Captcha(Screen):
@@ -513,7 +513,7 @@ class Home(Screen):
         self.transfer_cost = "0.00"
         self.transfer_send = "0.00"
         self.transfer_fee = "0.00"
-        self.coin_conversion = "0.00"
+        self.coin_conversion = "0.00 R"
         self.direction_text = "Conversion Calculator (£->R)"
 
     def check_transfer(self):
@@ -624,19 +624,16 @@ class WindowManager(ScreenManager):
     pass
 
 
-# loading UI and screens
 Builder.load_file("rdisc.kv")
 sm = WindowManager()
-screens = [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"),
-           KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"), ReCreateKey(name="ReCreateKey"),
-           ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPassword(name="NacPassword"),
-           LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
-           Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
-           Inventory(name="Inventory")]
-[sm.add_widget(screen) for screen in screens]
+[sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"),
+ LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"),
+ ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
+ NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"),
+ TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
+ Inventory(name="Inventory")]]
 
 
-# build gui
 class Rdisc(App):
     def build(self):
         if version_:
