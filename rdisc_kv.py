@@ -97,6 +97,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos: self.pos
 
 <YellowLabel@SizeLabel>
+    color: 0, 0, 0, 1
     size_hint: 0.1, 0.05
     canvas.before:
         Color:
@@ -105,7 +106,7 @@ kv_payload = """# You can edit this file to change the UI.
             size: self.size
             pos: self.pos
 
-<OrangeLabel@SizeLabel>
+<OrangeLabel@YellowLabel>
     canvas.before:
         Color:
             rgba: orange
@@ -113,7 +114,7 @@ kv_payload = """# You can edit this file to change the UI.
             size: self.size
             pos: self.pos
             
-<GreenLabel@SizeLabel>
+<GreenLabel@YellowLabel>
     canvas.before:
         Color:
             rgba: green
@@ -144,10 +145,9 @@ kv_payload = """# You can edit this file to change the UI.
 <IpSet>:
     ip_address: ip_address
     GreyFloatLayout:
-        Label:
+        SizeLabel:
             text: "Enter server IP address"
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.85}
+            pos_hint: {"x": 0.45, "top": 0.8}
         RoundedTextInput:
             id: ip_address
             pos_hint: {"x": 0.35, "top": 0.65}
@@ -179,10 +179,9 @@ kv_payload = """# You can edit this file to change the UI.
 <KeyUnlock>:
     pwd: pwd
     GreyFloatLayout:
-        Label:
+        SizeLabel:
             text: root.passcode_prompt_text
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.8}
+            pos_hint: {"x": 0.45, "top": 0.75}
         RoundedTextInput:
             id: pwd
             password: True
@@ -397,7 +396,6 @@ kv_payload = """# You can edit this file to change the UI.
 <LogUnlock>:
     pwd: pwd
     GreyFloatLayout:
-        size: root.width, root.height
         Label:
             text: root.passcode_prompt_text
             size_hint: 0.3, 0.1
@@ -497,7 +495,7 @@ kv_payload = """# You can edit this file to change the UI.
 <ChatButton@Button>:
     text: "Chat"
     size_hint: 0.15, 0.05
-    pos_hint: {"x": 0.10, "top": 0.99}
+    pos_hint: {"x": 0.1, "top": 0.99}
     
 <StoreButton@Button>:
     text: "Store"
@@ -507,20 +505,25 @@ kv_payload = """# You can edit this file to change the UI.
 <GameButton@Button>:
     text: "Games"
     size_hint: 0.15, 0.05
-    pos_hint: {"x": 0.40, "top": 0.99}
+    pos_hint: {"x": 0.4, "top": 0.99}
     
 <InventoryButton@Button>:
     text: "Inventory"
     size_hint: 0.15, 0.05
     pos_hint: {"x": 0.55, "top": 0.99}
     
-<R_coin_label@BackingLabel>:
-    color: r_coin_orange
-    pos_hint: {"x": 0.85, "top": 0.99}
+<SettingsButton@Button>:
+    text: "User"
+    size_hint: 0.07, 0.05
+    pos_hint: {"x": 0.7, "top": 0.99}
     
 <D_coin_label@BackingLabel>:
     color: d_coin_blue
-    pos_hint: {"x": 0.74, "top": 0.99}
+    pos_hint: {"x": 0.78, "top": 0.99}
+    
+<R_coin_label@BackingLabel>:
+    color: r_coin_orange
+    pos_hint: {"x": 0.89, "top": 0.99}
             
 <Home>:
     transfer_uid: transfer_uid
@@ -545,6 +548,10 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: 
                 root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
                 root.manager.current = 'Inventory'
+        SettingsButton:
+            on_press: 
+                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
+                root.manager.current = 'Settings'
         R_coin_label:
             text: root.r_coins
         D_coin_label:
@@ -616,7 +623,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.30, 0.6
             pos_hint: {"x": 0.69, "top": 0.76}
         SizeLabel:
-            text: "0 Notifications"
+            text: "Transaction History"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.79, "top": 0.74}
         BackingLabel:
@@ -651,6 +658,8 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.manager.current = 'Games'
         InventoryButton:
             on_press: root.manager.current = 'Inventory'
+        SettingsButton:
+            on_press: root.manager.current = 'Settings'
         R_coin_label:
             text: root.r_coins
         D_coin_label:
@@ -673,6 +682,8 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.manager.current = 'Games'
         InventoryButton:
             on_press: root.manager.current = 'Inventory'
+        SettingsButton:
+            on_press: root.manager.current = 'Settings'
         R_coin_label:
             text: root.r_coins
         D_coin_label:
@@ -695,6 +706,8 @@ kv_payload = """# You can edit this file to change the UI.
             disabled: True
         InventoryButton:
             on_press: root.manager.current = 'Inventory'
+        SettingsButton:
+            on_press: root.manager.current = 'Settings'
         R_coin_label:
             text: root.r_coins
         D_coin_label:
@@ -716,6 +729,8 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.manager.current = 'Games'
         InventoryButton:
             disabled: True
+        SettingsButton:
+            on_press: root.manager.current = 'Settings'
         R_coin_label:
             text: root.r_coins
         D_coin_label:
@@ -724,6 +739,58 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Inventory"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
+            
+<Settings>:
+    username_to: username_to
+    GreyFloatLayout:
+        HomeButton:
+            on_press: root.manager.current = 'Home'
+        ChatButton:
+            on_press: root.manager.current = 'Chat'
+        StoreButton:
+            on_press: root.manager.current = 'Store'
+        GameButton:
+            on_press: root.manager.current = 'Games'
+        InventoryButton:
+            on_press: root.manager.current = 'Inventory'
+        SettingsButton:
+            disabled: True
+        R_coin_label:
+            text: root.r_coins
+        D_coin_label:
+            text: root.d_coins
+        BackingLabel:
+            size_hint: 0.30, 0.6
+            pos_hint: {"x": 0.01, "top": 0.92}
+        Label:
+            text: "User Settings"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.11, "top": 0.92}
+        SizeLabel:
+            text: f"Name:"
+            pos_hint: {"x": 0, "top": 0.82}
+        RoundedTextInput:
+            id: username_to
+            text: root.username[:-4]
+            size_hint: 0.14, 0.05
+            pos_hint: {"x": 0.09, "top": 0.82}
+            on_text: self.text = self.text.replace("  ", " ").replace("#", "")[:24]
+            on_text_validate: root.change_name()
+        RoundedButton:
+            text: "Change"
+            size_hint: 0.05, 0.05
+            pos_hint: {"x": 0.25, "top": 0.82}
+            on_press: root.change_name()
+        SizeLabel:
+            text: "Changing your name will cost 5 D"
+            font_size: "10dp"
+            pos_hint: {"x": 0.11, "top": 0.78}
+        SizeLabel:
+            text: f"Tag: {root.username[-4:]}"
+            pos_hint: {"x": 0.06, "top": 0.73}
+        SizeLabel:
+            text: f"UID: {root.uid}"
+            pos_hint: {"x": 0.14, "top": 0.73}
  
 """
 

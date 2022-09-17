@@ -109,7 +109,7 @@ class Server:
 s = Server()
 
 
-class KeySystem:
+class KeyStore:
     def __init__(self):
         self.master_key = None
         self.uid = None
@@ -117,30 +117,17 @@ class KeySystem:
         self.ip_key = None
         self.pass_code = None
         self.pin_code = None
-        self.path = None  # Make, Unlock or Login <- Link flowchart
+        self.path = None  # Make or Login
         self.xp = None
         self.r_coin = None
         self.d_coin = None
 
 
-keys = KeySystem()
+keys = KeyStore()
 
 
 def connect_system(dt=None):
     if s.ip and s.connect():
-        sm.switch_to(LogInOrSignUp(), direction="left")
-    else:
-        sm.switch_to(IpSet(), direction="left")
-
-
-class AttemptConnection(Screen):
-    def __init__(self, **kwargs):
-        super(AttemptConnection, self).__init__(**kwargs)
-        Clock.schedule_once(connect_system, 1)  # todo make this retry
-
-
-class LogInOrSignUp(Screen):
-    def on_enter(self, **kwargs):
         print("Loading account keys...")
         if path.exists(f'userdata/key'):
             with open(f'userdata/key', 'rb') as f:
@@ -163,6 +150,46 @@ class LogInOrSignUp(Screen):
                 sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
+            sm.switch_to(LogInOrSignUp(), direction="left")
+    else:
+        sm.switch_to(IpSet(), direction="left")
+
+
+class AttemptConnection(Screen):
+    def __init__(self, **kwargs):
+        super(AttemptConnection, self).__init__(**kwargs)
+        Clock.schedule_once(connect_system, 1)  # todo make this retry
+
+
+class IpSet(Screen):
+    ip_address = ObjectProperty(None)
+
+    def try_connect(self):
+        if self.ip_address.text == "":
+            print("No input provided")
+        else:
+            try:
+                server_ip, server_port = self.ip_address.text.split(":")
+                server_port = int(server_port)
+            except ValueError or NameError:
+                print("\n🱫[COL-RED] Invalid input")
+            else:
+                if server_port < 1 or server_port > 65535:
+                    print("\n🱫[COL-RED] Port number must be between 1 and 65535")
+                else:
+                    try:
+                        ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
+                        if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
+                            s.ip = [server_ip, server_port]
+                            sm.switch_to(AttemptConnection(), direction="left")
+                        else:
+                            print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
+                    except ValueError or NameError:
+                        print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
+
+
+class LogInOrSignUp(Screen):
+    pass
 
 
 class KeyUnlock(Screen):
@@ -193,7 +220,7 @@ class KeyUnlock(Screen):
                         s.send_e(user_challenge)
                         ulk_resp = s.recv_d(1024)
                         if ulk_resp != "N":
-                            keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
+                            keys.username, keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
                             sm.switch_to(Home(), direction="left")
             except zl_error:
                 print("Invalid password")
@@ -307,33 +334,6 @@ class ReCreateGen(Screen):
         self.gen_left_text = f"Generating master key"
         Thread(target=self.regenerate_master_key, args=(keys.pass_code[:6].encode(),
                keys.pass_code[6:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
-
-
-class IpSet(Screen):
-    ip_address = ObjectProperty(None)
-
-    def try_connect(self):
-        if self.ip_address.text == "":
-            print("No input provided")
-        else:
-            try:
-                server_ip, server_port = self.ip_address.text.split(":")
-                server_port = int(server_port)
-            except ValueError or NameError:
-                print("\n🱫[COL-RED] Invalid input")
-            else:
-                if server_port < 1 or server_port > 65535:
-                    print("\n🱫[COL-RED] Port number must be between 1 and 65535")
-                else:
-                    try:
-                        ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
-                        if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
-                            s.ip = [server_ip, server_port]
-                            sm.switch_to(AttemptConnection(), direction="left")
-                        else:
-                            print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
-                    except ValueError or NameError:
-                        print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
 
 
 class Captcha(Screen):
@@ -457,7 +457,7 @@ class TwoFacSetup(Screen):
                     with open("userdata/key", "wb") as f:
                         f.write(keys.uid.encode()+ip_key)
                     print("2FA confirmed")
-                    keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
+                    keys.username, keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -480,7 +480,7 @@ class TwoFacLog(Screen):
                     with open("userdata/key", "wb") as f:
                         f.write(keys.uid.encode()+keys.ip_key)
                     print("2FA confirmed")
-                    keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
+                    keys.username, keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -509,7 +509,7 @@ class Home(Screen):
             keys.d_coin = keys.d_coin[:-2]
         self.r_coins = keys.r_coin+" R"
         self.d_coins = keys.d_coin+" D"
-        self.welcome_text = f"Welcome back {keys.uid}"
+        self.welcome_text = f"Welcome back {keys.username}"
         self.transfer_cost = "0.00"
         self.transfer_send = "0.00"
         self.transfer_fee = "0.00"
@@ -620,6 +620,45 @@ class Inventory(Screen):
         self.d_coins = keys.d_coin+" D"
 
 
+class Settings(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+    username = StringProperty()
+    uid = StringProperty()
+    username_to = ObjectProperty(None)
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+        self.username = keys.username
+        self.uid = keys.uid
+
+    def edit_username(self):
+        self.username_to.text = self.username_to.text.replace("  ", " ").replace("#", "")[:24]
+
+    def change_name(self):
+        if float(keys.d_coin) > 4:
+            if 4 < len(self.username_to.text) < 25:
+                s.send_e(f"CUN:{self.username_to.text}")
+                new_username = s.recv_d(1024)
+                if new_username != "N":
+                    keys.username = new_username
+                    self.username = keys.username
+                    keys.d_coin = str(float(keys.d_coin)-5)
+                    if keys.d_coin.endswith(".0"):
+                        keys.d_coin = keys.d_coin[:-2]
+                    self.d_coins = keys.d_coin+" D"
+                    print("username changed")
+            else:
+                print("username must be between 5 and 24 characters")
+        else:
+            print("insufficient funds")
+
+
 class WindowManager(ScreenManager):
     pass
 
@@ -631,10 +670,12 @@ sm = WindowManager()
  ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
  NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"),
  TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
- Inventory(name="Inventory")]]
+ Inventory(name="Inventory"), Settings(name="Settings")]]
 
 
 class Rdisc(App):
+    r_coins = keys.r_coin
+
     def build(self):
         if version_:
             self.title = f"Rdisc - {version_}"
@@ -647,6 +688,5 @@ class Rdisc(App):
         return sm
 
 
-# driver function
 if __name__ == "__main__":
     Rdisc().run()

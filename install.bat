@@ -6,7 +6,7 @@ if EXIST launch.bat (
     git clone --filter=blob:none --no-checkout --depth 1 --sparse https://github.com/rapidslayer101/Rdisc-Kivy Rdisc
     cd Rdisc
     git config core.sparsecheckout true
-    echo rdisc.py >> .git/info/sparse-checkout
+    echo rdisc.py > .git/info/sparse-checkout
     echo rdisc_kv.py >> .git/info/sparse-checkout
     echo enclib.py >> .git/info/sparse-checkout
     echo requirements.txt >> .git/info/sparse-checkout

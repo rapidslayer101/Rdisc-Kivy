@@ -47,22 +47,26 @@
 0.47 dynamic UI work on home page
 0.48 UI abstraction and work
 
-0.49 username setting, transfers and code claiming, saving of currencies
-0.50 coinflip
+0.49 username support, transfers and code claiming
+0.50 coinflip, transaction history, saving of currencies and last online
+0.51 updater for exe (only)
+0.52 friending
 
 - distro types:
   - downloadable exe, apk
-  - rdisc client code <- todo proper checkout and maybe build scrips
+  - rdisc client code
 
+- username to login
+- asynchronous server
 - possible FIP: error, check
 - show debug to users in UI
 - tell people what is required to make an account before starting
+- USB key support for master key and multiple ip keys
 - rate limits and checks for entire login paths
-- updater for exe only
 - separate server code and client code <- possibly
-- nfc experiment <- unlikely, mobile support not a priority
 - check if errors occur when not in order requests made through login paths
 - ip_key expiry check and deal with that as well as other invalid keys
+- nfc experiment <- unlikely, mobile support not a priority
 
 # account key + account pin = master key
 # MASTER KEY NEVER SAVED TO CLIENTS DEVICE
