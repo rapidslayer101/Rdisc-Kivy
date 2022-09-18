@@ -501,6 +501,7 @@ class Home(Screen):
     direction_text = StringProperty()
     amount_convert = ObjectProperty(None)
     coin_conversion = StringProperty()
+    code = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
         if keys.r_coin.endswith(".0"):
@@ -518,6 +519,7 @@ class Home(Screen):
 
     def check_transfer(self):
         if self.transfer_amount.text not in ["", "."]:
+            self.transfer_amount.text = self.transfer_amount.text[:12]
             if float(self.transfer_amount.text) > float(keys.r_coin)*0.995:
                 self.transfer_amount.text = str(float(keys.r_coin)*0.995)
             if "." in self.transfer_amount.text:
@@ -533,8 +535,43 @@ class Home(Screen):
             self.transfer_send = "0.00"
             self.transfer_fee = "0.00"
 
+    def transfer_coins(self):
+        if len(self.transfer_uid.text) > 7:
+            if self.transfer_uid.text != keys.uid:
+                if float(self.transfer_amount.text) >= 3:
+                    if float(self.transfer_amount.text) <= float(keys.r_coin)*0.995:
+                        s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amount.text}")
+                        if s.recv_d(1024) == "V":
+                            print("Transfer successful")
+                            keys.r_coin = str(round(float(keys.r_coin)-float(self.transfer_amount.text)/0.995, 2))
+                            if keys.r_coin.endswith(".0"):
+                                keys.r_coin = keys.r_coin[:-2]
+                            self.r_coins = keys.r_coin+" R"
+                            self.transfer_uid.text = ""
+                            self.transfer_amount.text = ""
+                        else:
+                            print("Invalid UID")
+                    else:
+                        print("Insufficient funds")
+                else:
+                    print("Minimum transfer amount is 3 R")
+            else:
+                print("You cannot transfer to yourself")
+        else:
+            print("Invalid UID")
+
     def claim_code(self):
-        print("claim code")
+        if len(self.code.text) == 19:
+            if self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
+                s.send_e(f"CLM:{self.code.text}")
+                if s.recv_d(1024) != "N":
+                    print("Code is for xxx")  # todo popup claim window
+                else:
+                    print("Invalid code")
+            else:
+                print("Invalid code")
+        else:
+            print("Invalid code")
 
     def convert_coins(self):
         if self.amount_convert.text not in ["", "."]:
@@ -674,8 +711,6 @@ sm = WindowManager()
 
 
 class Rdisc(App):
-    r_coins = keys.r_coin
-
     def build(self):
         if version_:
             self.title = f"Rdisc - {version_}"

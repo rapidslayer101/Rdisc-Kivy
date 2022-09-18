@@ -61,7 +61,8 @@ class Users:
             self.logged_in_users.pop(self.logged_in_users.index(u_id))
             self.logged_in_users.pop(self.logged_in_users.index(ip))
             self.sockets.pop(self.sockets.index(cs))
-            # todo write new values to db
+            self.db.execute("UPDATE users SET last_online = ? WHERE user_id = ?", (str(datetime.now())[:-7], u_id))
+            self.db.commit()
         except ValueError:
             pass
 
@@ -316,26 +317,9 @@ def client_connection(cs):
                     send_e("N")
 
             if request.startswith("CUP:"):
-                try:
-                    old_pass, new_pass = request[6:].split("🱫")
-                except ValueError:
-                    raise AssertionError
-                if old_pass == new_pass:
-                    send_e("SP")  # old pass and new pass the same
-                else:
-                    print(old_pass, new_pass)
-                    # fetch old pass
-                    with open(f"Users/{uid}/{uid}-keys.txt", encoding="utf-8") as f:
-                        u_old_pass, _h_ = f.read().split("🱫")
-                    if old_pass == u_old_pass:
-                        print("success")
-                        with open(f"Users/{uid}/{uid}-keys.txt", "w", encoding="utf-8") as f:
-                            f.write(f"{new_pass}🱫{_h_}")
-                        send_e("V")
-                    else:
-                        send_e("N")  # password wrong
+                print("Triggered CUP an not built feature")
 
-            if request.startswith("CUN:"):
+            if request.startswith("CUN:"):  # change username
                 if d_coin > 4:
                     n_u_name = request[4:]
                     if not 4 < len(n_u_name) < 25:
@@ -358,6 +342,29 @@ def client_connection(cs):
 
                 else:
                     raise AssertionError
+
+            if request.startswith("TRF:"):  # transfer R coins
+                transfer_to, transfer_amount = request[4:].split("🱫")
+                if round(float(transfer_amount)/0.995, 2) > r_coin:
+                    raise AssertionError
+                if transfer_to == uid:
+                    raise AssertionError
+                try:  # todo what if the user is already logged in, resolve username to UID
+                    transfer_to_r_coin = users.db.execute("SELECT r_coin FROM users WHERE user_id = ?",
+                                                          (transfer_to,)).fetchone()[0]
+                    r_coin = round(float(r_coin)-float(transfer_amount)/0.995, 2)
+                    users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?",
+                                     (r_coin, uid))
+                    users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?",
+                                     (float(transfer_to_r_coin)+float(transfer_amount), transfer_to))
+                    users.db.commit()
+                    send_e("V")
+                except TypeError:
+                    send_e("N")  # user not exist
+
+            if request.startswith("CLM:"):  # claim code
+                #code = request[4:]
+                send_e("N")
 
             if request.startswith("AFR:"):
                 add_friend_n = request[6:]

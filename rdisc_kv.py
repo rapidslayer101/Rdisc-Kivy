@@ -529,6 +529,7 @@ kv_payload = """# You can edit this file to change the UI.
     transfer_uid: transfer_uid
     transfer_amount: transfer_amount
     amount_convert: amount_convert
+    code: code
     GreyFloatLayout:
         HomeButton:
             disabled: True
@@ -597,6 +598,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Transfer"
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.06, "top": 0.46}
+            on_press: root.transfer_coins()
         BackingLabel:
             size_hint: 0.30, 0.13
             pos_hint: {"x": 0.69, "top": 0.15}
@@ -637,7 +639,7 @@ kv_payload = """# You can edit this file to change the UI.
             hint_text: "XXXX-XXXX-XXXX-XXXX"
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.06, "top": 0.23}
-            on_text: self.text = self.text[:19].upper()
+            on_text: self.text = self.text.replace(" ", "")[:19].upper()
             on_text_validate: root.claim_code()
         RoundedButton:
             text: "Claim"
