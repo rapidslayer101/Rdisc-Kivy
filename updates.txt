@@ -48,9 +48,11 @@
 0.48 UI abstraction and work
 0.49 username support, transfers, last online
 
-0.50 coinflip, transaction history, code claiming
-0.51 updater for exe (only)
-0.52 friending
+0.50 coinflip, transaction history with xp
+0.51 updater for exe (only), code claiming
+0.52 public chat room
+0.53 friending
+0.54 scratch cards and other inventory items
 
 - distro types:
   - downloadable exe, apk

@@ -381,6 +381,10 @@ def client_connection(cs):
                 else:
                     raise AssertionError
 
+            if request.startswith("COF:"):  # coinflip game
+                print("Coinflip game triggered")
+                # make game expire after x time
+
     except ConnectionResetError:
         print(f"{uid}-{ip}:{port} DC")
         if ip in users.logged_in_users:

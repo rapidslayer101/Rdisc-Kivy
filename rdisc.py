@@ -696,6 +696,20 @@ class Settings(Screen):
             print("insufficient funds")
 
 
+class Coinflip(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+        # request coinflip data
+
+
 class WindowManager(ScreenManager):
     pass
 
@@ -707,7 +721,7 @@ sm = WindowManager()
  ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
  NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"),
  TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
- Inventory(name="Inventory"), Settings(name="Settings")]]
+ Inventory(name="Inventory"), Settings(name="Settings"), Coinflip(name="Coinflip")]]
 
 
 class Rdisc(App):

@@ -9,6 +9,7 @@ kv_payload = """# You can edit this file to change the UI.
 # edits the color scheme of the UI
 
 #:set rdisc_purple (104/255, 84/255, 252/255,1)
+#:set rdisc_purple_dark (104/255, 73/255, 160/255,1)
 #:set rdisc_cyan (37/255, 190/255, 150/255,1)
 
 #:set green (20/255, 228/255, 43/255,1)
@@ -41,7 +42,7 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.3, 0.1
     canvas.before:
         Color:
-            rgba: rdisc_purple
+            rgba: rdisc_purple if self.state == 'normal' else rdisc_purple_dark
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -52,7 +53,7 @@ kv_payload = """# You can edit this file to change the UI.
     multiline: False
     halign: "center"
     size_hint: 0.3, 0.1
-    padding_y: [self.height/2.0-(self.line_height/2.0)*len(self._lines), 0]
+    padding: [0, self.height/2.0-(self.line_height/2.0)*len(self._lines), 0, 0]
     write_tab: False
     background_color: 0,0,0,0
     cursor_color: rdisc_cyan
@@ -361,24 +362,24 @@ kv_payload = """# You can edit this file to change the UI.
         Label:
             text: "Enter new password"
             size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.80}
+            pos_hint: {"x": 0.35, "top": 0.8}
         RoundedTextInput:
             id: nac_password_1
             password: True
-            pos_hint: {"x": 0.35, "top": 0.70}
+            pos_hint: {"x": 0.35, "top": 0.7}
             on_text_validate: nac_password_2.focus = True
         Label:
             text: "Repeat password"
             size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.60}
+            pos_hint: {"x": 0.35, "top": 0.6}
         RoundedTextInput:
             id: nac_password_2
             password: True
-            pos_hint: {"x": 0.35, "top": 0.50}
+            pos_hint: {"x": 0.35, "top": 0.5}
             on_text_validate: root.set_nac_password()
         RoundedButton:
             text: "Next"
-            pos_hint: {"x": 0.35, "top": 0.30}
+            pos_hint: {"x": 0.35, "top": 0.3}
             on_press: root.set_nac_password()
         GreenLabel:
             text: "User keys >>"
@@ -489,7 +490,7 @@ kv_payload = """# You can edit this file to change the UI.
             
 <HomeButton@Button>:
     text: "Home"
-    size_hint: 0.10, 0.05
+    size_hint: 0.1, 0.05
     pos_hint: {"x": 0, "top": 0.99}
     
 <ChatButton@Button>:
@@ -559,10 +560,10 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.d_coins
         BackingLabel:
             text: root.welcome_text
-            size_hint: 0.30, 0.15
+            size_hint: 0.3, 0.15
             pos_hint: {"x": 0.69, "top": 0.92}
         BackingLabel:
-            size_hint: 0.30, 0.6
+            size_hint: 0.3, 0.6
             pos_hint: {"x": 0.01, "top": 0.92}
         Label:
             text: "Transfer R-coins"
@@ -600,7 +601,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.06, "top": 0.46}
             on_press: root.transfer_coins()
         BackingLabel:
-            size_hint: 0.30, 0.13
+            size_hint: 0.3, 0.13
             pos_hint: {"x": 0.69, "top": 0.15}
         Label:
             text: root.direction_text
@@ -622,14 +623,14 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.coin_conversion
             pos_hint: {"x": 0.87, "top": 0.09}
         BackingLabel:
-            size_hint: 0.30, 0.6
+            size_hint: 0.3, 0.6
             pos_hint: {"x": 0.69, "top": 0.76}
         SizeLabel:
             text: "Transaction History"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.79, "top": 0.74}
         BackingLabel:
-            size_hint: 0.30, 0.29
+            size_hint: 0.3, 0.29
             pos_hint: {"x": 0.01, "top": 0.31}
         SizeLabel:
             text: "Claim Code"
@@ -667,7 +668,7 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         Label:
-            text: "Chat"
+            text: "Chat (Coming Soon)"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
                         
@@ -714,10 +715,44 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
-        Label:
-            text: "Games"
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.7}
+        RoundedButton:
+            size_hint: 0.2, 0.4
+            pos_hint: {"x": 0.01, "top": 0.92}
+            on_press: root.manager.current = 'Coinflip'
+            canvas.before:
+                Color:
+                    rgba: bk_grey_3
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        SizeLabel:
+            text: "Coinflip"
+            pos_hint: {"x": 0.06, "top": 0.91}
+        AsyncImage:
+            source: "https://purepng.com/public/uploads/large/purepng.com-gold-coingoldatomic-number-79chemical-elementgroup-11-elementaurumgold-dustprecious-metalgold-coins-1701528977728s2dcq.png"
+            anim_delay: 0.05
+            size_hint: 0.16, 0.3
+            pos_hint: {"x": 0.03, "top": 0.85}
+        RoundedButton:
+            size_hint: 0.2, 0.4
+            pos_hint: {"x": 0.22, "top": 0.92}
+            #on_press: root.manager.current = 'Coinflip'
+            canvas.before:
+                Color:
+                    rgba: bk_grey_3
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        SizeLabel:
+            text: "Crash"
+            pos_hint: {"x": 0.27, "top": 0.91}
+        AsyncImage:
+            source: "https://www.pngmart.com/files/3/Stock-Market-Graph-Up-PNG-Image.png"
+            anim_delay: 0.05
+            size_hint: 0.16, 0.3
+            pos_hint: {"x": 0.24, "top": 0.85}
             
 <Inventory>:
     GreyFloatLayout:
@@ -738,7 +773,7 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         Label:
-            text: "Inventory"
+            text: "Inventory (Coming Soon)"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
             
@@ -762,7 +797,7 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
-            size_hint: 0.30, 0.6
+            size_hint: 0.3, 0.6
             pos_hint: {"x": 0.01, "top": 0.92}
         Label:
             text: "User Settings"
@@ -793,7 +828,22 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: f"UID: {root.uid}"
             pos_hint: {"x": 0.14, "top": 0.73}
- 
+            
+            
+<Coinflip>:
+    GreyFloatLayout:
+        Button:
+            text: "<< Back"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
+            on_press: root.manager.current = 'Games'
+        R_coin_label:
+            text: root.r_coins
+        D_coin_label:
+            text: root.d_coins
+        SizeLabel:
+            text: "Coinflip"
+            pos_hint: {"x": 0.01, "top": 0.92}
 """
 
 
