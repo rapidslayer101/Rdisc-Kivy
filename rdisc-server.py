@@ -6,7 +6,7 @@ from time import sleep
 from datetime import datetime, timedelta
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
-from os import listdir, remove, removedirs, rename
+from os import listdir, remove, removedirs, path
 from threading import Thread
 from random import choices, randint
 from hashlib import sha512
@@ -132,11 +132,12 @@ def client_connection(cs):
                 current_hash = login_request[4:]
                 file = [file for file in listdir("dist") if file.endswith(".zip")][-1]
                 if current_hash == "N":
-                    send_e(f"{file}🱫{(os.path.getsize(f'dist/{file}'))}")
+                    send_e(f"{file}🱫{(path.getsize(f'dist/{file}'))}")
                     with open(f"dist/{file}", "rb") as f:
                         while True:
                             bytes_read = f.read(4096)
                             if not bytes_read:
+                                cs.sendall(b"_BREAK_")
                                 break
                             cs.sendall(bytes_read)
                     raise ConnectionResetError
@@ -144,7 +145,7 @@ def client_connection(cs):
                     with open("dist/latest_hash.txt", "r", encoding="utf-8") as f:
                         latest_hash = f.read()
                     if login_request[4:] != latest_hash:
-                        send_e(f"{file}🱫{(os.path.getsize(f'dist/{file}'))}")
+                        send_e(f"{file}🱫{(path.getsize(f'dist/{file}'))}")
                         with open(f"dist/{file}", "rb") as f:
                             while True:
                                 bytes_read = f.read(4096)

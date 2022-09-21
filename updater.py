@@ -146,6 +146,7 @@ class Update(Screen):
             if not update_data == "V":
                 print("Update needed")
                 file_name, update_size = update_data.split("🱫")
+                print(update_size)
                 print(f"Updating to version {file_name}")
                 self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
                 with open(f"app/{file_name}", "wb") as f:
