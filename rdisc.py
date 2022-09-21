@@ -8,7 +8,7 @@ from random import randint, uniform
 from time import perf_counter
 from random import choices
 from hashlib import sha512
-from os import path, mkdir
+from os import path, mkdir, listdir
 from datetime import datetime
 from threading import Thread
 from socket import socket
@@ -42,6 +42,8 @@ else:
         app_hash = enc.hash_a_file("rdisc.py")
     else:
         app_hash = f"Unknown platform: {platform}"
+
+version_ = None
 if path.exists("sha.txt"):
     with open("sha.txt", "r", encoding="utf-8") as f:
         latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
@@ -65,8 +67,8 @@ default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A
 class Server:
     def __init__(self):
         self.s, self.enc_key = socket(), None
-        if path.exists("userdata/server_ip"):
-            with open(f"userdata/server_ip", "rb") as f:
+        if path.exists("app/server_ip"):
+            with open(f"app/server_ip", "rb") as f:
                 self.ip = f.read().decode().split(":")
         else:
             self.ip = None
@@ -727,9 +729,9 @@ sm = WindowManager()
 class Rdisc(App):
     def build(self):
         if version_:
-            self.title = f"Rdisc - {version_}"
+            self.title = f"Rdisc-{version_}"
         else:
-            self.title = "Rdisc - V0.X.X.X"
+            self.title = [file for file in listdir('app') if file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
         if platform == "win32":
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')

@@ -47,17 +47,20 @@
 0.47 dynamic UI work on home page
 0.48 UI abstraction and work
 0.49 username support, transfers, last online
+0.50 installer/updater exe
 
-0.50 coinflip, transaction history with xp
-0.51 updater for exe (only), code claiming
+0.51 coinflip, transaction history with xp
 0.52 public chat room
 0.53 friending
 0.54 scratch cards and other inventory items
 
 - distro types:
-  - downloadable exe, apk
-  - rdisc client code
+  - updator:
+    - updating exe
+    - updating rdisc client code
+  - downloadable apk
 
+- add dev py version to updator
 - username to login
 - alt switcher
 - asynchronous server

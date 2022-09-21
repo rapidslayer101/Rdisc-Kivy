@@ -1,3 +1,4 @@
+import os
 import socket
 import sqlite3
 import enclib as enc
@@ -14,20 +15,6 @@ from captcha.image import ImageCaptcha
 
 # TODO MAJOR: REMOVE 1 THREAD PER USER, Disconnect inactive not logged in users?
 #  async, sesh_key front of enc to identify user
-
-
-def version_info(hashed):
-    version_data = None
-    with open("sha.txt", encoding="utf-8") as f:
-        for _hash_ in f.readlines():
-            if hashed == _hash_.split("§")[0]:
-                version_data = _hash_
-    if not version_data:
-        print(f"UNKNOWN: {hashed}")
-        return f"UNKNOWN"
-    version_, tme_, run_num = version_data.split("§")[1:]
-    print(f"{version_}🱫{tme_}🱫{run_num}")
-    return f"{version_}🱫{tme_}🱫{run_num}"
 
 
 class Users:
@@ -140,6 +127,34 @@ def client_connection(cs):
         while True:
             login_request = recv_d(1024)
             print(login_request)  # temp debug for dev
+
+            if login_request.startswith("UPD:"):
+                current_hash = login_request[4:]
+                file = [file for file in listdir("dist") if file.endswith(".zip")][-1]
+                if current_hash == "N":
+                    send_e(f"{file}🱫{(os.path.getsize(f'dist/{file}'))}")
+                    with open(f"dist/{file}", "rb") as f:
+                        while True:
+                            bytes_read = f.read(4096)
+                            if not bytes_read:
+                                break
+                            cs.sendall(bytes_read)
+                    raise ConnectionResetError
+                else:
+                    with open("dist/latest_hash.txt", "r", encoding="utf-8") as f:
+                        latest_hash = f.read()
+                    if login_request[4:] != latest_hash:
+                        send_e(f"{file}🱫{(os.path.getsize(f'dist/{file}'))}")
+                        with open(f"dist/{file}", "rb") as f:
+                            while True:
+                                bytes_read = f.read(4096)
+                                if not bytes_read:
+                                    break
+                                cs.sendall(bytes_read)
+                        raise ConnectionResetError
+                    else:
+                        send_e("V")
+                        raise ConnectionResetError
 
             if login_request.startswith("CAP"):
                 img = ImageCaptcha(width=280, height=90)

@@ -6,8 +6,8 @@ block_cipher = None
 
 
 a = Analysis(
-    ['rdisc.py'],
-    pathex=['C:/Users/Rapid/PycharmProjects/Rdisc-Kivy'],
+    ['updater.py'],
+    pathex=["C:\\Users\\rapid\\PycharmProjects\\kivy_test2"],
     binaries=[],
     datas=[],
     hiddenimports=[],
@@ -29,7 +29,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     *[Tree(p) for p in (sdl2.dep_bins + glew.dep_bins)],
-    name='rdisc-0.50.0.0',
+    name='rdisc',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
