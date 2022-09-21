@@ -69,10 +69,10 @@ def load(dt=None):
         mkdir("app")
         sm.switch_to(ChooseDistro())
     else:
-        app_location = [file for file in listdir('app') if file.endswith('.exe')][-1]
-        if app_location:
+        try:
+            [file for file in listdir('app') if file.endswith('.exe')][-1]
             sm.switch_to(AttemptConnection())
-        else:
+        except IndexError:
             if path.exists("rdisc.py"):
                 print("Git pull")
                 sm.switch_to(ChooseDistro())
@@ -138,8 +138,8 @@ class Update(Screen):
 
     def update_system(self):
         self.update_text = "Checking for updates..."
-        app_location = [file for file in listdir('app') if file.endswith('.exe')][-1]
-        if app_location:
+        try:
+            app_location = [file for file in listdir('app') if file.endswith('.exe')][-1]
             app_hash = enc.hash_a_file(f"app/{app_location}")
             s.send_e(f"UPD:{app_hash}")
             update_data = s.recv_d(1024)
@@ -149,7 +149,7 @@ class Update(Screen):
                 print(f"Updating to version {file_name}")
                 self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
                 with open(f"app/{file_name}", "wb") as f:
-                    for i in range((int(update_size) // 4096) + 1):
+                    for i in range((int(update_size)//4096)+1):
                         bytes_read = s.s.recv(4096)
                         if not bytes_read:
                             break
@@ -165,7 +165,7 @@ class Update(Screen):
                 sleep(2)
             else:
                 print("App is up to date")
-        else:
+        except IndexError:
             s.send_e("UPD:N")
             file_name, update_size = s.recv_d(1024).split("🱫")
             self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
