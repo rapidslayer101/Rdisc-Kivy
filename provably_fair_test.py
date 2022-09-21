@@ -31,11 +31,11 @@ def run_test(odds):
         counter += 1
         seed_input, rand_float, result, game_hash = game(odds)
         outcomes.append(result)
-        #if rand_float == game(odds, seed_input):
-        #    print("Game is fair!")
-        #else:
-        #    print("Game is not fair!")
-        #    break
+        if rand_float == game("44:100", seed_input):
+            print("Game is fair!")
+        else:
+            print("Game is not fair!")
+            break
         print(outcomes.count("WIN")/len(outcomes), counter)
 
 #run_test("49:100")
@@ -43,18 +43,18 @@ def run_test(odds):
 
 def run_game(odds):
     seed_input, rand_float, result, game_hash = game(odds)
-    print(rand_float)
-    multiply = 30
+    #print(rand_float)
+    multiply = 60
     min_val = rand_float/multiply
     number = uniform(1, min_val)
     loop_multiplier = 1
     while loop_multiplier < multiply-1:
         number = round(uniform(number, min_val*loop_multiplier), 2)
         print(number)
-        sleep(loop_multiplier*0.03)
+        sleep(loop_multiplier*0.015)
         loop_multiplier += 1
     print(rand_float)
 
 
-run_game("33:100")
-
+#run_game("33:100")
+run_test("44:100")

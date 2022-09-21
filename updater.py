@@ -4,7 +4,7 @@ from os import path, mkdir, listdir
 from socket import socket
 from os import system
 from zipfile import ZipFile
-from time import sleep
+from time import sleep, perf_counter
 from threading import Thread
 
 from kivy.clock import Clock
@@ -168,13 +168,22 @@ class Update(Screen):
         except IndexError:
             s.send_e("UPD:N")
             file_name, update_size = s.recv_d(1024).split("🱫")
+            update_size = int(update_size)
             self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
+            all_bytes = b""
+            start = perf_counter()
+            while True:
+                bytes_read = s.s.recv(4096)
+                if b"_BREAK_" in bytes_read:
+                    all_bytes += bytes_read[:-7]
+                    break
+                if perf_counter()-start > 0.25:
+                    start = perf_counter()
+                    self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')} " \
+                                       f"({round((len(all_bytes)/update_size)*100, 2)}%)"
+                all_bytes += bytes_read
             with open(f"app/{file_name}", "wb") as f:
-                for i in range((int(update_size) // 4096) + 1):
-                    bytes_read = s.s.recv(4096)
-                    if not bytes_read:
-                        break
-                    f.write(bytes_read)
+                f.write(all_bytes)
             print("Update downloaded")
             self.update_text = "Update downloaded, unpacking..."
             sleep(1)
