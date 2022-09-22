@@ -734,7 +734,7 @@ class Rdisc(App):
             try:
                 self.title = [file for file in listdir('app') if
                               file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
-            except IndexError:
+            except IndexError or FileNotFoundError:
                 self.title = "Rdisc-Dev"
         if platform in ["win32", "linux"]:
             Window.size = (1264, 681)
