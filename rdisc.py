@@ -731,7 +731,7 @@ class Rdisc(App):
         if version_:
             self.title = f"Rdisc-{version_}"
         else:
-            if path.exists("app/code/rdisc.py"):
+            if path.exists("rdisc.py"):
                 self.title = "Rdisc-Dev"
             else:
                 self.title = [file for file in listdir('app') if
