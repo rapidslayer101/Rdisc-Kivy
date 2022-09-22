@@ -731,11 +731,11 @@ class Rdisc(App):
         if version_:
             self.title = f"Rdisc-{version_}"
         else:
-            try:
+            if path.exists("app/code/rdisc.py"):
+                self.title = "Rdisc-Dev"
+            else:
                 self.title = [file for file in listdir('app') if
                               file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
-            except IndexError or FileNotFoundError:
-                self.title = "Rdisc-Dev"
         if platform in ["win32", "linux"]:
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
