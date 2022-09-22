@@ -49,18 +49,20 @@
 0.49 username support, transfers, last online
 0.50 installer/updater exe
 
-0.51 coinflip, transaction history with xp
-0.52 public chat room
-0.53 friending
-0.54 scratch cards and other inventory items
+0.51 updating rdisc source dode in updater
+0.51 USB master keys and ip keys, client misinformation logging
+
+0.52 coinflip, transaction history with xp
+0.53 public chat room
+0.54 friending
+0.55 scratch cards and other inventory items
 
 - distro types:
-  - updator:
+  - updator
     - updating exe
-    - updating rdisc client code
+    - updating rdisc source code
   - downloadable apk
 
-- add dev py version to updator
 - username to login
 - alt switcher
 - asynchronous server

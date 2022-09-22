@@ -1,7 +1,9 @@
 # Rdisc
-Rdisc - An open source python chat/game application with end-to-end encryption.
+Rdisc - An open source python chat/game application with end-to-end encrypted chat.
 
-# For most users (not developers) download the latest release from the releases page. If you are intending to code your own client then refer to the below guide
+# For normal users: download the latest release from the [releases page](https://github.com/rapidslayer101/Rdisc-Kivy/releases). 
+
+# If you are intending to code your own client then refer to the below guide
 
 # Rdisc (Dev) requires git to be installed:
 This installation requires git, if you don't have git installed please [download git](https://git-scm.com/download/win) or install it through powershell with the command below:

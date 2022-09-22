@@ -205,7 +205,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         Label:
-            text: "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WILL NOT be able to login in to your account or recover it.\\nFor security reasons we suggest you do not store these keys digitally"
+            text: "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou should write these down and/or click the save to USB button"
             color: (37/255, 190/255, 150/255,1)
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}

@@ -732,7 +732,7 @@ class Rdisc(App):
             self.title = f"Rdisc-{version_}"
         else:
             self.title = [file for file in listdir('app') if file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
-        if platform == "win32":
+        if platform in ["win32", "linux"]:
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.set('kivy', 'exit_on_escape', '0')

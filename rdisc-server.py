@@ -1,7 +1,6 @@
-import os
-import socket
 import sqlite3
 import enclib as enc
+from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from time import sleep
 from datetime import datetime, timedelta
 from rsa import PublicKey, encrypt
@@ -78,8 +77,8 @@ class Users:
 
 users = Users()
 client_sockets = set()
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s = socket(AF_INET, SOCK_STREAM)
+s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 s.bind(('', 30678))
 s.listen()
 print(f"[*] Listening as {str(s).split('laddr=')[1][:-1]}")
@@ -124,40 +123,36 @@ def client_connection(cs):
                 else:
                     send_e("N")
 
+        def send_update(update_file):
+            send_e(f"{update_file}🱫{(path.getsize(f'dist/{update_file}'))}")
+            with open(f"dist/{update_file}", "rb") as f:
+                while True:
+                    bytes_read = f.read(32768)
+                    if not bytes_read:
+                        cs.sendall(b"_BREAK_")
+                        break
+                    cs.sendall(bytes_read)
+            raise ConnectionResetError
+
         while True:
             login_request = recv_d(1024)
             print(login_request)  # temp debug for dev
 
-            if login_request.startswith("UPD:"):
+            if login_request.startswith("UPD:"):  # update request
                 current_hash = login_request[4:]
                 file = [file for file in listdir("dist") if file.endswith(".zip")][-1]
                 if current_hash == "N":
-                    send_e(f"{file}🱫{(path.getsize(f'dist/{file}'))}")
-                    with open(f"dist/{file}", "rb") as f:
-                        while True:
-                            bytes_read = f.read(4096)
-                            if not bytes_read:
-                                cs.sendall(b"_BREAK_")
-                                break
-                            cs.sendall(bytes_read)
-                    raise ConnectionResetError
+                    send_update(file)
                 else:
                     with open("dist/latest_hash.txt", "r", encoding="utf-8") as f:
                         latest_hash = f.read()
                     if login_request[4:] != latest_hash:
-                        send_e(f"{file}🱫{(path.getsize(f'dist/{file}'))}")
-                        with open(f"dist/{file}", "rb") as f:
-                            while True:
-                                bytes_read = f.read(4096)
-                                if not bytes_read:
-                                    break
-                                cs.sendall(bytes_read)
-                        raise ConnectionResetError
+                        send_update(file)
                     else:
                         send_e("V")
                         raise ConnectionResetError
 
-            if login_request.startswith("CAP"):
+            if login_request.startswith("CAP"):  # captcha request
                 img = ImageCaptcha(width=280, height=90)
                 captcha_text = "".join(choices("23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(10)))
                 print(captcha_text)
@@ -180,7 +175,6 @@ def client_connection(cs):
                 log_or_create = recv_d(1024)
                 if log_or_create.startswith("NAC:"):  # new account
                     master_key, user_pass = log_or_create[4:].split("🱫")
-                    # todo password checks here
                     user_secret = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXY"
                                                   "abcdefghijklmnopqrstuvwxyz", k=8))
                     while True:
@@ -197,7 +191,7 @@ def client_connection(cs):
                     new_ip(uid, user_secret, user_pass, u_name, 0, 0, d_coin)
                     break
 
-                if login_request.startswith("FIP:"):  # first ip key
+                if login_request.startswith("FIP:"):  # first ip key  # todo can this be removed?
                     uid, master_key_c, = login_request[4:].split("🱫")
                     try:
                         master_key, user_secret, user_pass, u_name, xp, r_coin, d_coin = users.db.execute(
@@ -277,7 +271,8 @@ def client_connection(cs):
                         send_e("N")  # User ID not found
                     else:
                         try:
-                            ip_keys = users.db.execute("SELECT ip, ip_key FROM ip_keys WHERE user_id = ?", (uid,)).fetchall()
+                            ip_keys = users.db.execute("SELECT ip, ip_key FROM ip_keys "
+                                                       "WHERE user_id = ?", (uid,)).fetchall()
                         except ValueError:
                             send_e("N")  # No IP keys found
                         else:
@@ -301,11 +296,8 @@ def client_connection(cs):
                                         send_e("N")
                                 break
 
-        print(f"{uid} reached version checking")  # debug, remove later
-        #version_response = version_info(recv_d(1024))  # todo trigger from client if on exe
-        #send_e(version_response)
         users.login(uid, ip, cs)
-        print(f"{uid} logged in with IP-{ip}:{port} and version-")#{version_response}")
+        print(f"{uid} logged in with IP-{ip}:{port}")
         while True:  # main loop
             request = recv_d(1024)
             print(request)  # temp debug for dev
@@ -342,7 +334,9 @@ def client_connection(cs):
                         raise AssertionError
                     if "#" in n_u_name or "  " in n_u_name:
                         raise AssertionError
-                    while True:  # todo possible infinite loop needing fix
+                    counter = 0
+                    while True:
+                        counter += 1
                         n_u_name_i = n_u_name+"#"+str(randint(111, 999))
                         try:
                             if users.db.execute("SELECT * FROM users WHERE username = ?",
@@ -354,7 +348,9 @@ def client_connection(cs):
                                 send_e(n_u_name_i)
                                 break
                         except sqlite3.OperationalError:
-                            send_e("N")
+                            if counter == 10:
+                                send_e("N")
+                                break
 
                 else:
                     raise AssertionError
@@ -411,6 +407,7 @@ def client_connection(cs):
         print(f"{uid}-{ip}:{port} DC - modified/invalid client request")
         if ip in users.logged_in_users:
             users.logout(uid, ip, cs)
+        # todo log misbehaving user
 
 
 while True:

@@ -1,11 +1,12 @@
 import enclib as enc
 from rsa import newkeys, PublicKey, decrypt
-from os import path, mkdir, listdir
+from os import path, mkdir, listdir, remove
 from socket import socket
-from os import system
+from subprocess import Popen, call
 from zipfile import ZipFile
 from time import sleep, perf_counter
 from threading import Thread
+from venv import create
 
 from kivy.clock import Clock
 from kivy.app import App
@@ -92,7 +93,7 @@ class ChooseDistro(Screen):
         sm.switch_to(AttemptConnection())
 
     def dev(self):
-        print("not built")
+        sm.switch_to(CreateDev())
 
 
 class AttemptConnection(Screen):
@@ -138,43 +139,24 @@ class Update(Screen):
 
     def update_system(self):
         self.update_text = "Checking for updates..."
+        file_name = None
         try:
             app_location = [file for file in listdir('app') if file.endswith('.exe')][-1]
             app_hash = enc.hash_a_file(f"app/{app_location}")
             s.send_e(f"UPD:{app_hash}")
             update_data = s.recv_d(1024)
             if not update_data == "V":
-                print("Update needed")
                 file_name, update_size = update_data.split("🱫")
-                print(update_size)
-                print(f"Updating to version {file_name}")
-                self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
-                with open(f"app/{file_name}", "wb") as f:
-                    for i in range((int(update_size)//4096)+1):
-                        bytes_read = s.s.recv(4096)
-                        if not bytes_read:
-                            break
-                        f.write(bytes_read)
-                self.update_text = "Update downloaded, unpacking..."
-                sleep(1)
-                with ZipFile(f"app/{file_name}", 'r') as zip_:
-                    zip_.printdir()
-                    print('Extracting update files...')
-                    zip_.extractall("app")
-                    print('Update patches applied, launching rdisc')
-                self.update_text = f"Successfully updated to {file_name[:-4].replace('rdisc', 'Rdisc')}."
-                sleep(2)
-            else:
-                print("App is up to date")
         except IndexError:
             s.send_e("UPD:N")
             file_name, update_size = s.recv_d(1024).split("🱫")
+        if file_name:
             update_size = int(update_size)
             self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
             all_bytes = b""
             start = perf_counter()
             while True:
-                bytes_read = s.s.recv(4096)
+                bytes_read = s.s.recv(32768)
                 if b"_BREAK_" in bytes_read:
                     all_bytes += bytes_read[:-7]
                     break
@@ -185,22 +167,60 @@ class Update(Screen):
                 all_bytes += bytes_read
             with open(f"app/{file_name}", "wb") as f:
                 f.write(all_bytes)
-            print("Update downloaded")
             self.update_text = "Update downloaded, unpacking..."
             sleep(1)
             with ZipFile(f"app/{file_name}", 'r') as zip_:
-                zip_.printdir()
-                print('Extracting update files...')
                 zip_.extractall("app")
-                print('Update patches applied, launching rdisc')
             self.update_text = f"Successfully updated to {file_name[:-4].replace('rdisc', 'Rdisc')}."
-            sleep(2)
+            sleep(1)
+            remove(f"app/{file_name}")
+            for file in listdir("app"):
+                if file.endswith(".exe") and file != f"{file_name[:-4]}.exe":
+                    remove(f"app/{file}")
+
         self.update_text = "Launching..."
-        system(f"start app/{[file for file in listdir('app') if file.endswith('.exe')][-1]}")
+        Popen(f"app/{[file for file in listdir('app') if file.endswith('.exe')][-1]}")
         App.get_running_app().stop()
 
     def on_enter(self, *args):
         Thread(target=self.update_system).start()
+
+
+class CreateDev(Screen):
+    create_text = StringProperty()
+
+    def create_env(self):
+        self.create_text = "Detecting git..."
+        try:
+            call("git")
+        except FileNotFoundError:
+            self.create_text = "Git not installed, installing..."
+            call("winget install --id Git.Git -e --source winget")
+        self.create_text = "Loading repo installer..."
+        with open("install.bat", "w") as f:
+            f.write("""echo Setting up repository
+        git clone --filter=blob:none --no-checkout --depth 1 --sparse https://github.com/rapidslayer101/Rdisc-Kivy app/code
+        cd app/code
+        git config core.sparsecheckout true
+        echo rdisc.py > .git/info/sparse-checkout
+        echo rdisc_kv.py >> .git/info/sparse-checkout
+        echo enclib.py >> .git/info/sparse-checkout
+        echo requirements.txt >> .git/info/sparse-checkout
+        git checkout
+        tar -xf app/code/venv.zip
+        )""")
+        self.create_text = "Running repo installer..."
+        call("install.bat")
+        self.create_text = "Installing dependency (kivy) 1/2..."
+        call("app/code/venv/Scripts/python -m pip install kivy")
+        self.create_text = "Installing dependency (rsa) 2/2..."
+        call("app/code/venv/Scripts/python -m pip install rsa")
+        self.create_text = "Launching..."
+        call("app/code/venv/Scripts/python app/code/rdisc.py")
+        App.get_running_app().stop()
+
+    def on_enter(self, *args):
+        Thread(target=self.create_env).start()
 
 
 class WindowManager(ScreenManager):
@@ -294,13 +314,12 @@ Builder.load_string("""
             pos_hint: {"x": 0.5, "top": 0.6}
             on_press: root.exe()
         SizeLabel:
-            text: "For developers:"
+            text: "For coders/devs:"
             pos_hint: {"x": 0.25, "top": 0.38}
         RoundedButton:
             text: "Rdisc dev (py)"
             pos_hint: {"x": 0.5, "top": 0.4}
             on_press: root.dev()
-            disabled: True
 
 <AttemptConnection>:
     GreyFloatLayout:
@@ -334,16 +353,25 @@ Builder.load_string("""
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.6}
             
+            
+<CreateDev>:
+    GreyFloatLayout:
+        Label:
+            text: root.create_text
+            font_size: '18dp'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.6}
+            
 
 
 """)
 sm = WindowManager()
-[sm.add_widget(screen) for screen in [Loading(), ChooseDistro(), AttemptConnection(), IpSet(), Update()]]
+[sm.add_widget(screen) for screen in [Loading(), ChooseDistro(), AttemptConnection(), IpSet(), Update(), CreateDev()]]
 
 
-class RdiscUpdator(App):
+class RdiscUpdater(App):
     def build(self):
-        self.title = f"Rdisc Updator"
+        self.title = f"Rdisc Updater"
         Window.size = (500, 600)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.set('kivy', 'exit_on_escape', '0')
@@ -351,4 +379,4 @@ class RdiscUpdator(App):
 
 
 if __name__ == "__main__":
-    RdiscUpdator().run()
+    RdiscUpdater().run()

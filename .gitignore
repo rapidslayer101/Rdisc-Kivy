@@ -8,3 +8,5 @@ rdisc_server.db
 bin
 .buildozer
 resources
+app
+rdisc-venv
