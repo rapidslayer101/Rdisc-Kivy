@@ -29,7 +29,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     *[Tree(p) for p in (sdl2.dep_bins + glew.dep_bins)],
-    name='rdisc-0.50.0.0',
+    name='rdisc-0.51.0.0',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

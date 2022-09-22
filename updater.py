@@ -69,22 +69,15 @@ def load(dt=None):
         mkdir("app")
         sm.switch_to(ChooseDistro())
     else:
-        try:
-            [file for file in listdir('app') if file.endswith('.exe')][-1]
-            sm.switch_to(AttemptConnection())
-        except IndexError:
-            if path.exists("app/code/rdisc.py"):
-                if not path.exists("app/code/launch.bat"):
-                    with open("app/code/launch.bat", "w") as f:
-                        f.write("""cd app/code
-echo Checking for updates
-git reset --hard
-git pull origin master
-echo Launching client
-start venv/Scripts/python.exe rdisc.py""")
-                call("start app/code/launch.bat")
-                App.get_running_app().stop()
-            else:
+        if path.exists("app/code/rdisc.py"):
+            call("launch.bat")
+            sleep(2)
+            App.get_running_app().stop()
+        else:
+            try:
+                [file for file in listdir('app') if file.endswith('.exe')][-1]
+                sm.switch_to(AttemptConnection())
+            except IndexError:
                 sm.switch_to(ChooseDistro())
 
 
@@ -222,7 +215,16 @@ class CreateDev(Screen):
         self.create_text = "Installing dependency (rsa) 2/2..."
         call("app/code/venv/Scripts/python -m pip install rsa")
         self.create_text = "Launching..."
-        call("app/code/venv/Scripts/python app/code/rdisc.py")
+        with open("launch.bat", "w") as f:
+            f.write("""cd app/code
+        echo Checking for updates
+        git reset --hard
+        git pull origin master
+        echo Launching client
+        start venv/Scripts/python.exe rdisc.py""")
+
+        call("launch.bat")
+        sleep(2)
         App.get_running_app().stop()
 
     def on_enter(self, *args):

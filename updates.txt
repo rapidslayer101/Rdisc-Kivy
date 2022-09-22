@@ -48,14 +48,13 @@
 0.48 UI abstraction and work
 0.49 username support, transfers, last online
 0.50 installer/updater exe
+0.51 updating rdisc source code in updater
 
-0.51 updating rdisc source dode in updater
-0.51 USB master keys and ip keys, client misinformation logging
-
-0.52 coinflip, transaction history with xp
-0.53 public chat room
-0.54 friending
-0.55 scratch cards and other inventory items
+0.52 USB master keys and ip keys, client misinformation logging
+0.53 coinflip, transaction history with xp
+0.54 public chat room
+0.55 friending
+0.56 scratch cards and other inventory items
 
 - distro types:
   - updator
