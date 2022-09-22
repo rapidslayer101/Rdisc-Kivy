@@ -6,7 +6,6 @@ from subprocess import Popen, call
 from zipfile import ZipFile
 from time import sleep, perf_counter
 from threading import Thread
-from venv import create
 
 from kivy.clock import Clock
 from kivy.app import App
@@ -74,11 +73,18 @@ def load(dt=None):
             [file for file in listdir('app') if file.endswith('.exe')][-1]
             sm.switch_to(AttemptConnection())
         except IndexError:
-            if path.exists("rdisc.py"):
-                print("Git pull")
-                sm.switch_to(ChooseDistro())
+            if path.exists("app/code/rdisc.py"):
+                if not path.exists("app/code/launch.bat"):
+                    with open("app/code/launch.bat", "w") as f:
+                        f.write("""cd app/code
+echo Checking for updates
+git reset --hard
+git pull origin master
+echo Launching client
+start venv/Scripts/python.exe rdisc.py""")
+                call("start app/code/launch.bat")
+                App.get_running_app().stop()
             else:
-                print("choose version")
                 sm.switch_to(ChooseDistro())
 
 
@@ -189,7 +195,7 @@ class Update(Screen):
 class CreateDev(Screen):
     create_text = StringProperty()
 
-    def create_env(self):
+    def create(self):
         self.create_text = "Detecting git..."
         try:
             call("git")
@@ -205,9 +211,9 @@ class CreateDev(Screen):
         echo rdisc.py > .git/info/sparse-checkout
         echo rdisc_kv.py >> .git/info/sparse-checkout
         echo enclib.py >> .git/info/sparse-checkout
-        echo requirements.txt >> .git/info/sparse-checkout
+        echo venv.zip >> .git/info/sparse-checkout
         git checkout
-        tar -xf app/code/venv.zip
+        tar -xf venv.zip
         )""")
         self.create_text = "Running repo installer..."
         call("install.bat")
@@ -220,7 +226,7 @@ class CreateDev(Screen):
         App.get_running_app().stop()
 
     def on_enter(self, *args):
-        Thread(target=self.create_env).start()
+        Thread(target=self.create).start()
 
 
 class WindowManager(ScreenManager):
