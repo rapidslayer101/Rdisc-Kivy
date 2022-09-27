@@ -49,12 +49,13 @@
 0.49 username support, transfers, last online
 0.50 installer/updater exe
 0.51 updating rdisc source code in updater
+0.52 reworked ip key and account creation system, username logins
 
-0.52 USB master keys and ip keys, client misinformation logging
-0.53 coinflip, transaction history with xp
-0.54 public chat room
-0.55 friending
-0.56 scratch cards and other inventory items
+0.53 USB master keys and ip keys, key ip detection logic, client misinformation logging, alt switcher
+0.54 coinflip, transaction history with xp
+0.55 public chat room
+0.56 friending
+0.57 scratch cards and other inventory items
 
 - distro types:
   - updator
@@ -62,16 +63,13 @@
     - updating rdisc source code
   - downloadable apk
 
-- username to login
-- alt switcher
+- ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
-- possible FIP: error, check
 - show debug to users in UI
+- rework code to use ELIF PLEASE
 - tell people what is required to make an account before starting
-- USB key support for master key and multiple ip keys
 - rate limits and checks for entire login paths
 - check if errors occur when not in order requests made through login paths
-- ip_key expiry check and deal with that as well as other invalid keys
 - nfc experiment <- unlikely, mobile support not a priority
 
 # account key + account pin = master key

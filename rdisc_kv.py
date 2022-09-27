@@ -205,7 +205,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         Label:
-            text: "Your account key and pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou should write these down and/or click the save to USB button"
+            text: "Your Account Key and Pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou should write these down and/or click the save to USB button"
             color: (37/255, 190/255, 150/255,1)
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
@@ -218,7 +218,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.45}
             on_text: root.continue_confirmation()
         YellowLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
             text: "CAPTCHA >>"
@@ -231,7 +231,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
                     
 <ReCreateKey>:
-    uid: uid
+    name_or_uid: name_or_uid
     pass_code: pass_code
     pin_code: pin_code
     GreyFloatLayout:
@@ -243,35 +243,39 @@ kv_payload = """# You can edit this file to change the UI.
                 root.manager.current = 'LogInOrSignUp'
                 root.manager.transition.direction = "right"
         Label:
-            text: "Enter User ID"
+            text: "Enter Username or User ID (UID)"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.9}
         RoundedTextInput:
-            id: uid
-            hint_text: "User ID"
+            id: name_or_uid
+            hint_text: "Username or UID"
             size_hint: 0.3, 0.05
             pos_hint: {"x": 0.35, "top": 0.8}
-            on_text: self.text = self.text[:8].upper()
+            on_text: 
+                self.text = self.text[:28]
+                root.toggle_button()
             on_text_validate: pass_code.focus = True
         Label:
-            text: "Enter account key"
+            text: "Enter Account Key"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
         RoundedTextInput:
             id: pass_code
-            hint_text: "Account key"
+            hint_text: "Account Key"
             size_hint: 0.3, 0.05
             password: True
             pos_hint: {"x": 0.35, "top": 0.6}
-            on_text: self.text = self.text[:15].upper().replace("-", "") 
+            on_text: 
+                self.text = self.text[:15].upper().replace("-", "") 
+                root.toggle_button()
             on_text_validate: pin_code.focus = True
         Label:
-            text: "Enter account pin"
+            text: "Enter Account Pin"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.5}
         RoundedTextInput:
             id: pin_code
-            hint_text: "Account pin"
+            hint_text: "Account Pin"
             size_hint: 0.3, 0.05
             password: True
             pos_hint: {"x": 0.35, "top": 0.4}
@@ -291,7 +295,7 @@ kv_payload = """# You can edit this file to change the UI.
                 root.manager.current = 'LogInOrSignUp'
                 root.manager.transition.direction = "right"
         YellowLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
             text: "CAPTCHA >>"
@@ -310,7 +314,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         OrangeLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
             text: "CAPTCHA >>"
@@ -333,6 +337,7 @@ kv_payload = """# You can edit this file to change the UI.
             id: captcha_image
             source: 'resources/blank_captcha.jpg'
             pos_hint: {"x": 0, "top": 1.15}
+            
         RoundedTextInput:
             id: captcha_input
             pos_hint: {"x": 0.35, "top": 0.5}
@@ -343,7 +348,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.35}
             on_press: root.try_captcha()
         GreenLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         YellowLabel:
             text: "CAPTCHA >>"
@@ -382,7 +387,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.3}
             on_press: root.set_nac_password()
         GreenLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
@@ -412,7 +417,7 @@ kv_payload = """# You can edit this file to change the UI.
             on_release:
                 root.login()
         GreenLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
@@ -446,7 +451,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.25}
             on_press: root.confirm_2fa()
         GreenLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
@@ -476,7 +481,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.4}
             on_press: root.confirm_2fa()
         GreenLabel:
-            text: "User keys >>"
+            text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreenLabel:
             text: "CAPTCHA >>"
@@ -571,7 +576,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.11, "top": 0.92}
         RoundedTextInput:
             id: transfer_uid
-            hint_text: "User ID or Username"
+            hint_text: "Username or UID"
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.06, "top": 0.82}
             on_text: self.text = self.text[:8].upper()
@@ -778,7 +783,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.7}
             
 <Settings>:
-    username_to: username_to
+    uname_to: uname_to
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -807,8 +812,8 @@ kv_payload = """# You can edit this file to change the UI.
             text: f"Name:"
             pos_hint: {"x": 0, "top": 0.82}
         RoundedTextInput:
-            id: username_to
-            text: root.username[:-4]
+            id: uname_to
+            text: root.uname[:-4]
             size_hint: 0.14, 0.05
             pos_hint: {"x": 0.09, "top": 0.82}
             on_text: self.text = self.text.replace("  ", " ").replace("#", "")[:24]
@@ -823,7 +828,7 @@ kv_payload = """# You can edit this file to change the UI.
             font_size: "10dp"
             pos_hint: {"x": 0.11, "top": 0.78}
         SizeLabel:
-            text: f"Tag: {root.username[-4:]}"
+            text: f"Tag: {root.uname[-4:]}"
             pos_hint: {"x": 0.06, "top": 0.73}
         SizeLabel:
             text: f"UID: {root.uid}"

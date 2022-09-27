@@ -114,9 +114,10 @@ s = Server()
 class KeyStore:
     def __init__(self):
         self.master_key = None
-        self.uid = None
+        self.uid = None  # user id
+        self.uname = None  # username
         self.secret_code = None
-        self.ip_key = None
+        self.ipk = None  # ip key
         self.pass_code = None
         self.pin_code = None
         self.path = None  # Make or Login
@@ -137,18 +138,11 @@ def connect_system(dt=None):
             print(" - Key data loaded")
             if b"MAKE_KEY" in key_data:
                 key_data = key_data.decode("utf-8")
-                if key_data.endswith("MAKE_KEY1"):
-                    print(" - MAKE KEY FROM CAPTCHA")
-                    keys.path, keys.master_key = "make", key_data[:-9]
-                    sm.switch_to(Captcha(), direction="left")
-                else:
-                    if key_data.endswith("MAKE_KEY2"):
-                        print(" - MAKE KEY FROM 2FA")
-                        keys.path = "make"
-                        keys.master_key, keys.uid, keys.secret_code = key_data[:-9].split("🱫")
-                        sm.switch_to(TwoFacSetup(), direction="left")
+                print(" - MAKE KEY FROM CAPTCHA")
+                keys.path, keys.master_key = "make", key_data[:-9]
+                sm.switch_to(Captcha(), direction="left")
             else:
-                keys.uid, keys.ip_key = str(key_data[:8])[2:-1], key_data[8:]
+                keys.uid, keys.ipk = str(key_data[:8])[2:-1], key_data[8:]
                 sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
@@ -207,23 +201,18 @@ class KeyUnlock(Screen):
         else:
             try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
-                user_pass = enc.to_base(96, 16, sha512((user_pass+keys.uid).encode()).hexdigest())
-                ip_key = enc.dec_from_pass(keys.ip_key, user_pass[:40], user_pass[40:])
-                ip_key = enc.to_base(96, 16, sha512((ip_key+keys.uid).encode()).hexdigest())
-                s.send_e(f"ULK:{keys.uid}")
+                user_pass = enc.pass_to_key(user_pass, keys.uid)
+                ipk = enc.dec_from_pass(keys.ipk, user_pass[:40], user_pass[40:])
+                s.send_e(f"ULK:{keys.uid}🱫{ipk}")
                 ulk_resp = s.recv_d(128)
                 if ulk_resp == "SESH_T":
                     print("Session taken")
                 else:
                     if ulk_resp == "N":
-                        print("User not found")  # or no IP keys found
+                        print("Login invalid")
                     else:
-                        user_challenge = sha512(enc.pass_to_key(ip_key, keys.uid, int(ulk_resp)).encode()).hexdigest()
-                        s.send_e(user_challenge)
-                        ulk_resp = s.recv_d(1024)
-                        if ulk_resp != "N":
-                            keys.username, keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
-                            sm.switch_to(Home(), direction="left")
+                        keys.uname, keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
+                        sm.switch_to(Home(), direction="left")
             except zl_error:
                 print("Invalid password")
 
@@ -259,7 +248,7 @@ class CreateKey(Screen):
         keys.master_key = enc.to_base(96, 16, master_key.hex())
         print(keys.master_key, enc.to_base(36, 10, current_depth))  # debug
         with open("userdata/key", "w", encoding="utf-8") as f:
-            f.write(f"{keys.master_key}MAKE_KEY1")
+            f.write(f"{keys.master_key}MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Account pin: {enc.to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your account code " \
@@ -268,7 +257,7 @@ class CreateKey(Screen):
     def on_pre_enter(self, *args):
         keys.path = "make"
         acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
-        time_depth = uniform(3, 10)
+        time_depth = uniform(3, 5)
         print(acc_key)  # debug
         Thread(target=self.generate_master_key, args=(acc_key[:6].encode(),
                acc_key[6:].encode(), time_depth,), daemon=True).start()
@@ -289,20 +278,29 @@ class CreateKey(Screen):
 
 
 class ReCreateKey(Screen):
-    uid = ObjectProperty()
+    name_or_uid = ObjectProperty()
     pass_code = ObjectProperty()
     pin_code = ObjectProperty()
 
     def toggle_button(self):
-        if len(self.uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
+        if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
             self.ids.start_regen_button.disabled = False
         else:
-            self.ids.start_regen_button.disabled = True
+            if 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
+                    len(self.pass_code.text) == 15 and self.pin_code.text:
+                self.ids.start_regen_button.disabled = False
+            else:
+                self.ids.start_regen_button.disabled = True
 
     def start_regeneration(self):
-        if len(self.uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
+        if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
             keys.path = "login"
-            keys.uid, keys.pass_code, keys.pin_code = self.uid.text, self.pass_code.text, self.pin_code.text
+            keys.uid, keys.pass_code, keys.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
+            sm.switch_to(ReCreateGen(), direction="left")
+        if 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
+                len(self.pass_code.text) == 15 and self.pin_code.text:
+            keys.path = "login"
+            keys.uname, keys.pass_code, keys.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
             sm.switch_to(ReCreateGen(), direction="left")
 
 
@@ -365,7 +363,10 @@ class Captcha(Screen):
                 if keys.path == "make":
                     sm.switch_to(NacPassword(), direction="left")
                 if keys.path == "login":
-                    s.send_e(f"LOG:{keys.master_key}🱫{keys.uid}")
+                    if keys.uname:
+                        s.send_e(f"LOG:{keys.master_key}🱫u🱫{keys.uname}")
+                    else:
+                        s.send_e(f"LOG:{keys.master_key}🱫i🱫{keys.uid}")
                     log_resp = s.recv_d(1024)
                     if log_resp == "IMK":
                         print("Invalid master key")
@@ -373,7 +374,9 @@ class Captcha(Screen):
                         if log_resp == "NU":
                             print("UID does not exist")
                         else:
-                            keys.ip_key = log_resp
+                            keys.ipk = log_resp
+                            if keys.uname:
+                                keys.uid = s.recv_d(1024)
                             sm.switch_to(LogUnlock(), direction="left")
             else:
                 print("Captcha failed")
@@ -414,9 +417,9 @@ class LogUnlock(Screen):
         else:
             try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
-                user_pass = enc.to_base(96, 16, sha512((user_pass+keys.uid).encode()).hexdigest())
-                ip_key = enc.dec_from_pass(keys.ip_key, user_pass[:40], user_pass[40:])
-                s.send_e(ip_key)
+                user_pass = enc.pass_to_key(user_pass, keys.uid)
+                ipk = enc.dec_from_pass(keys.ipk, user_pass[:40], user_pass[40:])
+                s.send_e(ipk)
                 if s.recv_d(1024) == "V":
                     sm.switch_to(TwoFacLog(), direction="left")
                 else:
@@ -434,18 +437,13 @@ class TwoFacSetup(Screen):
         self.two_fac_wait_text = "Waiting for 2fa QR code..."
 
     def on_enter(self, *args):
-        if not keys.secret_code:
-            keys.uid, keys.secret_code = s.recv_d(1024).split("🱫")
-            with open("userdata/key", "w", encoding="utf-8") as f:
-                f.write(f"{keys.master_key}🱫{keys.uid}🱫{keys.secret_code}MAKE_KEY2")
-        else:
-            s.send_e(f"FIP:{keys.uid}🱫{keys.master_key}")
+        keys.uid, keys.secret_code = s.recv_d(1024).split("🱫")
         secret_code = b32encode(keys.secret_code.encode()).decode().replace('=', '')
         print(secret_code)  # todo mention in UI text
         self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
                                      f"F%2Ftotp%2F{keys.uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
         self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
-                                 f"Your User ID is {keys.uid}"
+                                 f"Your User ID (UID) is {keys.uid}"
 
     def confirm_2fa(self):
         if self.two_fac_confirm.text == "":
@@ -454,12 +452,12 @@ class TwoFacSetup(Screen):
             self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
             if len(self.two_fac_confirm.text) == 6:
                 s.send_e(self.two_fac_confirm.text.replace(" ", ""))
-                ip_key = s.recv_d(1024)
-                if ip_key != "N":
+                ipk = s.recv_d(1024)
+                if ipk != "N":
                     with open("userdata/key", "wb") as f:
-                        f.write(keys.uid.encode()+ip_key)
+                        f.write(keys.uid.encode()+ipk)
                     print("2FA confirmed")
-                    keys.username, keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
+                    keys.uname, keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -480,9 +478,9 @@ class TwoFacLog(Screen):
                 two_fa_valid = s.recv_d(1024)
                 if two_fa_valid != "N":
                     with open("userdata/key", "wb") as f:
-                        f.write(keys.uid.encode()+keys.ip_key)
+                        f.write(keys.uid.encode()+keys.ipk)
                     print("2FA confirmed")
-                    keys.username, keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
+                    keys.uname, keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -512,7 +510,7 @@ class Home(Screen):
             keys.d_coin = keys.d_coin[:-2]
         self.r_coins = keys.r_coin+" R"
         self.d_coins = keys.d_coin+" D"
-        self.welcome_text = f"Welcome back {keys.username}"
+        self.welcome_text = f"Welcome back {keys.uname}"
         self.transfer_cost = "0.00"
         self.transfer_send = "0.00"
         self.transfer_fee = "0.00"
@@ -662,9 +660,9 @@ class Inventory(Screen):
 class Settings(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
-    username = StringProperty()
+    uname = StringProperty()
     uid = StringProperty()
-    username_to = ObjectProperty(None)
+    uname_to = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
         if keys.r_coin.endswith(".0"):
@@ -673,27 +671,24 @@ class Settings(Screen):
             keys.d_coin = keys.d_coin[:-2]
         self.r_coins = keys.r_coin+" R"
         self.d_coins = keys.d_coin+" D"
-        self.username = keys.username
+        self.uname = keys.uname
         self.uid = keys.uid
-
-    def edit_username(self):
-        self.username_to.text = self.username_to.text.replace("  ", " ").replace("#", "")[:24]
 
     def change_name(self):
         if float(keys.d_coin) > 4:
-            if 4 < len(self.username_to.text) < 25:
-                s.send_e(f"CUN:{self.username_to.text}")
-                new_username = s.recv_d(1024)
-                if new_username != "N":
-                    keys.username = new_username
-                    self.username = keys.username
+            if 4 < len(self.uname_to.text) < 25:
+                s.send_e(f"CUN:{self.uname_to.text}")
+                new_uname = s.recv_d(1024)
+                if new_uname != "N":
+                    keys.uname = new_uname
+                    self.uname = keys.uname
                     keys.d_coin = str(float(keys.d_coin)-5)
                     if keys.d_coin.endswith(".0"):
                         keys.d_coin = keys.d_coin[:-2]
                     self.d_coins = keys.d_coin+" D"
-                    print("username changed")
+                    print("Username changed")
             else:
-                print("username must be between 5 and 24 characters")
+                print("Username must be between 5 and 24 characters")
         else:
             print("insufficient funds")
 

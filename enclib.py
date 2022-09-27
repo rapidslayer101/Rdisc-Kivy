@@ -7,9 +7,9 @@ from hashlib import sha512
 from zlib import compress, decompress
 from multiprocessing import Pool, cpu_count
 
-# enc 11.8.5 - CREATED BY RAPIDSLAYER101 (Scott Bree)
+# enc 11.9.0 - CREATED BY RAPIDSLAYER101 (Scott Bree)
 _default_block_size_ = 5000000  # the chunking size
-_xor_salt_len_ = 8  # 94^8 combinations
+_xor_salt_len_ = 7  # 94^8 combinations
 _default_pass_depth_ = 100000  # the hash loop depth
 _b94set_ = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/`!\"$%^&*() -=[{]};:'@#~\\|,<.>?"
 _b96set_ = _b94set_+"¬£"
@@ -41,7 +41,8 @@ def get_base(data_to_resolve):
 
 # turns a password and salt into a key
 # used to save a key so encryption/decryption does not require the generation of a key each time
-def pass_to_key(password, salt, depth):
+# can also be used as a string hider to hide data other than a password
+def pass_to_key(password, salt, depth=1):
     password, salt = password.encode(), salt.encode()
     for i in range(depth):
         password = sha512(password+salt).digest()
@@ -172,7 +173,6 @@ def _file_encrypter_(enc, file, key, file_output, compressor):
 
 # a selection of wrappers for the encrypter function for encryption and decryption
 
-
 # encrypts data
 def enc_from_pass(text, password, salt, depth=_default_pass_depth_, block_size=_default_block_size_):
     return _encrypter_(True, text, pass_to_key(password, salt, depth), block_size, True)
@@ -204,7 +204,7 @@ def dec_file_from_pass(e_file, password, salt, file_output, depth=_default_pass_
 
 
 # rounds dt to an amount of seconds
-# this function could be used to create a time based key system
+# this function can be used to create a time based key system
 def round_time(dt=None, round_to=30):
     if not dt:
         dt = datetime.now()
