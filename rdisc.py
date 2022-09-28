@@ -372,7 +372,8 @@ class Captcha(Screen):
                         print("Invalid master key")
                     else:
                         if log_resp == "NU":
-                            print("UID does not exist")
+                            print("Username/UID does not exist")
+                            sm.switch_to(ReCreateKey(), direction="right")
                         else:
                             keys.ipk = log_resp
                             if keys.uname:

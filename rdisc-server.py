@@ -181,7 +181,7 @@ def client_connection(cs):
                             uid, master_key, user_secret, user_pass, u_name, xp, r_coin, d_coin = users.db.execute(
                                 "SELECT user_id, master_key, secret, user_pass, username, xp, r_coin, d_coin "
                                 "FROM users WHERE username = ?", (uname_or_uid,)).fetchone()
-                        except sqlite3.OperationalError:
+                        except TypeError:
                             send_e("NU")  # user does not exist
                     else:
                         try:

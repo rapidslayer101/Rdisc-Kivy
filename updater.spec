@@ -7,7 +7,7 @@ block_cipher = None
 
 a = Analysis(
     ['updater.py'],
-    pathex=["C:\\Users\\rapid\\PycharmProjects\\kivy_test2"],
+    pathex=["C:/Users/rapid/PycharmProjects/Rdisc-Kivy"],
     binaries=[],
     datas=[],
     hiddenimports=[],
