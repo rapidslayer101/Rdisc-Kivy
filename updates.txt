@@ -52,6 +52,7 @@
 0.52 reworked ip key and account creation system, username logins
 
 0.53 USB master keys and ip keys, key ip detection logic, client misinformation logging, alt switcher
+
 0.54 coinflip, transaction history with xp
 0.55 public chat room
 0.56 friending
@@ -66,15 +67,13 @@
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
 - show debug to users in UI
-- rework code to use ELIF PLEASE
 - tell people what is required to make an account before starting
-- rate limits and checks for entire login paths
+- connection rate limit and checks for entire login paths
 - check if errors occur when not in order requests made through login paths
 - nfc experiment <- unlikely, mobile support not a priority
 
 # account key + account pin = master key
-# MASTER KEY NEVER SAVED TO CLIENTS DEVICE
+# MASTER KEY MAY BE SAVED TO USB
 #-> set master key and password
 # master key + 2fa = ip key enc
-# (ip key + password) + challenge depth = login
-# 5 ips at one time
+# ip key + password= login

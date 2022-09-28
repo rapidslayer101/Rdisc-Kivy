@@ -15,6 +15,14 @@ from captcha.image import ImageCaptcha
 #  async, sesh_key front of enc to identify user
 
 
+class InvalidClientData(Exception):
+    pass
+
+
+class SessionTaken(Exception):
+    pass
+
+
 class Users:
     def __init__(self):
         self.logged_in_users = []
@@ -56,11 +64,10 @@ class Users:
     def check_logged_in(self, uid, ip):
         if uid in self.logged_in_users:
             return True
+        elif ip in self.logged_in_users:
+            return True
         else:
-            if ip in self.logged_in_users:
-                return True
-            else:
-                return False
+            return False
 
 
 users = Users()
@@ -80,11 +87,10 @@ def client_connection(cs):
         try:
             pub_key_cli = PublicKey.load_pkcs1(cs.recv(256))
         except ValueError:
-            raise AssertionError
-        enc_seed, enc_salt = enc.rand_b96_str(48), enc.rand_b96_str(48)
+            raise InvalidClientData
+        enc_seed = enc.rand_b96_str(36)
         cs.send(encrypt(enc_seed.encode(), pub_key_cli))
-        cs.send(encrypt(enc_salt.encode(), pub_key_cli))
-        enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
+        enc_key = enc.pass_to_key(enc_seed[:18], enc_seed[18:], 100000)
 
         def send_e(text):
             try:
@@ -107,7 +113,6 @@ def client_connection(cs):
                         cs.sendall(b"_BREAK_")
                         break
                     cs.sendall(bytes_read)
-            raise ConnectionResetError
 
         while True:
             login_request = recv_d(1024)
@@ -125,9 +130,9 @@ def client_connection(cs):
                         send_update(file)
                     else:
                         send_e("V")
-                        raise ConnectionResetError
+                raise ConnectionResetError
 
-            if login_request.startswith("CAP"):  # captcha request
+            elif login_request == "CAP":  # captcha request
                 img = ImageCaptcha(width=280, height=90)
                 captcha_text = "".join(choices("23456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(10)))
                 print(captcha_text)
@@ -249,11 +254,11 @@ def client_connection(cs):
                         else:
                             send_e("IMK")  # master key wrong
 
-            if login_request.startswith("ULK:"):
+            elif login_request.startswith("ULK:"):
                 uid, u_ipk = login_request[4:].split("🱫")
                 if users.check_logged_in(uid, ip):
                     send_e("SESH_T")
-                    raise ConnectionRefusedError
+                    raise SessionTaken
                 else:
                     try:
                         ipk1, ipk2, ipk3, ipk4, u_name, xp, r_coin, d_coin = \
@@ -292,6 +297,9 @@ def client_connection(cs):
                                 break
                         send_e("N")
 
+            else:
+                raise InvalidClientData
+
         users.login(uid, ip, cs)
         print(f"{uid} logged in with IP-{ip}:{port}")
         while True:  # main loop
@@ -313,9 +321,9 @@ def client_connection(cs):
                 if d_coin > 4:
                     n_u_name = request[4:]
                     if not 4 < len(n_u_name) < 25:
-                        raise AssertionError
+                        raise InvalidClientData
                     if "#" in n_u_name or "  " in n_u_name:
-                        raise AssertionError
+                        raise InvalidClientData
                     counter = 0
                     while True:
                         counter += 1
@@ -335,14 +343,14 @@ def client_connection(cs):
                                 break
 
                 else:
-                    raise AssertionError
+                    raise InvalidClientData
 
             if request.startswith("TRF:"):  # transfer R coins
                 transfer_to, transfer_amount = request[4:].split("🱫")
                 if round(float(transfer_amount)/0.995, 2) > r_coin:
-                    raise AssertionError
+                    raise InvalidClientData
                 if transfer_to == uid:
-                    raise AssertionError
+                    raise InvalidClientData
                 try:  # todo what if the user is already logged in, resolve username to UID
                     transfer_to_r_coin = users.db.execute("SELECT r_coin FROM users WHERE user_id = ?",
                                                           (transfer_to,)).fetchone()[0]
@@ -366,14 +374,14 @@ def client_connection(cs):
                     try:
                         int(add_friend_n[-4:])
                         if add_friend_n[-5] != "#":
-                            raise AssertionError
+                            raise InvalidClientData
                         else:
                             print("process new friend")
                             print(add_friend_n)
                     except ValueError:
-                        raise AssertionError
+                        raise InvalidClientData
                 else:
-                    raise AssertionError
+                    raise InvalidClientData
 
             if request.startswith("COF:"):  # coinflip game
                 print("Coinflip game triggered")
@@ -383,9 +391,9 @@ def client_connection(cs):
         print(f"{uid}-{ip}:{port} DC")
         if ip in users.logged_in_users:
             users.logout(uid, ip, cs)
-    except ConnectionRefusedError:
+    except SessionTaken:
         print(f"{uid}-{ip}:{port} DC - 1 session limit")
-    except AssertionError:
+    except InvalidClientData:
         print(f"{uid}-{ip}:{port} DC - modified/invalid client request")
         if ip in users.logged_in_users:
             users.logout(uid, ip, cs)

@@ -205,7 +205,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         Label:
-            text: "Your Account Key and Pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou should write these down and/or click the save to USB button"
+            text: "Your Account Key and Pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou may want to write these down."
             color: (37/255, 190/255, 150/255,1)
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
@@ -218,6 +218,32 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.45}
             on_text: root.continue_confirmation()
         YellowLabel:
+            text: "User Keys >>"
+            pos_hint: {"x": 0.3,  "top": 1}
+        GreyLabel:
+            text: "CAPTCHA >>"
+            pos_hint: {"x": 0.4,  "top": 1}
+        GreyLabel:
+            text: "Password >>"
+            pos_hint: {"x": 0.5,  "top": 1}
+        GreyLabel:
+            text: "2FA"
+            pos_hint: {"x": 0.6,  "top": 1}
+            
+<UsbSetup>:
+    GreyFloatLayout:
+        Label:
+            text: root.usb_text
+            color: (37/255, 190/255, 150/255,1)
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.7}
+        RoundedButton:
+            text: root.skip_text
+            pos_hint: {"x": 0.35, "top": 0.45}
+            on_press:
+                root.manager.current = 'Captcha'
+                root.manager.transition.direction = "right"
+        OrangeLabel:
             text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
         GreyLabel:
@@ -495,8 +521,8 @@ kv_payload = """# You can edit this file to change the UI.
             
 <HomeButton@Button>:
     text: "Home"
-    size_hint: 0.1, 0.05
-    pos_hint: {"x": 0, "top": 0.99}
+    size_hint: 0.09, 0.05
+    pos_hint: {"x": 0.01, "top": 0.99}
     
 <ChatButton@Button>:
     text: "Chat"

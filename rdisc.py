@@ -74,21 +74,20 @@ class Server:
             self.ip = None
 
     def connect(self):
-        try:
+        try:  # try to connect to server
             self.s.connect((self.ip[0], int(self.ip[1])))
             print("Connected to server")
             l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
             s_ip, s_port = str(self.s).split("raddr=")[1][2:-2].split("', ")
             print(f" << Server connected via {l_ip}:{l_port} -> {s_ip}:{s_port}")
-            pub_key, pri_key = newkeys(1024)
+            pub_key, pri_key = newkeys(512)
             try:
                 self.s.send(PublicKey.save_pkcs1(pub_key))
             except ConnectionResetError:
                 return False
             print(" >> Public RSA key sent")
             enc_seed = decrypt(self.s.recv(128), pri_key).decode()
-            enc_salt = decrypt(self.s.recv(128), pri_key).decode()
-            self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
+            self.enc_key = enc.pass_to_key(enc_seed[:18], enc_seed[18:], 100000)
             print(" << Client enc_seed and enc_salt received and loaded\n -- RSA Enc bootstrap complete")
             return True
         except ConnectionRefusedError:
@@ -120,6 +119,7 @@ class KeyStore:
         self.ipk = None  # ip key
         self.pass_code = None
         self.pin_code = None
+        self.acc_key = None
         self.path = None  # Make or Login
         self.xp = None
         self.r_coin = None
@@ -250,9 +250,10 @@ class CreateKey(Screen):
         with open("userdata/key", "w", encoding="utf-8") as f:
             f.write(f"{keys.master_key}MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Account pin: {enc.to_base(36, 10, current_depth)}"
-        self.rand_confirm_text = f"Once you have written down your account code " \
+        self.pin_code_text = f"Account Pin: {enc.to_base(36, 10, current_depth)}"
+        self.rand_confirm_text = f"Once you have written down your Account pin " \
                                  f"and pin enter {self.rand_confirmation} below"
+        keys.pin_code = enc.to_base(36, 10, current_depth)
 
     def on_pre_enter(self, *args):
         keys.path = "make"
@@ -263,18 +264,57 @@ class CreateKey(Screen):
                acc_key[6:].encode(), time_depth,), daemon=True).start()
         self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
         acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}"
-        self.pass_code_text = f"Your account key is: {acc_key_print}"
+        self.pass_code_text = f"Your Account Key is: {acc_key_print}"
+        keys.acc_key = acc_key
 
     def continue_confirmation(self):
         if self.rand_confirmation:
             if self.confirmation_code == "":
                 print("No input provided")
-            else:
-                if self.confirmation_code.text == self.rand_confirmation:
-                    print("Confirmation code correct")
-                    sm.switch_to(Captcha(), direction="left")
+            elif self.confirmation_code.text == self.rand_confirmation:
+                print("Confirmation code correct")
+                if platform in ["win32", "linux"]:
+                    sm.switch_to(UsbSetup(), direction="left")
                 else:
-                    print("Confirmation code incorrect")
+                    sm.switch_to(Captcha(), direction="left")
+            else:
+                print("Confirmation code incorrect")
+
+
+class UsbSetup(Screen):
+    usb_text = StringProperty()
+    skip_text = StringProperty()
+
+    def check_usb(self):
+        dl = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
+        while True:
+            now_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
+            if before_drives != now_drives:
+                try:
+                    new_drive = [d for d in now_drives if d not in before_drives][0]
+                    break
+                except IndexError:
+                    before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
+            sleep(0.1)
+        mkey_file_num = 1
+        for file in listdir(new_drive):
+            if file.startswith("mkey"):
+                try:
+                    if int(file[4:]) >= mkey_file_num:
+                        mkey_file_num = int(file[4:])+1
+                except ValueError:
+                    pass
+        with open(f"{new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
+            f.write(f"{keys.acc_key}🱫{keys.pin_code}")
+        self.usb_text = f"Wrote keys to USB drive at {new_drive}"
+        self.skip_text = "Continue"
+
+    def on_pre_enter(self, *args):
+        self.usb_text = "Detecting USB drive....\nPlease connect your USB drive\n" \
+                        "(If it is already connected please disconnect and reconnect it)"
+        self.skip_text = "Skip USB setup"
+        Thread(target=self.check_usb, daemon=True).start()
 
 
 class ReCreateKey(Screen):
@@ -285,12 +325,11 @@ class ReCreateKey(Screen):
     def toggle_button(self):
         if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
             self.ids.start_regen_button.disabled = False
+        elif 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
+                len(self.pass_code.text) == 15 and self.pin_code.text:
+            self.ids.start_regen_button.disabled = False
         else:
-            if 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
-                    len(self.pass_code.text) == 15 and self.pin_code.text:
-                self.ids.start_regen_button.disabled = False
-            else:
-                self.ids.start_regen_button.disabled = True
+            self.ids.start_regen_button.disabled = True
 
     def start_regeneration(self):
         if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
@@ -370,15 +409,14 @@ class Captcha(Screen):
                     log_resp = s.recv_d(1024)
                     if log_resp == "IMK":
                         print("Invalid master key")
+                    elif log_resp == "NU":
+                        print("Username/UID does not exist")
+                        sm.switch_to(ReCreateKey(), direction="right")
                     else:
-                        if log_resp == "NU":
-                            print("Username/UID does not exist")
-                            sm.switch_to(ReCreateKey(), direction="right")
-                        else:
-                            keys.ipk = log_resp
-                            if keys.uname:
-                                keys.uid = s.recv_d(1024)
-                            sm.switch_to(LogUnlock(), direction="left")
+                        keys.ipk = log_resp
+                        if keys.uname:
+                            keys.uid = s.recv_d(1024)
+                        sm.switch_to(LogUnlock(), direction="left")
             else:
                 print("Captcha failed")
 
@@ -390,19 +428,16 @@ class NacPassword(Screen):
     def set_nac_password(self):
         if self.nac_password_1.text == "":
             print("No input provided (1)")
+        elif self.nac_password_2.text == "":
+            print("No input provided (2)")
+        elif len(self.nac_password_1.text) < 9:
+            print("Password must be at least 9 characters")
+        elif self.nac_password_1.text != self.nac_password_2.text:
+            print("Passwords do not match")
         else:
-            if self.nac_password_2.text == "":
-                print("No input provided (2)")
-            else:
-                if len(self.nac_password_1.text) < 9:
-                    print("Password must be at least 9 characters")
-                else:
-                    if self.nac_password_1.text != self.nac_password_2.text:
-                        print("Passwords do not match")
-                    else:
-                        pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
-                        s.send_e(f"NAC:{keys.master_key}🱫{pass_send}")
-                        sm.switch_to(TwoFacSetup(), direction="left")
+            pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
+            s.send_e(f"NAC:{keys.master_key}🱫{pass_send}")
+            sm.switch_to(TwoFacSetup(), direction="left")
 
 
 class LogUnlock(Screen):
@@ -716,7 +751,7 @@ Builder.load_file("rdisc.kv")
 sm = WindowManager()
 [sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"),
  LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"),
- ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
+ UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
  NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"),
  TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
  Inventory(name="Inventory"), Settings(name="Settings"), Coinflip(name="Coinflip")]]
@@ -726,12 +761,11 @@ class Rdisc(App):
     def build(self):
         if version_:
             self.title = f"Rdisc-{version_}"
+        elif path.exists("rdisc.py"):
+            self.title = "Rdisc-Dev"
         else:
-            if path.exists("rdisc.py"):
-                self.title = "Rdisc-Dev"
-            else:
-                self.title = [file for file in listdir('app') if
-                              file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
+            self.title = [file for file in listdir('app') if
+                          file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
         if platform in ["win32", "linux"]:
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')

@@ -33,15 +33,14 @@ class Server:
             l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
             s_ip, s_port = str(self.s).split("raddr=")[1][2:-2].split("', ")
             print(f" << Server connected via {l_ip}:{l_port} -> {s_ip}:{s_port}")
-            pub_key, pri_key = newkeys(1024)
+            pub_key, pri_key = newkeys(512)
             try:
                 self.s.send(PublicKey.save_pkcs1(pub_key))
             except ConnectionResetError:
                 return False
             print(" >> Public RSA key sent")
             enc_seed = decrypt(self.s.recv(128), pri_key).decode()
-            enc_salt = decrypt(self.s.recv(128), pri_key).decode()
-            self.enc_key = enc.pass_to_key(enc_seed, enc_salt, 100000)
+            self.enc_key = enc.pass_to_key(enc_seed[:18], enc_seed[18:], 100000)
             print(" << Client enc_seed and enc_salt received and loaded\n -- RSA Enc bootstrap complete")
             return True
         except ConnectionRefusedError:
