@@ -4,6 +4,7 @@ kv_payload = """# You can edit this file to change the UI.
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
 #: import WipeTransition kivy.uix.screenmanager.WipeTransition
+#:import Factory kivy.factory.Factory
 
 ### Colors ###
 # edits the color scheme of the UI
@@ -12,6 +13,7 @@ kv_payload = """# You can edit this file to change the UI.
 #:set rdisc_purple_dark (104/255, 73/255, 160/255,1)
 #:set rdisc_cyan (37/255, 190/255, 150/255,1)
 
+#:set link_blue (80/255, 154/255, 228/255, 1)
 #:set green (20/255, 228/255, 43/255,1)
 #:set yellow (243/255, 240/255, 51/255,1)
 #:set orange (243/255, 132/255, 1/255,1)
@@ -43,6 +45,16 @@ kv_payload = """# You can edit this file to change the UI.
     canvas.before:
         Color:
             rgba: rdisc_purple if self.state == 'normal' else rdisc_purple_dark
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [10]
+            
+<RoundedBackingButton@Button>
+    background_color: 0,0,0,0
+    canvas.before:
+        Color:
+            rgba: bk_grey_3
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -84,9 +96,58 @@ kv_payload = """# You can edit this file to change the UI.
         Line:
             ellipse: self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 360, 540
             
-
 <SizeLabel@Label>:
     size_hint: 0.1, 0.05
+            
+<TermsPopup@Popup>:
+    title: "Rdisc Terms and Conditions"
+    auto_dismiss: False
+    size_hint: 0.75, 0.75
+    GreyFloatLayout:
+        Label:
+            text: app.t_and_c
+            size_hint: 0.9, 0.9
+            pos_hint: {"x": 0.05, "top": 1.2}
+        RoundedButton:
+            text: 'Close'
+            size_hint: 0.4, 0.1
+            pos_hint: {"x": 0.3, "top": 0.2}
+            on_release: root.dismiss()
+               
+<InvalidCodePopup@Popup>:
+    title: "Claim Code"
+    auto_dismiss: False
+    size_hint: 0.6, 0.6
+    GreyFloatLayout:
+        Label:
+            text: app.claim_result
+            size_hint: 0.9, 0.9
+            pos_hint: {"x": 0.05, "top": 1.2}
+        RoundedButton:
+            text: 'Exit'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.2}
+            on_release: root.dismiss()
+            
+<ClaimCodePopup@Popup>:
+    title: "Claim Code"
+    auto_dismiss: False
+    size_hint: 0.6, 0.6
+    GreyFloatLayout:
+        Label:
+            text: app.claim_result
+            size_hint: 0.9, 0.9
+            pos_hint: {"x": 0.05, "top": 1.2}
+        RoundedButton:
+            text: 'Exit'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.19, "top": 0.2}
+            on_release: root.dismiss()
+        RoundedButton:
+            text: 'Claim'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.51, "top": 0.2}
+            on_release: root.dismiss()
 
 # colored labels
 <GreyLabel@SizeLabel>
@@ -205,7 +266,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         Label:
-            text: "Your Account Key and Pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou may want to write these down."
+            text: f"Your Account Key and Pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou may want to write these down."
             color: (37/255, 190/255, 150/255,1)
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
@@ -213,9 +274,16 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.rand_confirm_text
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.6}
+        Button:
+            text: "View Terms and Conditions"
+            color: link_blue
+            background_color: (1/255, 1/255, 1/255,0)
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45, "top": 0.51}
+            on_release: Factory.TermsPopup().open()
         RoundedTextInput:
             id: confirmation_code
-            pos_hint: {"x": 0.35, "top": 0.45}
+            pos_hint: {"x": 0.35, "top": 0.4}
             on_text: root.continue_confirmation()
         YellowLabel:
             text: "User Keys >>"
@@ -242,7 +310,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.45}
             on_press:
                 root.manager.current = 'Captcha'
-                root.manager.transition.direction = "right"
+                root.manager.transition.direction = "left"
         OrangeLabel:
             text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
@@ -268,6 +336,12 @@ kv_payload = """# You can edit this file to change the UI.
             on_press:
                 root.manager.current = 'LogInOrSignUp'
                 root.manager.transition.direction = "right"
+        Button:
+            id: load_from_usb_button
+            text: root.load_text
+            size_hint: 0.12, 0.05
+            pos_hint: {"x": 0.88, "top": 1}
+            on_press: root.load_from_usb()
         Label:
             text: "Enter Username or User ID (UID)"
             size_hint: 0.3, 0.1
@@ -424,6 +498,13 @@ kv_payload = """# You can edit this file to change the UI.
         GreyLabel:
             text: "2FA"
             pos_hint: {"x": 0.6,  "top": 1}
+            
+<AccountPicker>:
+    GreyFloatLayout:
+        Label:
+            text: "Pick Account"
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.35, "top": 0.8}
                     
 <LogUnlock>:
     pwd: pwd
@@ -549,13 +630,13 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.07, 0.05
     pos_hint: {"x": 0.7, "top": 0.99}
     
-<D_coin_label@BackingLabel>:
-    color: d_coin_blue
-    pos_hint: {"x": 0.78, "top": 0.99}
-    
 <R_coin_label@BackingLabel>:
     color: r_coin_orange
     pos_hint: {"x": 0.89, "top": 0.99}
+    
+<D_coin_label@BackingLabel>:
+    color: d_coin_blue
+    pos_hint: {"x": 0.78, "top": 0.99}
             
 <Home>:
     transfer_uid: transfer_uid
@@ -597,7 +678,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.6
             pos_hint: {"x": 0.01, "top": 0.92}
         Label:
-            text: "Transfer R-coins"
+            text: "Transfer R-Coins"
             size_hint: 0.1, 0.1
             pos_hint: {"x": 0.11, "top": 0.92}
         RoundedTextInput:
@@ -664,7 +745,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.29
             pos_hint: {"x": 0.01, "top": 0.31}
         SizeLabel:
-            text: "Claim Code"
+            text: "Check Code"
             pos_hint: {"x": 0.11, "top": 0.29}
         RoundedTextInput
             id: code
@@ -672,12 +753,12 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.06, "top": 0.23}
             on_text: self.text = self.text.replace(" ", "")[:19].upper()
-            on_text_validate: root.claim_code()
+            on_text_validate: root.check_code()
         RoundedButton:
             text: "Claim"
             size_hint: 0.16, 0.05
             pos_hint: {"x": 0.08, "top": 0.09}
-            on_press: root.claim_code()
+            on_press: root.check_code()
             
 
 <Chat>:
@@ -722,12 +803,19 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
-        Label:
-            text: "Store"
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.7}
-            
-            
+        RoundedBackingButton:
+            size_hint: 0.2, 0.4
+            pos_hint: {"x": 0.01, "top": 0.92}
+            on_press: root.manager.current = 'GiftCards'
+        SizeLabel:
+            text: "Buy R-Coin Gift Cards"
+            pos_hint: {"x": 0.06, "top": 0.91}
+        AsyncImage:
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
+            anim_delay: 0.05
+            size_hint: 0.16, 0.3
+            pos_hint: {"x": 0.03, "top": 0.85}
+        
 <Games>:
     GreyFloatLayout:
         HomeButton:
@@ -746,42 +834,26 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
-        RoundedButton:
+        RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.01, "top": 0.92}
             on_press: root.manager.current = 'Coinflip'
-            canvas.before:
-                Color:
-                    rgba: bk_grey_3
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [10]
         SizeLabel:
             text: "Coinflip"
             pos_hint: {"x": 0.06, "top": 0.91}
         AsyncImage:
             source: "https://purepng.com/public/uploads/large/purepng.com-gold-coingoldatomic-number-79chemical-elementgroup-11-elementaurumgold-dustprecious-metalgold-coins-1701528977728s2dcq.png"
-            anim_delay: 0.05
             size_hint: 0.16, 0.3
             pos_hint: {"x": 0.03, "top": 0.85}
-        RoundedButton:
+        RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.22, "top": 0.92}
             #on_press: root.manager.current = 'Coinflip'
-            canvas.before:
-                Color:
-                    rgba: bk_grey_3
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [10]
         SizeLabel:
             text: "Crash"
             pos_hint: {"x": 0.27, "top": 0.91}
         AsyncImage:
             source: "https://www.pngmart.com/files/3/Stock-Market-Graph-Up-PNG-Image.png"
-            anim_delay: 0.05
             size_hint: 0.16, 0.3
             pos_hint: {"x": 0.24, "top": 0.85}
             
@@ -859,6 +931,80 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: f"UID: {root.uid}"
             pos_hint: {"x": 0.14, "top": 0.73}
+            
+
+<GiftCards>:
+    GreyFloatLayout:
+        Button:
+            text: "<< Back"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
+            on_press: root.manager.current = 'Store'
+        R_coin_label:
+            text: root.r_coins
+        D_coin_label:
+            text: root.d_coins
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.23, "top": 0.89}
+            on_press: root.manager.current = 'GiftCards'
+        SizeLabel:
+            text: "25 R Gift Card"
+            font_size: "20dp"
+            pos_hint: {"x": 0.31, "top": 0.85}
+        AsyncImage:
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
+            size_hint: 0.23, 0.35
+            pos_hint: {"x": 0.25, "top": 0.8}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.51, "top": 0.89}
+            on_press: root.manager.current = 'GiftCards'
+        SizeLabel:
+            text: "40 R Gift Card"
+            font_size: "20dp"
+            pos_hint: {"x": 0.59, "top": 0.85}
+        AsyncImage:
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
+            size_hint: 0.23, 0.35
+            pos_hint: {"x": 0.53, "top": 0.8}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.09, "top": 0.45}
+            on_press: root.manager.current = 'GiftCards'
+        SizeLabel:
+            text: "100 R Gift Card"
+            font_size: "20dp"
+            pos_hint: {"x": 0.17, "top": 0.41}
+        AsyncImage:
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
+            size_hint: 0.23, 0.35
+            pos_hint: {"x": 0.11, "top": 0.36}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.37, "top": 0.45}
+            on_press: root.manager.current = 'GiftCards'
+        SizeLabel:
+            text: "250 R Gift Card"
+            font_size: "20dp"
+            pos_hint: {"x": 0.45, "top": 0.41}
+        AsyncImage:
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
+            size_hint: 0.23, 0.35
+            pos_hint: {"x": 0.39, "top": 0.36}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.65, "top": 0.45}
+            on_press: root.manager.current = 'GiftCards'
+        SizeLabel:
+            text: "600 R Gift Card"
+            font_size: "20dp"
+            pos_hint: {"x": 0.73, "top": 0.41}
+        AsyncImage:
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
+            size_hint: 0.23, 0.35
+            pos_hint: {"x": 0.67, "top": 0.36}
+            
             
             
 <Coinflip>:

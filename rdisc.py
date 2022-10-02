@@ -17,6 +17,7 @@ from base64 import b32encode
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.lang import Builder
@@ -41,7 +42,7 @@ else:
     if path.exists("rdisc.py"):
         app_hash = enc.hash_a_file("rdisc.py")
     else:
-        app_hash = f"Unknown platform: {platform}"
+        app_hash = f"Unknown distro: {platform}"
 
 version_ = None
 if path.exists("sha.txt"):
@@ -122,28 +123,22 @@ class KeyStore:
         self.acc_key = None
         self.path = None  # Make or Login
         self.xp = None
-        self.r_coin = None
-        self.d_coin = None
+        App.r_coin = None
+        App.d_coin = None
 
 
 keys = KeyStore()
 
 
-def connect_system(dt=None):
+def connect_system():
     if s.ip and s.connect():
         print("Loading account keys...")
         if path.exists(f'userdata/key'):
             with open(f'userdata/key', 'rb') as f:
                 key_data = f.read()
             print(" - Key data loaded")
-            if b"MAKE_KEY" in key_data:
-                key_data = key_data.decode("utf-8")
-                print(" - MAKE KEY FROM CAPTCHA")
-                keys.path, keys.master_key = "make", key_data[:-9]
-                sm.switch_to(Captcha(), direction="left")
-            else:
-                keys.uid, keys.ipk = str(key_data[:8])[2:-1], key_data[8:]
-                sm.switch_to(KeyUnlock(), direction="left")
+            keys.uid, keys.ipk = str(key_data[:8])[2:-1], key_data[8:]
+            sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
             sm.switch_to(LogInOrSignUp(), direction="left")
@@ -154,7 +149,7 @@ def connect_system(dt=None):
 class AttemptConnection(Screen):
     def __init__(self, **kwargs):
         super(AttemptConnection, self).__init__(**kwargs)
-        Clock.schedule_once(connect_system, 1)  # todo make this retry
+        Clock.schedule_once(lambda dt: connect_system(), 1)  # todo make this retry
 
 
 class IpSet(Screen):
@@ -242,17 +237,16 @@ class CreateKey(Screen):
                           f"DPS: {round(real_dps/1000000, 3)}M  "
                           f"Depth: {current_depth}/{round(real_dps*time_left, 2)}  "
                           f"Progress: {round((depth_time-time_left)/depth_time*100, 3)}%")
-                    self.pin_code_text = f"Generating key and pin ({round(time_left, 2)}s left)"
+                    self.pin_code_text = f"Generating Key and Pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
         keys.master_key = enc.to_base(96, 16, master_key.hex())
         print(keys.master_key, enc.to_base(36, 10, current_depth))  # debug
-        with open("userdata/key", "w", encoding="utf-8") as f:
-            f.write(f"{keys.master_key}MAKE_KEY")
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Account Pin: {enc.to_base(36, 10, current_depth)}"
-        self.rand_confirm_text = f"Once you have written down your Account pin " \
-                                 f"and pin enter {self.rand_confirmation} below"
+        self.rand_confirm_text = f"Once you have written down your Account Key " \
+                                 f"and Pin enter {self.rand_confirmation} below.\n" \
+                                 f"By proceeding with account creation you agree to our Terms and Conditions."
         keys.pin_code = enc.to_base(36, 10, current_depth)
 
     def on_pre_enter(self, *args):
@@ -262,7 +256,7 @@ class CreateKey(Screen):
         print(acc_key)  # debug
         Thread(target=self.generate_master_key, args=(acc_key[:6].encode(),
                acc_key[6:].encode(), time_depth,), daemon=True).start()
-        self.pin_code_text = f"Generating key and pin ({time_depth}s left)"
+        self.pin_code_text = f"Generating Key and Pin ({time_depth}s left)"
         acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}"
         self.pass_code_text = f"Your Account Key is: {acc_key_print}"
         keys.acc_key = acc_key
@@ -285,7 +279,7 @@ class UsbSetup(Screen):
     usb_text = StringProperty()
     skip_text = StringProperty()
 
-    def check_usb(self):
+    def check_usb(self):  # todo linux version
         dl = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
         while True:
@@ -297,17 +291,9 @@ class UsbSetup(Screen):
                 except IndexError:
                     before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
             sleep(0.1)
-        mkey_file_num = 1
-        for file in listdir(new_drive):
-            if file.startswith("mkey"):
-                try:
-                    if int(file[4:]) >= mkey_file_num:
-                        mkey_file_num = int(file[4:])+1
-                except ValueError:
-                    pass
-        with open(f"{new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
-            f.write(f"{keys.acc_key}🱫{keys.pin_code}")
-        self.usb_text = f"Wrote keys to USB drive at {new_drive}"
+        keys.new_drive = new_drive
+        self.usb_text = f"USB detected at {new_drive}\n" \
+                        f"Do not unplug USB until your account is created and you are on the home screen"
         self.skip_text = "Continue"
 
     def on_pre_enter(self, *args):
@@ -318,9 +304,39 @@ class UsbSetup(Screen):
 
 
 class ReCreateKey(Screen):
+    load_text = StringProperty()
     name_or_uid = ObjectProperty()
     pass_code = ObjectProperty()
     pin_code = ObjectProperty()
+    drive = None
+
+    def on_pre_enter(self, *args):
+        self.load_text = "Load from USB"
+
+    def load_data(self):
+        with open(self.drive+"mkey1", "r", encoding="utf-8") as f:
+            self.name_or_uid.text, self.pass_code.text, self.pin_code.text = f.read().split("🱫")
+
+    def detect_usb(self):
+        dl = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
+        while True:
+            now_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
+            if before_drives != now_drives:
+                try:
+                    new_drive = [d for d in now_drives if d not in before_drives][0]
+                    break
+                except IndexError:
+                    before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
+            sleep(0.1)
+        self.load_text = "USB loaded"
+        self.drive = new_drive
+        Clock.schedule_once(lambda dt: self.load_data())
+
+    def load_from_usb(self):
+        self.load_text = "Detecting USB"
+        self.ids.load_from_usb_button.disabled = True
+        Thread(target=self.detect_usb, daemon=True).start()
 
     def toggle_button(self):
         if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
@@ -343,7 +359,7 @@ class ReCreateKey(Screen):
             sm.switch_to(ReCreateGen(), direction="left")
 
 
-def switch_to_captcha(dt=None):
+def switch_to_captcha():
     sm.switch_to(Captcha(), direction="left")
 
 
@@ -367,7 +383,7 @@ class ReCreateGen(Screen):
                 except ZeroDivisionError:
                     pass
         keys.master_key = enc.to_base(96, 16, master_key.hex())
-        Clock.schedule_once(switch_to_captcha)
+        Clock.schedule_once(lambda dt: switch_to_captcha())
 
     def on_enter(self, *args):
         self.gen_left_text = f"Generating master key"
@@ -494,6 +510,17 @@ class TwoFacSetup(Screen):
                         f.write(keys.uid.encode()+ipk)
                     print("2FA confirmed")
                     keys.uname, keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
+                    if keys.new_drive:
+                        mkey_file_num = 1
+                        for file in listdir(keys.new_drive):
+                            if file.startswith("mkey"):
+                                try:
+                                    if int(file[4:]) >= mkey_file_num:
+                                        mkey_file_num = int(file[4:]) + 1
+                                except ValueError:
+                                    pass
+                        with open(f"{keys.new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
+                            f.write(f"{keys.uid}🱫{keys.acc_key}🱫{keys.pin_code}")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -522,6 +549,14 @@ class TwoFacLog(Screen):
                     print("2FA failed")
             else:
                 print("Invalid input")
+
+
+class InvalidCodePopup(Popup):
+    pass
+
+
+class ClaimCodePopup(Popup):
+    pass
 
 
 class Home(Screen):
@@ -596,14 +631,18 @@ class Home(Screen):
         else:
             print("Invalid UID")
 
-    def claim_code(self):
+    def check_code(self):
         if len(self.code.text) == 19:
             if self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
                 s.send_e(f"CLM:{self.code.text}")
                 if s.recv_d(1024) != "N":
-                    print("Code is for xxx")  # todo popup claim window
+                    print("Code is for xxx")
+                    App.claim_result = "Invalid code"
+                    ClaimCodePopup().open()
                 else:
                     print("Invalid code")
+                    App.claim_result = "Invalid code"
+                    InvalidCodePopup().open()
             else:
                 print("Invalid code")
         else:
@@ -729,6 +768,19 @@ class Settings(Screen):
             print("insufficient funds")
 
 
+class GiftCards(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+
+    def on_pre_enter(self, *args):
+        if keys.r_coin.endswith(".0"):
+            keys.r_coin = keys.r_coin[:-2]
+        if keys.d_coin.endswith(".0"):
+            keys.d_coin = keys.d_coin[:-2]
+        self.r_coins = keys.r_coin+" R"
+        self.d_coins = keys.d_coin+" D"
+
+
 class Coinflip(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -754,11 +806,16 @@ sm = WindowManager()
  UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
  NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"),
  TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
- Inventory(name="Inventory"), Settings(name="Settings"), Coinflip(name="Coinflip")]]
+ Inventory(name="Inventory"), Settings(name="Settings"), GiftCards(name="GiftCards"), Coinflip(name="Coinflip")]]
 
 
-class Rdisc(App):
+class App(App):
     def build(self):
+        # app defaults
+        with open("Terms_and_Conditions.txt") as f:
+            App.t_and_c = f.read()
+        App.claim_result = ""
+
         if version_:
             self.title = f"Rdisc-{version_}"
         elif path.exists("rdisc.py"):
@@ -774,4 +831,4 @@ class Rdisc(App):
 
 
 if __name__ == "__main__":
-    Rdisc().run()
+    App().run()

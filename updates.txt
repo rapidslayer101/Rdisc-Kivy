@@ -50,11 +50,10 @@
 0.50 installer/updater exe
 0.51 updating rdisc source code in updater
 0.52 reworked ip key and account creation system, username logins
+0.53 USB master keys, t's and c's popup, gift card screen
 
-0.53 USB master keys and ip keys, key ip detection logic, client misinformation logging, alt switcher
-
-0.54 coinflip, transaction history with xp
-0.55 public chat room
+0.54 coinflip, transaction history with xp, code claiming
+0.55 public chat room, client misinformation logging
 0.56 friending
 0.57 scratch cards and other inventory items
 

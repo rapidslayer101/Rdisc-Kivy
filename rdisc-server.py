@@ -28,15 +28,14 @@ class Users:
         self.logged_in_users = []
         self.sockets = []
         self.db = sqlite3.connect('rdisc_server.db', check_same_thread=False)
-        try:
-            self.db.execute("SELECT user_id FROM users")
-        except sqlite3.OperationalError:
-            print("No such table: users")
-            self.db.execute("CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE,"
-                            "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
-                            "user_pass TEXT NOT NULL, ip_key1 TEXT, ip_key2 TEXT, ip_key3 TEXT, ip_key4 TEXT, "
-                            "username TEXT NOT NULL, last_online DATE NOT NULL, xp FLOAT NOT NULL,"
-                            "r_coin FLOAT NOT NULL, d_coin FLOAT NOT NULL)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE,"
+                        "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
+                        "user_pass TEXT NOT NULL, ip_key1 TEXT, ip_key2 TEXT, ip_key3 TEXT, ip_key4 TEXT, "
+                        "username TEXT NOT NULL, last_online DATE NOT NULL, xp FLOAT NOT NULL,"
+                        "r_coin FLOAT NOT NULL, d_coin FLOAT NOT NULL)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY NOT NULL UNIQUE,"
+                        "expiry_date DATE NOT NULL, claimed TEXT NOT NULL,"
+                        "reward_type TEXT NOT NULL, amount FLOAT NOT NULL)")
 
     def login(self, u_id, ip, cs):
         self.logged_in_users.append(u_id)
