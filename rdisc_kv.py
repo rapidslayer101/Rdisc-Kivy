@@ -3,7 +3,7 @@ kv_payload = """# You can edit this file to change the UI.
 # To see what can be edited visit the wiki at https://kivy.org/doc/stable/api-kivy.lang.html
 # Programming Guide: https://kivy.org/doc/stable/guide/lang.html
 
-#: import WipeTransition kivy.uix.screenmanager.WipeTransition
+#:import WipeTransition kivy.uix.screenmanager.WipeTransition
 #:import Factory kivy.factory.Factory
 
 ### Colors ###
@@ -1027,6 +1027,19 @@ kv_payload = """# You can edit this file to change the UI.
 def kv():
     with open("rdisc.kv", "w", encoding="utf-8") as f:
         f.write(kv_payload)
+
+
+def t_and_c():  # rdisc terms and conditions
+    return """
+Section 1 - Changes to the Terms and Conditions:
+1.1 - Rdisc can make changes to the Terms and Conditions at any time without prior notice.
+        These changes can be for any section or condition.
+
+Section 2 -  Monetary Terms:
+2.1 - In the event of a Rdisc exploit or error causing an incorrect amount of either r-coins or d-coins to reside within an account,
+        Rdisc holds the right to correct the value to the intended value.
+2.2 - Users permitted to find exploits may be rewarded with a percentage of the r-coins or d-coins that were gained due to an exploit.
+        The amount of r-coins or d-coins rewarded is entirely up to the discretion of the Admin permitting the user to test exploits."""
 
 
 def w_images():

@@ -1,9 +1,0 @@
-Section 1 - Changes to the Terms and Conditions:
-1.1 - Rdisc can make changes to the Terms and Conditions at any time without prior notice.
-        These changes can be for any section or condition.
-
-Section 2 -  Monetary Terms:
-2.1 - In the event of a Rdisc exploit or error causing an incorrect amount of either r-coins or d-coins to reside within an account,
-        Rdisc holds the right to correct the value to the intended value.
-2.2 - Users permitted to find exploits may be rewarded with a percentage of the r-coins or d-coins that were gained due to an exploit.
-        The amount of r-coins or d-coins rewarded is entirely up to the discretion of the Admin permitting the user to test exploits.

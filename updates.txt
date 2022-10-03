@@ -53,9 +53,10 @@
 0.53 USB master keys, t's and c's popup, gift card screen
 
 0.54 coinflip, transaction history with xp, code claiming
-0.55 public chat room, client misinformation logging
-0.56 friending
-0.57 scratch cards and other inventory items
+0.55 leveling
+0.56 public chat room, client misinformation logging
+0.57 friending
+0.58 scratch cards and other inventory items
 
 - distro types:
   - updator

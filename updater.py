@@ -324,7 +324,7 @@ Builder.load_string("""
             text: "For coders/devs:"
             pos_hint: {"x": 0.25, "top": 0.38}
         RoundedButton:
-            text: "Rdisc dev (py)"
+            text: "Rdisc Dev (py)"
             pos_hint: {"x": 0.5, "top": 0.4}
             on_press: root.dev()
 

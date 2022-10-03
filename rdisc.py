@@ -111,25 +111,6 @@ class Server:
 s = Server()
 
 
-class KeyStore:
-    def __init__(self):
-        self.master_key = None
-        self.uid = None  # user id
-        self.uname = None  # username
-        self.secret_code = None
-        self.ipk = None  # ip key
-        self.pass_code = None
-        self.pin_code = None
-        self.acc_key = None
-        self.path = None  # Make or Login
-        self.xp = None
-        App.r_coin = None
-        App.d_coin = None
-
-
-keys = KeyStore()
-
-
 def connect_system():
     if s.ip and s.connect():
         print("Loading account keys...")
@@ -137,7 +118,7 @@ def connect_system():
             with open(f'userdata/key', 'rb') as f:
                 key_data = f.read()
             print(" - Key data loaded")
-            keys.uid, keys.ipk = str(key_data[:8])[2:-1], key_data[8:]
+            App.uid, App.ipk = str(key_data[:8])[2:-1], key_data[8:]
             sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
@@ -188,7 +169,7 @@ class KeyUnlock(Screen):
     passcode_prompt_text = StringProperty()
 
     def on_pre_enter(self, *args):
-        self.passcode_prompt_text = f"Enter passcode for account {keys.uid}"
+        self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
 
     def login(self):
         if self.pwd.text == "":
@@ -196,9 +177,9 @@ class KeyUnlock(Screen):
         else:
             try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
-                user_pass = enc.pass_to_key(user_pass, keys.uid)
-                ipk = enc.dec_from_pass(keys.ipk, user_pass[:40], user_pass[40:])
-                s.send_e(f"ULK:{keys.uid}🱫{ipk}")
+                user_pass = enc.pass_to_key(user_pass, App.uid)
+                ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
+                s.send_e(f"ULK:{App.uid}🱫{ipk}")
                 ulk_resp = s.recv_d(128)
                 if ulk_resp == "SESH_T":
                     print("Session taken")
@@ -206,7 +187,7 @@ class KeyUnlock(Screen):
                     if ulk_resp == "N":
                         print("Login invalid")
                     else:
-                        keys.uname, keys.xp, keys.r_coin, keys.d_coin = ulk_resp.split("🱫")
+                        App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
                         sm.switch_to(Home(), direction="left")
             except zl_error:
                 print("Invalid password")
@@ -240,17 +221,17 @@ class CreateKey(Screen):
                     self.pin_code_text = f"Generating Key and Pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        keys.master_key = enc.to_base(96, 16, master_key.hex())
-        print(keys.master_key, enc.to_base(36, 10, current_depth))  # debug
+        App.master_key = enc.to_base(96, 16, master_key.hex())
+        print(App.master_key, enc.to_base(36, 10, current_depth))  # debug
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Account Pin: {enc.to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your Account Key " \
                                  f"and Pin enter {self.rand_confirmation} below.\n" \
                                  f"By proceeding with account creation you agree to our Terms and Conditions."
-        keys.pin_code = enc.to_base(36, 10, current_depth)
+        App.pin_code = enc.to_base(36, 10, current_depth)
 
     def on_pre_enter(self, *args):
-        keys.path = "make"
+        App.path = "make"
         acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
         time_depth = uniform(3, 5)
         print(acc_key)  # debug
@@ -259,7 +240,7 @@ class CreateKey(Screen):
         self.pin_code_text = f"Generating Key and Pin ({time_depth}s left)"
         acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}"
         self.pass_code_text = f"Your Account Key is: {acc_key_print}"
-        keys.acc_key = acc_key
+        App.acc_key = acc_key
 
     def continue_confirmation(self):
         if self.rand_confirmation:
@@ -291,7 +272,7 @@ class UsbSetup(Screen):
                 except IndexError:
                     before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
             sleep(0.1)
-        keys.new_drive = new_drive
+        App.new_drive = new_drive
         self.usb_text = f"USB detected at {new_drive}\n" \
                         f"Do not unplug USB until your account is created and you are on the home screen"
         self.skip_text = "Continue"
@@ -349,13 +330,13 @@ class ReCreateKey(Screen):
 
     def start_regeneration(self):
         if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
-            keys.path = "login"
-            keys.uid, keys.pass_code, keys.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
+            App.path = "login"
+            App.uid, App.pass_code, App.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
             sm.switch_to(ReCreateGen(), direction="left")
         if 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
                 len(self.pass_code.text) == 15 and self.pin_code.text:
-            keys.path = "login"
-            keys.uname, keys.pass_code, keys.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
+            App.path = "login"
+            App.uname, App.pass_code, App.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
             sm.switch_to(ReCreateGen(), direction="left")
 
 
@@ -382,13 +363,13 @@ class ReCreateGen(Screen):
                     self.gen_left_text = f"Generating master key ({round((depth_left-depth_count)/real_dps, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        keys.master_key = enc.to_base(96, 16, master_key.hex())
+        App.master_key = enc.to_base(96, 16, master_key.hex())
         Clock.schedule_once(lambda dt: switch_to_captcha())
 
     def on_enter(self, *args):
         self.gen_left_text = f"Generating master key"
-        Thread(target=self.regenerate_master_key, args=(keys.pass_code[:6].encode(),
-               keys.pass_code[6:].encode(), int(enc.to_base(10, 36, keys.pin_code)),), daemon=True).start()
+        Thread(target=self.regenerate_master_key, args=(App.pass_code[:6].encode(),
+               App.pass_code[6:].encode(), int(enc.to_base(10, 36, App.pin_code)),), daemon=True).start()
 
 
 class Captcha(Screen):
@@ -415,13 +396,13 @@ class Captcha(Screen):
         if len(self.captcha_input.text) == 10:
             s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
             if s.recv_d(1024) == "V":
-                if keys.path == "make":
+                if App.path == "make":
                     sm.switch_to(NacPassword(), direction="left")
-                if keys.path == "login":
-                    if keys.uname:
-                        s.send_e(f"LOG:{keys.master_key}🱫u🱫{keys.uname}")
+                if App.path == "login":
+                    if App.uname:
+                        s.send_e(f"LOG:{App.master_key}🱫u🱫{App.uname}")
                     else:
-                        s.send_e(f"LOG:{keys.master_key}🱫i🱫{keys.uid}")
+                        s.send_e(f"LOG:{App.master_key}🱫i🱫{App.uid}")
                     log_resp = s.recv_d(1024)
                     if log_resp == "IMK":
                         print("Invalid master key")
@@ -429,9 +410,9 @@ class Captcha(Screen):
                         print("Username/UID does not exist")
                         sm.switch_to(ReCreateKey(), direction="right")
                     else:
-                        keys.ipk = log_resp
-                        if keys.uname:
-                            keys.uid = s.recv_d(1024)
+                        App.ipk = log_resp
+                        if App.uname:
+                            App.uid = s.recv_d(1024)
                         sm.switch_to(LogUnlock(), direction="left")
             else:
                 print("Captcha failed")
@@ -452,7 +433,7 @@ class NacPassword(Screen):
             print("Passwords do not match")
         else:
             pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
-            s.send_e(f"NAC:{keys.master_key}🱫{pass_send}")
+            s.send_e(f"NAC:{App.master_key}🱫{pass_send}")
             sm.switch_to(TwoFacSetup(), direction="left")
 
 
@@ -461,7 +442,7 @@ class LogUnlock(Screen):
     passcode_prompt_text = StringProperty()
 
     def on_pre_enter(self, *args):
-        self.passcode_prompt_text = f"Enter passcode for account {keys.uid}"
+        self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
 
     def login(self):
         if self.pwd.text == "":
@@ -469,8 +450,8 @@ class LogUnlock(Screen):
         else:
             try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
-                user_pass = enc.pass_to_key(user_pass, keys.uid)
-                ipk = enc.dec_from_pass(keys.ipk, user_pass[:40], user_pass[40:])
+                user_pass = enc.pass_to_key(user_pass, App.uid)
+                ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
                 s.send_e(ipk)
                 if s.recv_d(1024) == "V":
                     sm.switch_to(TwoFacLog(), direction="left")
@@ -489,13 +470,13 @@ class TwoFacSetup(Screen):
         self.two_fac_wait_text = "Waiting for 2fa QR code..."
 
     def on_enter(self, *args):
-        keys.uid, keys.secret_code = s.recv_d(1024).split("🱫")
-        secret_code = b32encode(keys.secret_code.encode()).decode().replace('=', '')
+        App.uid, App.secret_code = s.recv_d(1024).split("🱫")
+        secret_code = b32encode(App.secret_code.encode()).decode().replace('=', '')
         print(secret_code)  # todo mention in UI text
         self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
-                                     f"F%2Ftotp%2F{keys.uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
+                                     f"F%2Ftotp%2F{App.uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
         self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
-                                 f"Your User ID (UID) is {keys.uid}"
+                                 f"Your User ID (UID) is {App.uid}"
 
     def confirm_2fa(self):
         if self.two_fac_confirm.text == "":
@@ -507,20 +488,20 @@ class TwoFacSetup(Screen):
                 ipk = s.recv_d(1024)
                 if ipk != "N":
                     with open("userdata/key", "wb") as f:
-                        f.write(keys.uid.encode()+ipk)
+                        f.write(App.uid.encode()+ipk)
                     print("2FA confirmed")
-                    keys.uname, keys.xp, keys.r_coin, keys.d_coin = s.recv_d(1024).split("🱫")
-                    if keys.new_drive:
+                    App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
+                    if App.new_drive:
                         mkey_file_num = 1
-                        for file in listdir(keys.new_drive):
+                        for file in listdir(App.new_drive):
                             if file.startswith("mkey"):
                                 try:
                                     if int(file[4:]) >= mkey_file_num:
                                         mkey_file_num = int(file[4:]) + 1
                                 except ValueError:
                                     pass
-                        with open(f"{keys.new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
-                            f.write(f"{keys.uid}🱫{keys.acc_key}🱫{keys.pin_code}")
+                        with open(f"{App.new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
+                            f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -541,9 +522,9 @@ class TwoFacLog(Screen):
                 two_fa_valid = s.recv_d(1024)
                 if two_fa_valid != "N":
                     with open("userdata/key", "wb") as f:
-                        f.write(keys.uid.encode()+keys.ipk)
+                        f.write(App.uid.encode()+App.ipk)
                     print("2FA confirmed")
-                    keys.uname, keys.xp, keys.r_coin, keys.d_coin = two_fa_valid.split("🱫")
+                    App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
                     sm.switch_to(Home(), direction="left")
                 else:
                     print("2FA failed")
@@ -575,13 +556,13 @@ class Home(Screen):
     code = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
-        self.welcome_text = f"Welcome back {keys.uname}"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
+        self.welcome_text = f"Welcome back {App.uname}"
         self.transfer_cost = "0.00"
         self.transfer_send = "0.00"
         self.transfer_fee = "0.00"
@@ -591,8 +572,8 @@ class Home(Screen):
     def check_transfer(self):
         if self.transfer_amount.text not in ["", "."]:
             self.transfer_amount.text = self.transfer_amount.text[:12]
-            if float(self.transfer_amount.text) > float(keys.r_coin)*0.995:
-                self.transfer_amount.text = str(float(keys.r_coin)*0.995)
+            if float(self.transfer_amount.text) > float(App.r_coin)*0.995:
+                self.transfer_amount.text = str(float(App.r_coin)*0.995)
             if "." in self.transfer_amount.text:
                 if len(self.transfer_amount.text.split(".")[1]) > 2:
                     self.transfer_amount.text = self.transfer_amount.text[:-1]
@@ -608,16 +589,16 @@ class Home(Screen):
 
     def transfer_coins(self):
         if len(self.transfer_uid.text) > 7:
-            if self.transfer_uid.text != keys.uid:
+            if self.transfer_uid.text != App.uid:
                 if float(self.transfer_amount.text) >= 3:
-                    if float(self.transfer_amount.text) <= float(keys.r_coin)*0.995:
+                    if float(self.transfer_amount.text) <= float(App.r_coin)*0.995:
                         s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amount.text}")
                         if s.recv_d(1024) == "V":
                             print("Transfer successful")
-                            keys.r_coin = str(round(float(keys.r_coin)-float(self.transfer_amount.text)/0.995, 2))
-                            if keys.r_coin.endswith(".0"):
-                                keys.r_coin = keys.r_coin[:-2]
-                            self.r_coins = keys.r_coin+" R"
+                            App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amount.text)/0.995, 2))
+                            if App.r_coin.endswith(".0"):
+                                App.r_coin = App.r_coin[:-2]
+                            self.r_coins = App.r_coin+" R"
                             self.transfer_uid.text = ""
                             self.transfer_amount.text = ""
                         else:
@@ -685,12 +666,12 @@ class Chat(Screen):
     d_coins = StringProperty()
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
 
 
 class Store(Screen):
@@ -698,12 +679,12 @@ class Store(Screen):
     d_coins = StringProperty()
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
 
 
 class Games(Screen):
@@ -711,12 +692,12 @@ class Games(Screen):
     d_coins = StringProperty()
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
 
 
 class Inventory(Screen):
@@ -724,12 +705,12 @@ class Inventory(Screen):
     d_coins = StringProperty()
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
 
 
 class Settings(Screen):
@@ -740,27 +721,27 @@ class Settings(Screen):
     uname_to = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
-        self.uname = keys.uname
-        self.uid = keys.uid
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
+        self.uname = App.uname
+        self.uid = App.uid
 
     def change_name(self):
-        if float(keys.d_coin) > 4:
+        if float(App.d_coin) > 4:
             if 4 < len(self.uname_to.text) < 25:
                 s.send_e(f"CUN:{self.uname_to.text}")
                 new_uname = s.recv_d(1024)
                 if new_uname != "N":
-                    keys.uname = new_uname
-                    self.uname = keys.uname
-                    keys.d_coin = str(float(keys.d_coin)-5)
-                    if keys.d_coin.endswith(".0"):
-                        keys.d_coin = keys.d_coin[:-2]
-                    self.d_coins = keys.d_coin+" D"
+                    App.uname = new_uname
+                    self.uname = App.uname
+                    App.d_coin = str(float(App.d_coin)-5)
+                    if App.d_coin.endswith(".0"):
+                        App.d_coin = App.d_coin[:-2]
+                    self.d_coins = App.d_coin+" D"
                     print("Username changed")
             else:
                 print("Username must be between 5 and 24 characters")
@@ -773,12 +754,12 @@ class GiftCards(Screen):
     d_coins = StringProperty()
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
 
 
 class Coinflip(Screen):
@@ -786,12 +767,12 @@ class Coinflip(Screen):
     d_coins = StringProperty()
 
     def on_pre_enter(self, *args):
-        if keys.r_coin.endswith(".0"):
-            keys.r_coin = keys.r_coin[:-2]
-        if keys.d_coin.endswith(".0"):
-            keys.d_coin = keys.d_coin[:-2]
-        self.r_coins = keys.r_coin+" R"
-        self.d_coins = keys.d_coin+" D"
+        if App.r_coin.endswith(".0"):
+            App.r_coin = App.r_coin[:-2]
+        if App.d_coin.endswith(".0"):
+            App.d_coin = App.d_coin[:-2]
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
         # request coinflip data
 
 
@@ -812,16 +793,25 @@ sm = WindowManager()
 class App(App):
     def build(self):
         # app defaults
-        with open("Terms_and_Conditions.txt") as f:
-            App.t_and_c = f.read()
+        App.t_and_c = rdisc_kv.t_and_c()
         App.claim_result = ""
+        App.master_key = None
+        App.uid = None  # user id
+        App.uname = None  # username
+        App.secret_code = None
+        App.ipk = None  # ip key
+        App.pass_code = None
+        App.pin_code = None
+        App.acc_key = None
+        App.path = None  # Make or Login
+        App.xp = None
 
         if version_:
-            self.title = f"Rdisc-{version_}"
+            App.title = f"Rdisc-{version_}"
         elif path.exists("rdisc.py"):
-            self.title = "Rdisc-Dev"
+            App.title = "Rdisc-Dev"
         else:
-            self.title = [file for file in listdir('app') if
+            App.title = [file for file in listdir('app') if
                           file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
         if platform in ["win32", "linux"]:
             Window.size = (1264, 681)
