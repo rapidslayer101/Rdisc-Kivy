@@ -9,22 +9,24 @@ kv_payload = """# You can edit this file to change the UI.
 ### Colors ###
 # edits the color scheme of the UI
 
-#:set rdisc_purple (104/255, 84/255, 252/255,1)
-#:set rdisc_purple_dark (104/255, 73/255, 160/255,1)
-#:set rdisc_cyan (37/255, 190/255, 150/255,1)
+#:set rdisc_purple (104/255, 84/255, 252/255, 1)
+#:set rdisc_purple_dark (104/255, 73/255, 160/255, 1)
+#:set rdisc_cyan (37/255, 190/255, 150/255, 1)
+#:set rdisc_cyan_la (37/255, 190/255, 150/255, 0.6)
 
 #:set link_blue (80/255, 154/255, 228/255, 1)
-#:set green (20/255, 228/255, 43/255,1)
-#:set yellow (243/255, 240/255, 51/255,1)
-#:set orange (243/255, 132/255, 1/255,1)
-#:set grey (60/255, 60/255, 50/255,1)
+#:set green (20/255, 228/255, 43/255, 1)
+#:set yellow (243/255, 240/255, 51/255, 1)
+#:set orange (243/255, 132/255, 1/255, 1)
+#:set red (251/255, 30/255, 5/255, 1)
+#:set grey (60/255, 60/255, 50/255, 1)
 
-#:set bk_grey_1 (50/255, 50/255, 50/255,1)
-#:set bk_grey_2 (55/255, 55/255, 55/255,1)
-#:set bk_grey_3 (60/255, 60/255, 60/255,1)
+#:set bk_grey_1 (50/255, 50/255, 50/255, 1)
+#:set bk_grey_2 (55/255, 55/255, 55/255, 1)
+#:set bk_grey_3 (60/255, 60/255, 60/255, 1)
 
-#:set r_coin_orange (245/255, 112/255, 15/255,1)
-#:set d_coin_blue (93/255, 93255, 218/255,1)
+#:set r_coin_orange (245/255, 112/255, 15/255, 1)
+#:set d_coin_blue (93/255, 93255, 218/255, 1)
     
     
 ### Templates ### 
@@ -64,14 +66,13 @@ kv_payload = """# You can edit this file to change the UI.
     font_size: '16dp'
     multiline: False
     halign: "center"
+    hint_text_color: rdisc_cyan_la
+    foreground_color: rdisc_cyan
     size_hint: 0.3, 0.1
     padding: [0, self.height/2.0-(self.line_height/2.0)*len(self._lines), 0, 0]
     write_tab: False
     background_color: 0,0,0,0
     cursor_color: rdisc_cyan
-    canvas.before:
-        Color:
-            rgba: rdisc_cyan
     canvas.after:
         Color:
             rgba: 0,0,0,0
@@ -98,6 +99,17 @@ kv_payload = """# You can edit this file to change the UI.
             
 <SizeLabel@Label>:
     size_hint: 0.1, 0.05
+    
+<ErrorPopup@Popup>:
+    title: "Invalid Entry"
+    size_hint: 0.32, 0.27
+    GreyFloatLayout:
+        Label:
+            text: app.error_reason
+            font_size: "16dp"
+            color: orange
+            size_hint: 0.9, 0.9
+            pos_hint: {"x": 0.05, "top": 1.1}
             
 <TermsPopup@Popup>:
     title: "Rdisc Terms and Conditions"
@@ -212,6 +224,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.45, "top": 0.8}
         RoundedTextInput:
             id: ip_address
+            hint_text: "0.0.0.0:1337"
             pos_hint: {"x": 0.35, "top": 0.65}
             on_text_validate: root.try_connect()
         RoundedButton:
@@ -246,6 +259,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.45, "top": 0.75}
         RoundedTextInput:
             id: pwd
+            hint_text: "Password"
             password: True
             pos_hint: {"x": 0.35, "top": 0.65}
             on_text_validate: root.login()
@@ -267,7 +281,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.8}
         Label:
             text: f"Your Account Key and Pin are REQUIRED to access your account on another device.\\nIf you lose these YOU WONT be able to login to your account or recover it.\\nYou may want to write these down."
-            color: (37/255, 190/255, 150/255,1)
+            color: (37/255, 190/255, 150/255, 1)
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
         Label:
@@ -302,7 +316,7 @@ kv_payload = """# You can edit this file to change the UI.
     GreyFloatLayout:
         Label:
             text: root.usb_text
-            color: (37/255, 190/255, 150/255,1)
+            color: (37/255, 190/255, 150/255, 1)
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
         RoundedButton:

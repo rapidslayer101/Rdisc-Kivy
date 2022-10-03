@@ -52,11 +52,13 @@
 0.52 reworked ip key and account creation system, username logins
 0.53 USB master keys, t's and c's popup, gift card screen
 
-0.54 coinflip, transaction history with xp, code claiming
-0.55 leveling
-0.56 public chat room, client misinformation logging
-0.57 friending
-0.58 scratch cards and other inventory items
+0.54 invalid action popups, fix Rdisc-Dev distro, fix Rdisc distro popup problems
+
+0.55 coinflip, transaction history with xp, code claiming
+0.56 leveling
+0.57 public chat room, client misinformation logging
+0.58 friending
+0.59 scratch cards and other inventory items
 
 - distro types:
   - updator
@@ -66,8 +68,6 @@
 
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
-- show debug to users in UI
-- tell people what is required to make an account before starting
 - connection rate limit and checks for entire login paths
 - check if errors occur when not in order requests made through login paths
 - nfc experiment <- unlikely, mobile support not a priority

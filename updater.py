@@ -63,7 +63,7 @@ class Server:
 s = Server()
 
 
-def load(dt=None):
+def load():
     if not path.exists("app"):
         mkdir("app")
         sm.switch_to(ChooseDistro())
@@ -83,7 +83,7 @@ def load(dt=None):
 class Loading(Screen):
     def __init__(self, **kwargs):
         super(Loading, self).__init__(**kwargs)
-        Clock.schedule_once(load, 0.1)
+        Clock.schedule_once(lambda dt: load(), 0.1)
 
 
 class ChooseDistro(Screen):
@@ -181,14 +181,14 @@ class Update(Screen):
         App.get_running_app().stop()
 
     def on_enter(self, *args):
-        Thread(target=self.update_system).start()
+        Thread(target=self.update_system, daemon=True).start()
 
 
 class CreateDev(Screen):
     create_text = StringProperty()
 
     def create(self):
-        self.create_text = "Detecting git..."
+        self.create_text = "Detecting Git..."
         try:
             call("git")
         except FileNotFoundError:
@@ -207,11 +207,11 @@ class CreateDev(Screen):
         git checkout
         tar -xf venv.zip
         )""")
-        self.create_text = "Running repo installer..."
+        self.create_text = "Running repo Installer..."
         call("install.bat")
-        self.create_text = "Installing dependency (kivy) 1/2..."
+        self.create_text = "Installing Dependency (kivy) 1/2..."
         call("app/code/venv/Scripts/python -m pip install kivy")
-        self.create_text = "Installing dependency (rsa) 2/2..."
+        self.create_text = "Installing Dependency (rsa) 2/2..."
         call("app/code/venv/Scripts/python -m pip install rsa")
         self.create_text = "Launching..."
         with open("launch.bat", "w") as f:
@@ -221,13 +221,12 @@ class CreateDev(Screen):
         git pull origin master
         echo Launching client
         start venv/Scripts/python.exe rdisc.py""")
-
         call("launch.bat")
         sleep(2)
         App.get_running_app().stop()
 
     def on_enter(self, *args):
-        Thread(target=self.create).start()
+        Thread(target=self.create, daemon=True).start()
 
 
 class WindowManager(ScreenManager):

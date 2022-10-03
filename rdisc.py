@@ -14,15 +14,15 @@ from threading import Thread
 from socket import socket
 from base64 import b32encode
 
-from kivy.clock import Clock
 from kivy.app import App
+from kivy.lang import Builder
+from kivy.core.window import Window
+from kivy.config import Config
+from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
-from kivy.lang import Builder
-from kivy.core.window import Window
-from kivy.config import Config
 
 if not path.exists("resources"):
     mkdir("resources")
@@ -111,6 +111,10 @@ class Server:
 s = Server()
 
 
+class ErrorPopup(Popup):
+    pass
+
+
 def connect_system():
     if s.ip and s.connect():
         print("Loading account keys...")
@@ -138,16 +142,19 @@ class IpSet(Screen):
 
     def try_connect(self):
         if self.ip_address.text == "":
-            print("No input provided")
+            App.error_reason = "IP Blank\n- Type an IP into the IP box"
+            ErrorPopup().open()
         else:
             try:
                 server_ip, server_port = self.ip_address.text.split(":")
                 server_port = int(server_port)
             except ValueError or NameError:
-                print("\n🱫[COL-RED] Invalid input")
+                App.error_reason = "Invalid IP address\n- Please type a valid IP"
+                ErrorPopup().open()
             else:
                 if server_port < 1 or server_port > 65535:
-                    print("\n🱫[COL-RED] Port number must be between 1 and 65535")
+                    App.error_reason = "IP Port Invalid\n- Port must be between 1 and 65535"
+                    ErrorPopup().open()
                 else:
                     try:
                         ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
@@ -155,9 +162,11 @@ class IpSet(Screen):
                             s.ip = [server_ip, server_port]
                             sm.switch_to(AttemptConnection(), direction="left")
                         else:
-                            print("\n🱫[COL-RED] IP address must have integers between 0 and 255")
+                            App.error_reason = "IP Address Invalid\n- Address must have integers between 0 and 255"
+                            ErrorPopup().open()
                     except ValueError or NameError:
-                        print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
+                        App.error_reason = "IP Address Invalid\n- Address must be in the format 'xxx.xxx.xxx.xxx"
+                        ErrorPopup().open()
 
 
 class LogInOrSignUp(Screen):
@@ -167,13 +176,20 @@ class LogInOrSignUp(Screen):
 class KeyUnlock(Screen):
     pwd = ObjectProperty(None)
     passcode_prompt_text = StringProperty()
+    counter = 0
 
     def on_pre_enter(self, *args):
         self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
 
     def login(self):
         if self.pwd.text == "":
-            print("Password blank")
+            self.counter += 1
+            if self.counter != 3:
+                App.error_reason = "Password Blank\n- Top tip, type something in the password box."
+                ErrorPopup().open()
+            else:
+                App.error_reason = "Password Blank\n- WHY IS THE BOX BLANK?"
+                ErrorPopup().open()
         else:
             try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
@@ -182,15 +198,18 @@ class KeyUnlock(Screen):
                 s.send_e(f"ULK:{App.uid}🱫{ipk}")
                 ulk_resp = s.recv_d(128)
                 if ulk_resp == "SESH_T":
-                    print("Session taken")
+                    App.error_reason = "This accounts session is taken."
+                    ErrorPopup().open()
                 else:
                     if ulk_resp == "N":
-                        print("Login invalid")
+                        App.error_reason = "Incorrect Password\n- Not exactly sure how you managed to trigger this one."
+                        ErrorPopup().open()
                     else:
                         App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
                         sm.switch_to(Home(), direction="left")
             except zl_error:
-                print("Invalid password")
+                App.error_reason = "Incorrect Password"
+                ErrorPopup().open()
 
 
 class CreateKey(Screen):
@@ -222,7 +241,6 @@ class CreateKey(Screen):
                 except ZeroDivisionError:
                     pass
         App.master_key = enc.to_base(96, 16, master_key.hex())
-        print(App.master_key, enc.to_base(36, 10, current_depth))  # debug
         self.rand_confirmation = str(randint(0, 9))
         self.pin_code_text = f"Account Pin: {enc.to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your Account Key " \
@@ -234,7 +252,6 @@ class CreateKey(Screen):
         App.path = "make"
         acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
         time_depth = uniform(3, 5)
-        print(acc_key)  # debug
         Thread(target=self.generate_master_key, args=(acc_key[:6].encode(),
                acc_key[6:].encode(), time_depth,), daemon=True).start()
         self.pin_code_text = f"Generating Key and Pin ({time_depth}s left)"
@@ -245,15 +262,16 @@ class CreateKey(Screen):
     def continue_confirmation(self):
         if self.rand_confirmation:
             if self.confirmation_code == "":
-                print("No input provided")
+                App.error_reason = "Confirmation Empty"
+                ErrorPopup().open()
             elif self.confirmation_code.text == self.rand_confirmation:
-                print("Confirmation code correct")
                 if platform in ["win32", "linux"]:
                     sm.switch_to(UsbSetup(), direction="left")
                 else:
                     sm.switch_to(Captcha(), direction="left")
             else:
-                print("Confirmation code incorrect")
+                App.error_reason = "Incorrect Confirmation Number"
+                ErrorPopup().open()
 
 
 class UsbSetup(Screen):
@@ -380,7 +398,6 @@ class Captcha(Screen):
         self.captcha_prompt_text = "Waiting for captcha..."
 
     def on_enter(self, *args):
-        print("Captcha screen")
         s.send_e("CAP")
         self.get_captcha()
 
@@ -388,7 +405,6 @@ class Captcha(Screen):
         image = s.recv_d(32768)  # todo remove the need for a file
         with open('captcha.jpg', 'wb') as f:
             f.write(image)
-            print("new captcha")
         self.captcha_prompt_text = f"Enter the text below"
         self.ids.captcha_image.source = 'captcha.jpg'
 
@@ -405,9 +421,11 @@ class Captcha(Screen):
                         s.send_e(f"LOG:{App.master_key}🱫i🱫{App.uid}")
                     log_resp = s.recv_d(1024)
                     if log_resp == "IMK":
-                        print("Invalid master key")
+                        App.error_reason = "Invalid Master Key"
+                        ErrorPopup().open()
                     elif log_resp == "NU":
-                        print("Username/UID does not exist")
+                        App.error_reason = "Username/UID does not exist"
+                        ErrorPopup().open()
                         sm.switch_to(ReCreateKey(), direction="right")
                     else:
                         App.ipk = log_resp
@@ -415,7 +433,8 @@ class Captcha(Screen):
                             App.uid = s.recv_d(1024)
                         sm.switch_to(LogUnlock(), direction="left")
             else:
-                print("Captcha failed")
+                App.error_reason = "Captcha Failed"
+                ErrorPopup().open()
 
 
 class NacPassword(Screen):
@@ -424,13 +443,17 @@ class NacPassword(Screen):
 
     def set_nac_password(self):
         if self.nac_password_1.text == "":
-            print("No input provided (1)")
+            App.error_reason = "Password 1 Blank"
+            ErrorPopup().open()
         elif self.nac_password_2.text == "":
-            print("No input provided (2)")
+            App.error_reason = "Password 2 Blank"
+            ErrorPopup().open()
         elif len(self.nac_password_1.text) < 9:
-            print("Password must be at least 9 characters")
+            App.error_reason = "Password Invalid\n- Password must be at least 9 characters"
+            ErrorPopup().open()
         elif self.nac_password_1.text != self.nac_password_2.text:
-            print("Passwords do not match")
+            App.error_reason = "Password Mismatch\n- Password must be the same"
+            ErrorPopup().open()
         else:
             pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
             s.send_e(f"NAC:{App.master_key}🱫{pass_send}")
@@ -446,7 +469,8 @@ class LogUnlock(Screen):
 
     def login(self):
         if self.pwd.text == "":
-            print("Password blank")
+            App.error_reason = "Password Blank\n- The question is, why is it blank?"
+            ErrorPopup().open()
         else:
             try:
                 user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
@@ -456,9 +480,11 @@ class LogUnlock(Screen):
                 if s.recv_d(1024) == "V":
                     sm.switch_to(TwoFacLog(), direction="left")
                 else:
-                    print("Invalid password")
+                    App.error_reason = "Incorrect Password\n- Not exactly sure how you managed to trigger this one."
+                    ErrorPopup().open()
             except zl_error:
-                print("Invalid password")
+                App.error_reason = "Incorrect Password"
+                ErrorPopup().open()
 
 
 class TwoFacSetup(Screen):
@@ -466,7 +492,6 @@ class TwoFacSetup(Screen):
     two_fac_confirm = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
-        print("Two factor setup screen")
         self.two_fac_wait_text = "Waiting for 2fa QR code..."
 
     def on_enter(self, *args):
@@ -480,7 +505,8 @@ class TwoFacSetup(Screen):
 
     def confirm_2fa(self):
         if self.two_fac_confirm.text == "":
-            print("No input provided")
+            App.error_reason = "2FA Code Blank\n- Please enter a 2FA code"
+            ErrorPopup().open()
         else:
             self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
             if len(self.two_fac_confirm.text) == 6:
@@ -489,7 +515,6 @@ class TwoFacSetup(Screen):
                 if ipk != "N":
                     with open("userdata/key", "wb") as f:
                         f.write(App.uid.encode()+ipk)
-                    print("2FA confirmed")
                     App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
                     if App.new_drive:
                         mkey_file_num = 1
@@ -504,9 +529,11 @@ class TwoFacSetup(Screen):
                             f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
                     sm.switch_to(Home(), direction="left")
                 else:
-                    print("2FA failed")
+                    App.error_reason = "2FA Failed\n- Please Try Again"
+                    ErrorPopup().open()
             else:
-                print("Invalid input")
+                App.error_reason = "Invalid 2FA Code"
+                ErrorPopup().open()
 
 
 class TwoFacLog(Screen):
@@ -514,7 +541,8 @@ class TwoFacLog(Screen):
 
     def confirm_2fa(self):
         if self.two_fac_confirm.text == "":
-            print("No input provided")
+            App.error_reason = "2FA Code Blank\n- Please enter a 2FA code"
+            ErrorPopup().open()
         else:
             self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
             if len(self.two_fac_confirm.text) == 6:
@@ -523,13 +551,14 @@ class TwoFacLog(Screen):
                 if two_fa_valid != "N":
                     with open("userdata/key", "wb") as f:
                         f.write(App.uid.encode()+App.ipk)
-                    print("2FA confirmed")
                     App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
                     sm.switch_to(Home(), direction="left")
                 else:
-                    print("2FA failed")
+                    App.error_reason = "2FA Failed\n- Please Try Again"
+                    ErrorPopup().open()
             else:
-                print("Invalid input")
+                App.error_reason = "Invalid 2FA Code"
+                ErrorPopup().open()
 
 
 class InvalidCodePopup(Popup):
@@ -594,7 +623,7 @@ class Home(Screen):
                     if float(self.transfer_amount.text) <= float(App.r_coin)*0.995:
                         s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amount.text}")
                         if s.recv_d(1024) == "V":
-                            print("Transfer successful")
+                            print("Transfer successful")  # todo green popup
                             App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amount.text)/0.995, 2))
                             if App.r_coin.endswith(".0"):
                                 App.r_coin = App.r_coin[:-2]
@@ -602,32 +631,37 @@ class Home(Screen):
                             self.transfer_uid.text = ""
                             self.transfer_amount.text = ""
                         else:
-                            print("Invalid UID")
+                            App.error_reason = "Invalid Username/UID For Transfer"
+                            ErrorPopup().open()
                     else:
-                        print("Insufficient funds")
+                        App.error_reason = "Insufficient funds For Transfer"
+                        ErrorPopup().open()
                 else:
-                    print("Minimum transfer amount is 3 R")
+                    App.error_reason = "Below Minimum Transfer\n- Transaction amount below the 3 R minimum"
+                    ErrorPopup().open()
             else:
-                print("You cannot transfer to yourself")
+                App.error_reason = "You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!"
+                ErrorPopup().open()
         else:
-            print("Invalid UID")
+            App.error_reason = "Invalid Username/UID For Transfer"
+            ErrorPopup().open()
 
     def check_code(self):
         if len(self.code.text) == 19:
             if self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
                 s.send_e(f"CLM:{self.code.text}")
                 if s.recv_d(1024) != "N":
-                    print("Code is for xxx")
-                    App.claim_result = "Invalid code"
+                    App.claim_result = "Code is for xxx"
                     ClaimCodePopup().open()
                 else:
-                    print("Invalid code")
-                    App.claim_result = "Invalid code"
-                    InvalidCodePopup().open()
+                    App.error_reason = "Invalid Code"
+                    ErrorPopup().open()
             else:
-                print("Invalid code")
+                App.error_reason = "Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx"
+                ErrorPopup().open()
         else:
-            print("Invalid code")
+            App.error_reason = "Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx"
+            ErrorPopup().open()
 
     def convert_coins(self):
         if self.amount_convert.text not in ["", "."]:
@@ -742,11 +776,13 @@ class Settings(Screen):
                     if App.d_coin.endswith(".0"):
                         App.d_coin = App.d_coin[:-2]
                     self.d_coins = App.d_coin+" D"
-                    print("Username changed")
+                    print("Username changed")  # todo green popup
             else:
-                print("Username must be between 5 and 24 characters")
+                App.error_reason = "Invalid Username\n- Username must be between 5 and 24 characters"
+                ErrorPopup().open()
         else:
-            print("insufficient funds")
+            App.error_reason = "Insufficient Funds\n- You require 5 D to change your username"
+            ErrorPopup().open()
 
 
 class GiftCards(Screen):
@@ -794,7 +830,6 @@ class App(App):
     def build(self):
         # app defaults
         App.t_and_c = rdisc_kv.t_and_c()
-        App.claim_result = ""
         App.master_key = None
         App.uid = None  # user id
         App.uname = None  # username
@@ -812,7 +847,7 @@ class App(App):
             App.title = "Rdisc-Dev"
         else:
             App.title = [file for file in listdir('app') if
-                          file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
+                         file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
         if platform in ["win32", "linux"]:
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
