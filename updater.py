@@ -1,6 +1,6 @@
 import enclib as enc
 from rsa import newkeys, PublicKey, decrypt
-from os import path, mkdir, listdir, remove
+from os import path, mkdir, listdir, remove, rename
 from socket import socket
 from subprocess import Popen, call
 from zipfile import ZipFile
@@ -170,6 +170,7 @@ class Update(Screen):
             with ZipFile(f"app/{file_name}", 'r') as zip_:
                 zip_.extractall("app")
             self.update_text = f"Successfully updated to {file_name[:-4].replace('rdisc', 'Rdisc')}."
+            rename("rdisc.kv", "old_rdisc.kv")
             sleep(1)
             remove(f"app/{file_name}")
             for file in listdir("app"):

@@ -51,8 +51,7 @@
 0.51 updating rdisc source code in updater
 0.52 reworked ip key and account creation system, username logins
 0.53 USB master keys, t's and c's popup, gift card screen
-
-0.54 invalid action popups, fix Rdisc-Dev distro, fix Rdisc distro popup problems
+0.54 invalid action popups, fixed Rdisc distro popup problems
 
 0.55 coinflip, transaction history with xp, code claiming
 0.56 leveling
@@ -66,6 +65,7 @@
     - updating rdisc source code
   - downloadable apk
 
+- possibly fix the multiple builds incorrect distribution problem
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
 - connection rate limit and checks for entire login paths

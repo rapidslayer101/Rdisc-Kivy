@@ -5,6 +5,7 @@ build
 captcha.jpg
 secret_qr.png
 rdisc_server.db
+rdisc.spec
 bin
 .buildozer
 resources

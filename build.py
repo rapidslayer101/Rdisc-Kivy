@@ -84,4 +84,10 @@ else:
     with open("dist/latest_hash.txt", "w", encoding="utf-8") as f:
         f.write(hashed)
     remove(f"dist/rdisc-{release_major}.{major}.{build}.{run}.exe")
+    if is_major.lower() == "n":
+        for i in range(0, build):
+            try:
+                remove(f"dist/rdisc-{release_major}.{major}.{i}.{run}.zip")
+            except FileNotFoundError:
+                pass
     print(f"Build V{release_major}.{major}.{build}.{run} Completed")
