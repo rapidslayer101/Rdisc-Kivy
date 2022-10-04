@@ -131,12 +131,12 @@ def connect_system():
                 key_data = f.read()
             print(" - Key data loaded")
             App.uid, App.ipk = str(key_data[:8])[2:-1], key_data[8:]
-            sm.switch_to(KeyUnlock(), direction="left")
+            App.sm.switch_to(KeyUnlock(), direction="left")
         else:
             print(" - No keys found")
-            sm.switch_to(LogInOrSignUp(), direction="left")
+            App.sm.switch_to(LogInOrSignUp(), direction="left")
     else:
-        sm.switch_to(IpSet(), direction="left")
+        App.sm.switch_to(IpSet(), direction="left")
 
 
 class AttemptConnection(Screen):
@@ -165,7 +165,7 @@ class IpSet(Screen):
                         ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
                         if all(i.isdigit() and 0 <= int(i) <= 255 for i in [ip_1, ip_2, ip_3, ip_4]):
                             s.ip = [server_ip, server_port]
-                            sm.switch_to(AttemptConnection(), direction="left")
+                            App.sm.switch_to(AttemptConnection(), direction="left")
                         else:
                             error_popup("IP Address Invalid\n- Address must have integers between 0 and 255")
                     except ValueError or NameError:
@@ -205,7 +205,7 @@ class KeyUnlock(Screen):
                         error_popup("Incorrect Password\n- How exactly did you managed to trigger this.")
                     else:
                         App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
-                        sm.switch_to(Home(), direction="left")
+                        App.sm.switch_to(Home(), direction="left")
             except zl_error:
                 error_popup("Incorrect Password")
 
@@ -263,9 +263,9 @@ class CreateKey(Screen):
                 error_popup("Confirmation Empty")
             elif self.confirmation_code.text == self.rand_confirmation:
                 if platform in ["win32", "linux"]:
-                    sm.switch_to(UsbSetup(), direction="left")
+                    App.sm.switch_to(UsbSetup(), direction="left")
                 else:
-                    sm.switch_to(Captcha(), direction="left")
+                    App.sm.switch_to(Captcha(), direction="left")
             else:
                 error_popup("Incorrect Confirmation Number")
 
@@ -346,16 +346,16 @@ class ReCreateKey(Screen):
         if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
             App.path = "login"
             App.uid, App.pass_code, App.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
-            sm.switch_to(ReCreateGen(), direction="left")
+            App.sm.switch_to(ReCreateGen(), direction="left")
         if 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
                 len(self.pass_code.text) == 15 and self.pin_code.text:
             App.path = "login"
             App.uname, App.pass_code, App.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
-            sm.switch_to(ReCreateGen(), direction="left")
+            App.sm.switch_to(ReCreateGen(), direction="left")
 
 
 def switch_to_captcha():
-    sm.switch_to(Captcha(), direction="left")
+    App.sm.switch_to(Captcha(), direction="left")
 
 
 class ReCreateGen(Screen):
@@ -409,7 +409,7 @@ class Captcha(Screen):
             s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
             if s.recv_d(1024) == "V":
                 if App.path == "make":
-                    sm.switch_to(NacPassword(), direction="left")
+                    App.sm.switch_to(NacPassword(), direction="left")
                 if App.path == "login":
                     if App.uname:
                         s.send_e(f"LOG:{App.master_key}🱫u🱫{App.uname}")
@@ -420,12 +420,12 @@ class Captcha(Screen):
                         error_popup("Invalid Master Key")
                     elif log_resp == "NU":
                         error_popup("Username/UID does not exist")
-                        sm.switch_to(ReCreateKey(), direction="right")
+                        App.sm.switch_to(ReCreateKey(), direction="right")
                     else:
                         App.ipk = log_resp
                         if App.uname:
                             App.uid = s.recv_d(1024)
-                        sm.switch_to(LogUnlock(), direction="left")
+                        App.sm.switch_to(LogUnlock(), direction="left")
             else:
                 error_popup("Captcha Failed")
 
@@ -446,7 +446,7 @@ class NacPassword(Screen):
         else:
             pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
             s.send_e(f"NAC:{App.master_key}🱫{pass_send}")
-            sm.switch_to(TwoFacSetup(), direction="left")
+            App.sm.switch_to(TwoFacSetup(), direction="left")
 
 
 class LogUnlock(Screen):
@@ -466,7 +466,7 @@ class LogUnlock(Screen):
                 ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
                 s.send_e(ipk)
                 if s.recv_d(1024) == "V":
-                    sm.switch_to(TwoFacLog(), direction="left")
+                    App.sm.switch_to(TwoFacLog(), direction="left")
                 else:
                     error_popup("Incorrect Password\n- How exactly did you managed to trigger this")
             except zl_error:
@@ -512,7 +512,7 @@ class TwoFacSetup(Screen):
                                     pass
                         with open(f"{App.new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
                             f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
-                    sm.switch_to(Home(), direction="left")
+                    App.sm.switch_to(Home(), direction="left")
                 else:
                     error_popup("2FA Failed\n- Please Try Again")
             else:
@@ -534,7 +534,7 @@ class TwoFacLog(Screen):
                     with open("userdata/key", "wb") as f:
                         f.write(App.uid.encode()+App.ipk)
                     App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
-                    sm.switch_to(Home(), direction="left")
+                    App.sm.switch_to(Home(), direction="left")
                 else:
                     error_popup("2FA Failed\n- Please Try Again")
             else:
@@ -670,6 +670,8 @@ class Home(Screen):
 class Chat(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
+    public_room_text = StringProperty()
+    public_room_input = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
         if App.r_coin.endswith(".0"):
@@ -678,6 +680,13 @@ class Chat(Screen):
             App.d_coin = App.d_coin[:-2]
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
+        self.public_room_text = ""
+
+    def send_public_message(self):
+        if self.public_room_input.text != "":
+            s.send_e(f"MSG:{self.public_room_input.text}")
+            self.public_room_text += self.public_room_input.text + "\n"
+            self.public_room_input.text = ""
 
 
 class Store(Screen):
@@ -786,18 +795,17 @@ class WindowManager(ScreenManager):
     pass
 
 
-sm = WindowManager()
-[sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"),
- LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"),
- UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"),
- NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"),
- TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
- Inventory(name="Inventory"), Settings(name="Settings"), GiftCards(name="GiftCards"), Coinflip(name="Coinflip")]]
-
-
 class App(App):
     def build(self):
-        # app defaults
+        # app defaults and window manager
+        App.sm = WindowManager()
+        [App.sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"),
+         LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"),
+         UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"),
+         Captcha(name="Captcha"), NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"),
+         TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"), Home(name="Home"), Chat(name="Chat"),
+         Store(name="Store"), Games(name="Games"), Inventory(name="Inventory"), Settings(name="Settings"),
+         GiftCards(name="GiftCards"), Coinflip(name="Coinflip")]]
         App.t_and_c = rdisc_kv.t_and_c()
         App.master_key = None
         App.uid = None  # user id
@@ -821,7 +829,7 @@ class App(App):
             Window.size = (1264, 681)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.set('kivy', 'exit_on_escape', '0')
-        return sm
+        return App.sm
 
 
 if __name__ == "__main__":

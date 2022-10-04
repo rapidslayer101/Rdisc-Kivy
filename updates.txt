@@ -53,10 +53,11 @@
 0.53 USB master keys, t's and c's popup, gift card screen
 0.54 invalid action popups, fixed Rdisc distro popup problems
 
-0.55 coinflip, transaction history with xp, code claiming
-0.56 leveling
+0.55 transaction history with xp, code claiming, coinflip
+
+0.56 leveling, gift card buying
 0.57 public chat room, client misinformation logging
-0.58 friending
+0.58 friending, user pass changing
 0.59 scratch cards and other inventory items
 
 - distro types:

@@ -116,14 +116,21 @@ kv_payload = """# You can edit this file to change the UI.
     auto_dismiss: False
     size_hint: 0.75, 0.75
     GreyFloatLayout:
-        Label:
-            text: app.t_and_c
-            size_hint: 0.9, 0.9
-            pos_hint: {"x": 0.05, "top": 1.2}
+        ScrollView:
+            size_hint: 1, 0.8
+            pos_hint: {"x": 0, "top": 1}
+            scroll_type: ['bars']
+            GreyFloatLayout:
+                size_hint_y: None
+                height: root.height*1
+                Label:
+                    text: app.t_and_c
+                    size_hint: 0.9, 0.9
+                    pos_hint: {"x": 0.05, "top": 1.2}
         RoundedButton:
             text: 'Close'
             size_hint: 0.4, 0.1
-            pos_hint: {"x": 0.3, "top": 0.2}
+            pos_hint: {"x": 0.3, "top": 0.15}
             on_release: root.dismiss()
                
 <InvalidCodePopup@Popup>:
@@ -620,29 +627,29 @@ kv_payload = """# You can edit this file to change the UI.
     pos_hint: {"x": 0.01, "top": 0.99}
     
 <ChatButton@Button>:
-    text: "Chat"
-    size_hint: 0.15, 0.05
+    text: "Chat/Friends"
+    size_hint: 0.14, 0.05
     pos_hint: {"x": 0.1, "top": 0.99}
     
 <StoreButton@Button>:
     text: "Store"
-    size_hint: 0.15, 0.05
-    pos_hint: {"x": 0.25, "top": 0.99}
+    size_hint: 0.14, 0.05
+    pos_hint: {"x": 0.24, "top": 0.99}
 
 <GameButton@Button>:
     text: "Games"
-    size_hint: 0.15, 0.05
-    pos_hint: {"x": 0.4, "top": 0.99}
+    size_hint: 0.14, 0.05
+    pos_hint: {"x": 0.38, "top": 0.99}
     
 <InventoryButton@Button>:
     text: "Inventory"
-    size_hint: 0.15, 0.05
-    pos_hint: {"x": 0.55, "top": 0.99}
+    size_hint: 0.14, 0.05
+    pos_hint: {"x": 0.52, "top": 0.99}
     
 <SettingsButton@Button>:
-    text: "User"
-    size_hint: 0.07, 0.05
-    pos_hint: {"x": 0.7, "top": 0.99}
+    text: "Settings"
+    size_hint: 0.11, 0.05
+    pos_hint: {"x": 0.66, "top": 0.99}
     
 <R_coin_label@BackingLabel>:
     color: r_coin_orange
@@ -774,8 +781,8 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.08, "top": 0.09}
             on_press: root.check_code()
             
-
 <Chat>:
+    public_room_input: public_room_input
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -793,11 +800,42 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
+        BackingLabel:
+            size_hint: 0.5, 0.7
+            pos_hint: {"x": 0.25, "top": 0.9}
         Label:
-            text: "Chat (Coming Soon)"
+            text: "Public Chat Room (WIP - This does not actually send messages yet)" 
             size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.35, "top": 0.7}
-                        
+            pos_hint: {"x": 0.35, "top": 0.9}
+        ScrollView:
+            size_hint: 0.5, 0.5
+            pos_hint: {"x": 0.25, "top": 0.8}
+            scroll_type: ['bars']
+            FloatLayout:
+                canvas.before:
+                    Color:
+                        rgba: bk_grey_2
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size    
+                size_hint_y: None
+                height: root.height*1
+                orientation:'horizontal'
+                Label:
+                    text: root.public_room_text
+                    halign: "left"
+                    valign: "bottom"
+                    size_hint: 0.5, 0.5
+                    #pos_hint: {"x": 0.5, "top": 0}
+        BackingLabel:
+            size_hint: 0.5, 0.14
+            pos_hint: {"x": 0.25, "top": 0.17}
+        RoundedTextInput:
+            id: public_room_input
+            size_hint: 0.4, 0.1
+            pos_hint: {"x": 0.3, "top": 0.15}
+            text_validate_unfocus: False
+            on_text_validate: root.send_public_message()   
             
 <Store>:
     GreyFloatLayout:
@@ -914,39 +952,42 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
-            size_hint: 0.3, 0.6
+            size_hint: 0.36, 0.4
             pos_hint: {"x": 0.01, "top": 0.92}
-        Label:
+        SizeLabel:
             text: "User Settings"
-            size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.11, "top": 0.92}
+            pos_hint: {"x": 0.14, "top": 0.9}
         SizeLabel:
             text: f"Name:"
-            pos_hint: {"x": 0, "top": 0.82}
+            pos_hint: {"x": -0.01, "top": 0.82}
         RoundedTextInput:
             id: uname_to
             text: root.uname[:-4]
             size_hint: 0.14, 0.05
-            pos_hint: {"x": 0.09, "top": 0.82}
+            pos_hint: {"x": 0.08, "top": 0.82}
             on_text: self.text = self.text.replace("  ", " ").replace("#", "")[:24]
             on_text_validate: root.change_name()
         RoundedButton:
             text: "Change"
             size_hint: 0.05, 0.05
-            pos_hint: {"x": 0.25, "top": 0.82}
+            pos_hint: {"x": 0.31, "top": 0.82}
             on_press: root.change_name()
+        SizeLabel:
+            text: f"Tag: {root.uname[-4:]}"
+            pos_hint: {"x": 0.22, "top": 0.82}
         SizeLabel:
             text: "Changing your name will cost 5 D"
             font_size: "10dp"
-            pos_hint: {"x": 0.11, "top": 0.78}
-        SizeLabel:
-            text: f"Tag: {root.uname[-4:]}"
-            pos_hint: {"x": 0.06, "top": 0.73}
+            pos_hint: {"x": 0.1, "top": 0.78}
         SizeLabel:
             text: f"UID: {root.uid}"
             pos_hint: {"x": 0.14, "top": 0.73}
+        RoundedButton:
+            text: "T's and C's"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.89, "top": 0.07}
+            on_press: Factory.TermsPopup().open()
             
-
 <GiftCards>:
     GreyFloatLayout:
         Button:
@@ -1019,8 +1060,6 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.23, 0.35
             pos_hint: {"x": 0.67, "top": 0.36}
             
-            
-            
 <Coinflip>:
     GreyFloatLayout:
         Button:
@@ -1032,9 +1071,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
-        SizeLabel:
-            text: "Coinflip"
-            pos_hint: {"x": 0.01, "top": 0.92}
+        
 """
 
 
@@ -1045,14 +1082,19 @@ def kv():
 
 def t_and_c():  # rdisc terms and conditions
     return """
-Section 1 - Changes to the Terms and Conditions:
+Section 1 - Conditions for these Terms and Conditions:
 1.1 - Rdisc can make changes to the Terms and Conditions at any time without prior notice.
         These changes can be for any section or condition.
+1.2 - If a below term implies a term that is not listed, the implied term is to be considered as a part of the Terms and Conditions.
 
-Section 2 -  Monetary Terms:
-2.1 - In the event of a Rdisc exploit or error causing an incorrect amount of either r-coins or d-coins to reside within an account,
-        Rdisc holds the right to correct the value to the intended value.
-2.2 - Users permitted to find exploits may be rewarded with a percentage of the r-coins or d-coins that were gained due to an exploit.
+Section 2 -  General Terms:
+2.1 - Rdisc is not responsible for any damage caused to a user's device or account due to the use of Rdisc.
+       In the event of damage it is likely to be caused by another user's device or account, not Rdisc.
+
+Section 3 -  Monetary Terms:
+3.1 - In the event of a Rdisc exploit or error causing an incorrect amount of either r-coins or d-coins to reside within an account,
+        Rdisc holds the right to correct the value within the account to the intended value.
+3.2 - Users permitted to find exploits may be rewarded with a percentage of the r-coins or d-coins that were gained due to an exploit.
         The amount of r-coins or d-coins rewarded is entirely up to the discretion of the Admin permitting the user to test exploits."""
 
 
