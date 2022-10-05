@@ -829,17 +829,19 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
-            size_hint: 0.5, 0.7
+            size_hint: 0.5, 0.88
             pos_hint: {"x": 0.25, "top": 0.9}
         Label:
             text: "Public Chat Room (WIP - This does not actually send messages yet)" 
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.9}
         ScrollView:
-            size_hint: 0.5, 0.5
+            id: public_chat_scroll
+            size_hint: 0.5, 0.62
             pos_hint: {"x": 0.25, "top": 0.8}
             scroll_type: ['bars']
             FloatLayout:
+                id: public_chat
                 canvas.before:
                     Color:
                         rgba: bk_grey_2
@@ -848,16 +850,6 @@ kv_payload = """# You can edit this file to change the UI.
                         size: self.size    
                 size_hint_y: None
                 height: root.height
-                orientation:'horizontal'
-                Label:
-                    text: root.public_room_text
-                    halign: "left"
-                    valign: "bottom"
-                    size_hint: 0.5, 0.5
-                    #pos_hint: {"x": 0.5, "top": 0}
-        BackingLabel:
-            size_hint: 0.5, 0.14
-            pos_hint: {"x": 0.25, "top": 0.17}
         RoundedTextInput:
             id: public_room_input
             size_hint: 0.4, 0.1

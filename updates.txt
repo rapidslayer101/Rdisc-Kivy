@@ -53,11 +53,11 @@
 0.53 USB master keys, t's and c's popup, gift card screen
 0.54 invalid action popups, fixed Rdisc distro popup problems
 
-0.55 transaction history with xp, code claiming, coinflip
+0.55 public chat room, transaction history with xp leveling
 
-0.56 leveling, gift card buying
-0.57 public chat room, client misinformation logging
-0.58 friending, user pass changing
+0.56 coinflip, gift card buying, code claiming
+0.57 client misinformation logging, user pass changing
+0.58 friending
 0.59 scratch cards and other inventory items
 
 - distro types:
@@ -66,11 +66,11 @@
     - updating rdisc source code
   - downloadable apk
 
-- usb multiple accounts loading error, account not exist error
+- check for rounding errors in transfers
+- known error that after first install the app does not launch, but after a restart it does
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
 - connection rate limit and checks for entire login paths
-- check if errors occur when not in order requests made through login paths
 - nfc experiment <- unlikely, mobile support not a priority
 
 # account key + account pin = master key

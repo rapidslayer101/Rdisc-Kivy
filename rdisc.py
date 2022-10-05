@@ -21,6 +21,8 @@ from kivy.config import Config
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.image import AsyncImage
 from kivy.factory import Factory
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
@@ -183,6 +185,10 @@ class KeyUnlock(Screen):
 
     def on_pre_enter(self, *args):
         self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
+        if path.exists("password.txt"):  # this is for testing ONLY
+            with open("password.txt", "r") as f:
+                self.pwd.text = f.read()
+            self.login()
 
     def login(self):
         if self.pwd.text == "":
@@ -665,8 +671,8 @@ class Home(Screen):
 class Chat(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
-    public_room_text = StringProperty()
     public_room_input = ObjectProperty(None)
+    public_room_msg_counter = 0
 
     def on_pre_enter(self, *args):
         if App.r_coin.endswith(".0"):
@@ -675,13 +681,37 @@ class Chat(Screen):
             App.d_coin = App.d_coin[:-2]
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
-        self.public_room_text = ""
+        self.ids.public_chat_scroll.scroll_y = 0
 
     def send_public_message(self):
         if self.public_room_input.text != "":
-            s.send_e(f"MSG:{self.public_room_input.text}")
-            self.public_room_text += self.public_room_input.text + "\n"
+            if "https://" in self.public_room_input.text or "http://" in self.public_room_input.text:
+                self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_input.text, size_hint_y=None,
+                                                           height=300, anim_delay=0.05))
+            else:
+                self.ids.public_chat.add_widget(Label(text=self.public_room_input.text, font_size=16,
+                                                      color=(1, 1, 1, 1), size_hint_y=None, height=40, halign="left"))
+            #s.send_e(f"MSG:{self.public_room_input.text}")
+            self.public_room_msg_counter += 1
+            if self.ids.public_chat_scroll.scroll_y == 0:
+                scroll_down = True
+            else:
+                scroll_down = False
+            if self.public_room_msg_counter > 101:
+                self.ids.public_chat.remove_widget(self.ids.public_chat.children[-1])
+                self.ids.public_chat.children[-1].text = "MESSAGES ABOVE HAVE BEEN DELETED DUE 100 MESSAGE LIMIT"
+                self.public_room_msg_counter -= 1
+            message_height = 0
+            for i in range(self.public_room_msg_counter):
+                self.ids.public_chat.children[i].y = message_height
+                self.ids.public_chat.children[i].x = 0
+                message_height += self.ids.public_chat.children[i].height
+            self.ids.public_chat.height = message_height
             self.public_room_input.text = ""
+            if scroll_down:
+                self.ids.public_chat_scroll.scroll_y = 0
+            else:
+                pass  # todo make stay still
 
 
 class Store(Screen):
