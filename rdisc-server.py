@@ -179,13 +179,13 @@ def client_connection(cs):
 
                 if log_or_create.startswith("LOG:"):
                     master_key_c, search_for, uname_or_uid = log_or_create[4:].split("🱫")
-                    uid = None
                     if search_for == "u":
                         try:
                             uid, master_key, user_secret, user_pass, u_name, xp, r_coin, d_coin = users.db.execute(
                                 "SELECT user_id, master_key, secret, user_pass, username, xp, r_coin, d_coin "
                                 "FROM users WHERE username = ?", (uname_or_uid,)).fetchone()
                         except TypeError:
+                            uid = None
                             send_e("NU")  # user does not exist
                     else:
                         try:
@@ -193,7 +193,8 @@ def client_connection(cs):
                             master_key, user_secret, user_pass, u_name, xp, r_coin, d_coin = users.db.execute(
                                 "SELECT master_key, secret, user_pass, username, xp, r_coin, d_coin "
                                 "FROM users WHERE user_id = ?", (uname_or_uid,)).fetchone()
-                        except sqlite3.OperationalError:
+                        except TypeError:
+                            uid = None
                             send_e("NU")  # user does not exist
                     if uid:
                         if enc.pass_to_key(master_key_c, uid) == master_key:

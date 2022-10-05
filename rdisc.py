@@ -309,7 +309,7 @@ class ReCreateKey(Screen):
         self.load_text = "Load from USB"
 
     def load_data(self):
-        with open(self.drive+"mkey1", "r", encoding="utf-8") as f:
+        with open(self.drive+"mkey", "r", encoding="utf-8") as f:
             self.name_or_uid.text, self.pass_code.text, self.pin_code.text = f.read().split("🱫")
 
     def detect_usb(self):
@@ -502,15 +502,7 @@ class TwoFacSetup(Screen):
                         f.write(App.uid.encode()+ipk)
                     App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
                     if App.new_drive:
-                        mkey_file_num = 1
-                        for file in listdir(App.new_drive):
-                            if file.startswith("mkey"):
-                                try:
-                                    if int(file[4:]) >= mkey_file_num:
-                                        mkey_file_num = int(file[4:]) + 1
-                                except ValueError:
-                                    pass
-                        with open(f"{App.new_drive}mkey{mkey_file_num}", "w", encoding="utf-8") as f:
+                        with open(f"{App.new_drive}mkey", "w", encoding="utf-8") as f:
                             f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
                     App.sm.switch_to(Home(), direction="left")
                 else:
@@ -597,29 +589,32 @@ class Home(Screen):
             self.transfer_fee = "0.00"
 
     def transfer_coins(self):
-        if len(self.transfer_uid.text) > 7:
-            if self.transfer_uid.text != App.uid:
-                if float(self.transfer_amount.text) >= 3:
-                    if float(self.transfer_amount.text) <= float(App.r_coin)*0.995:
-                        s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amount.text}")
-                        if s.recv_d(1024) == "V":
-                            print("Transfer successful")  # todo green popup
-                            App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amount.text)/0.995, 2))
-                            if App.r_coin.endswith(".0"):
-                                App.r_coin = App.r_coin[:-2]
-                            self.r_coins = App.r_coin+" R"
-                            self.transfer_uid.text = ""
-                            self.transfer_amount.text = ""
+        if self.transfer_amount.text != "":
+            if len(self.transfer_uid.text) > 7:
+                if self.transfer_uid.text != App.uid:
+                    if float(self.transfer_amount.text) >= 3:
+                        if float(self.transfer_amount.text) <= float(App.r_coin)*0.995:
+                            s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amount.text}")
+                            if s.recv_d(1024) == "V":
+                                print("Transfer successful")  # todo green popup
+                                App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amount.text)/0.995, 2))
+                                if App.r_coin.endswith(".0"):
+                                    App.r_coin = App.r_coin[:-2]
+                                self.r_coins = App.r_coin+" R"
+                                self.transfer_uid.text = ""
+                                self.transfer_amount.text = ""
+                            else:
+                                error_popup("Invalid Username/UID For Transfer")
                         else:
-                            error_popup("Invalid Username/UID For Transfer")
+                            error_popup("Insufficient funds For Transfer")
                     else:
-                        error_popup("Insufficient funds For Transfer")
+                        error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
                 else:
-                    error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
+                    error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
             else:
-                error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
+                error_popup("Invalid Username/UID For Transfer")
         else:
-            error_popup("Invalid Username/UID For Transfer")
+            error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
 
     def check_code(self):
         if len(self.code.text) == 19:

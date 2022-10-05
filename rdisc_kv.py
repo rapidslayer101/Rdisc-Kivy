@@ -122,7 +122,7 @@ kv_payload = """# You can edit this file to change the UI.
             scroll_type: ['bars']
             GreyFloatLayout:
                 size_hint_y: None
-                height: root.height*1
+                height: root.height
                 Label:
                     text: app.t_and_c
                     size_hint: 0.9, 0.9
@@ -692,93 +692,121 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
-            text: root.welcome_text
-            size_hint: 0.3, 0.15
-            pos_hint: {"x": 0.69, "top": 0.92}
-        BackingLabel:
-            size_hint: 0.3, 0.6
+            size_hint: 0.32, 0.6
             pos_hint: {"x": 0.01, "top": 0.92}
         Label:
             text: "Transfer R-Coins"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.11, "top": 0.92}
+            pos_hint: {"x": 0.12, "top": 0.92}
         RoundedTextInput:
             id: transfer_uid
             hint_text: "Username or UID"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.82}
-            on_text: self.text = self.text[:8].upper()
+            pos_hint: {"x": 0.07, "top": 0.82}
+            on_text: self.text = self.text[:28]
             on_text_validate: transfer_amount.focus = True
         RoundedTextInput
             id: transfer_amount
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.67}
+            pos_hint: {"x": 0.07, "top": 0.67}
             on_text: root.check_transfer()
         Label:
             text: f"Cost: {root.transfer_cost}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.01, "top": 0.56}
+            pos_hint: {"x": 0.02, "top": 0.56}
         Label:
             text: f"Send: {root.transfer_send}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.11, "top": 0.56}
+            pos_hint: {"x": 0.12, "top": 0.56}
         Label:
             text: f"Fee: {root.transfer_fee}R"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.21, "top": 0.56}
+            pos_hint: {"x": 0.22, "top": 0.56}
         RoundedButton:
             text: "Transfer"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.46}
+            pos_hint: {"x": 0.07, "top": 0.46}
             on_press: root.transfer_coins()
         BackingLabel:
-            size_hint: 0.3, 0.13
-            pos_hint: {"x": 0.69, "top": 0.15}
+            text: root.welcome_text
+            size_hint: 0.32, 0.15
+            pos_hint: {"x": 0.34, "top": 0.92}
+        BackingLabel:
+            size_hint: 0.32, 0.6
+            pos_hint: {"x": 0.34, "top": 0.76}
+        SizeLabel:
+            text: "Latest News"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.45, "top": 0.74}
+        BackingLabel:
+            size_hint: 0.32, 0.13
+            pos_hint: {"x": 0.34, "top": 0.15}
         Label:
             text: root.direction_text
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.79, "top": 0.17}
+            pos_hint: {"x": 0.45, "top": 0.17}
         RoundedButton:
             text: "<>"
             size_hint: 0.04, 0.04
-            pos_hint: {"x": 0.95, "top": 0.15}
+            pos_hint: {"x": 0.62, "top": 0.15}
             on_press: root.change_transfer_direction()
         RoundedTextInput
             id: amount_convert
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.74, "top": 0.09}
+            pos_hint: {"x": 0.4, "top": 0.09}
             on_text: root.convert_coins()
         SizeLabel:
             text: root.coin_conversion
-            pos_hint: {"x": 0.87, "top": 0.09}
+            pos_hint: {"x": 0.53, "top": 0.09}
         BackingLabel:
-            size_hint: 0.3, 0.6
-            pos_hint: {"x": 0.69, "top": 0.76}
+            text: "Level 0 - 0xp"
+            size_hint: 0.32, 0.23
+            pos_hint: {"x": 0.67, "top": 0.92}
+        BackingLabel:
+            size_hint: 0.32, 0.66
+            pos_hint: {"x": 0.67, "top": 0.68}
         SizeLabel:
             text: "Transaction History"
             size_hint: 0.1, 0.05
-            pos_hint: {"x": 0.79, "top": 0.74}
+            pos_hint: {"x": 0.78, "top": 0.66}
+        ScrollView:
+            size_hint: 0.32, 0.6
+            pos_hint: {"x": 0.67, "top": 0.56}
+            GreyFloatLayout:
+                canvas.before:
+                    Color:
+                        rgba: bk_grey_3
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size    
+                size_hint: 1, None
+                height: self.height
+                Label:
+                    #text: root.transaction_history
+                    text: "No transactions."
+                    size_hint: 1, 1
+                    pos_hint: {"x": 0.01, "top": 0.99}
         BackingLabel:
-            size_hint: 0.3, 0.29
+            size_hint: 0.32, 0.29
             pos_hint: {"x": 0.01, "top": 0.31}
         SizeLabel:
             text: "Check Code"
-            pos_hint: {"x": 0.11, "top": 0.29}
+            pos_hint: {"x": 0.12, "top": 0.29}
         RoundedTextInput
             id: code
             hint_text: "XXXX-XXXX-XXXX-XXXX"
             size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.06, "top": 0.23}
+            pos_hint: {"x": 0.07, "top": 0.23}
             on_text: self.text = self.text.replace(" ", "")[:19].upper()
             on_text_validate: root.check_code()
         RoundedButton:
             text: "Claim"
             size_hint: 0.16, 0.05
-            pos_hint: {"x": 0.08, "top": 0.09}
+            pos_hint: {"x": 0.09, "top": 0.09}
             on_press: root.check_code()
             
 <Chat>:
@@ -819,7 +847,7 @@ kv_payload = """# You can edit this file to change the UI.
                         pos: self.pos
                         size: self.size    
                 size_hint_y: None
-                height: root.height*1
+                height: root.height
                 orientation:'horizontal'
                 Label:
                     text: root.public_room_text

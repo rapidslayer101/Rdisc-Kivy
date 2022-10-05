@@ -66,7 +66,7 @@
     - updating rdisc source code
   - downloadable apk
 
-- possibly fix the multiple builds incorrect distribution problem
+- usb multiple accounts loading error, account not exist error
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
 - connection rate limit and checks for entire login paths
