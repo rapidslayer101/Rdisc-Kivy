@@ -46,7 +46,7 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.3, 0.1
     canvas.before:
         Color:
-            rgba: rdisc_purple if self.state == 'normal' else rdisc_purple_dark
+            rgba: app.rdisc_purple if self.state == 'normal' else rdisc_purple_dark
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -87,7 +87,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos: (self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1])
             size: (self.size[1], self.size[1])
         Color:
-            rgba: rdisc_purple
+            rgba: app.rdisc_purple
         Line:
             points: self.pos[0], self.pos[1], self.pos[0]+self.size[0], self.pos[1]
         Line:
@@ -1002,6 +1002,11 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: f"UID: {root.uid}"
             pos_hint: {"x": 0.14, "top": 0.73}
+        RoundedButton:
+            text: "Reload"
+            size_hint: 0.05, 0.05
+            pos_hint: {"x": 0.79, "top": 0.07}
+            on_press: root.reload()
         RoundedButton:
             text: "T's and C's"
             size_hint: 0.1, 0.05

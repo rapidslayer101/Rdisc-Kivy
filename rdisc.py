@@ -39,8 +39,6 @@ if not path.exists("rdisc.kv"):
 if path.exists("rdisc.py"):
     rdisc_kv.kv()
 
-Builder.load_file("rdisc.kv")
-
 if path.exists("rdisc.exe"):
     app_hash = enc.hash_a_file("rdisc.exe")
 else:
@@ -142,8 +140,7 @@ def connect_system():
 
 
 class AttemptConnection(Screen):
-    def __init__(self, **kwargs):
-        super(AttemptConnection, self).__init__(**kwargs)
+    def on_enter(self, *args):
         Clock.schedule_once(lambda dt: connect_system(), 1)  # todo make this retry
 
 
@@ -788,6 +785,11 @@ class Settings(Screen):
         else:
             error_popup("Insufficient Funds\n- You require 5 D to change your username")
 
+    def reload(self):
+        from random import randint
+        App.rdisc_purple = (randint(1, 255)/ 255, 190 / 255, 150 / 255, 0.6)
+        reload()
+
 
 class GiftCards(Screen):
     r_coins = StringProperty()
@@ -822,6 +824,10 @@ class WindowManager(ScreenManager):
 
 class App(App):
     def build(self):
+        # colors
+        App.rdisc_purple = (104/255, 84/255, 252/255, 1)
+        Builder.load_file("rdisc.kv")
+
         # app defaults and window manager
         App.sm = WindowManager()
         [App.sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"), IpSet(name="IpSet"),
@@ -855,6 +861,20 @@ class App(App):
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.set('kivy', 'exit_on_escape', '0')
         return App.sm
+
+
+def reload():
+    App.sm.switch_to(Settings())
+    while len(App.sm.screens) > 1:
+        for screen in App.sm.screens:
+            if screen.name != "Settings":
+                App.sm.remove_widget(screen)
+    [App.sm.add_widget(screen) for screen in [Home(name="Home"), AttemptConnection(name="AttemptConnection"),
+     IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"), CreateKey(name="CreateKey"),
+     UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"), ReCreateGen(name="ReCreateGen"),
+     Captcha(name="Captcha"), NacPassword(name="NacPassword"), LogUnlock(name="LogUnlock"),
+     TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"), Chat(name="Chat"), Store(name="Store"),
+     Games(name="Games"), Inventory(name="Inventory"), GiftCards(name="GiftCards"), Coinflip(name="Coinflip")]]
 
 
 if __name__ == "__main__":
