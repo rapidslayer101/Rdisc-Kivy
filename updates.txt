@@ -52,13 +52,13 @@
 0.52 reworked ip key and account creation system, username logins
 0.53 USB master keys, t's and c's popup, gift card screen
 0.54 invalid action popups, fixed Rdisc distro popup problems
+0.55 reloads, crash handling and coloring backend
 
-0.55 public chat room, transaction history with xp leveling
-
-0.56 coinflip, gift card buying, code claiming
-0.57 client misinformation logging, user pass changing
-0.58 friending
-0.59 scratch cards and other inventory items
+0.56 public chat room, color editing, color-blind modes
+0.57 gift card buying, code claiming, transaction history with xp leveling
+0.58 coinflip, client misinformation logging, user pass changing
+0.59 friending
+0.60 scratch cards and other inventory items
 
 - distro types:
   - updator
@@ -67,11 +67,14 @@
   - downloadable apk
 
 - check for rounding errors in transfers
-- known error that after first install the app does not launch, but after a restart it does
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
 - connection rate limit and checks for entire login paths
 - nfc experiment <- unlikely, mobile support not a priority
+
+known issues:
+- after first install the app does not launch, but after a restart it does
+- after a crash reload the app cannot be closed with cntl+x and color reloads dont work
 
 # account key + account pin = master key
 # MASTER KEY MAY BE SAVED TO USB

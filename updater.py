@@ -170,6 +170,8 @@ class Update(Screen):
             with ZipFile(f"app/{file_name}", 'r') as zip_:
                 zip_.extractall("app")
             self.update_text = f"Successfully updated to {file_name[:-4].replace('rdisc', 'Rdisc')}."
+            if path.exists(f"old_rdisc.kv"):
+                remove(f"old_rdisc.kv")
             rename("rdisc.kv", "old_rdisc.kv")
             sleep(1)
             remove(f"app/{file_name}")
@@ -179,6 +181,7 @@ class Update(Screen):
 
         self.update_text = "Launching..."
         Popen(f"app/{[file for file in listdir('app') if file.endswith('.exe')][-1]}")
+        sleep(1)
         App.get_running_app().stop()
 
     def on_enter(self, *args):

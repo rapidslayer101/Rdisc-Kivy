@@ -9,10 +9,13 @@ kv_payload = """# You can edit this file to change the UI.
 ### Colors ###
 # edits the color scheme of the UI
 
+# THESE NO LONGER DO ANYTHING AS OF 0.55, they might do something in the future
 #:set rdisc_purple (104/255, 84/255, 252/255, 1)
 #:set rdisc_purple_dark (104/255, 73/255, 160/255, 1)
 #:set rdisc_cyan (37/255, 190/255, 150/255, 1)
 #:set rdisc_cyan_la (37/255, 190/255, 150/255, 0.6)
+#:set r_coin_orange (245/255, 112/255, 15/255, 1)
+#:set d_coin_blue (93/255, 93255, 218/255, 1)
 
 #:set link_blue (80/255, 154/255, 228/255, 1)
 #:set green (20/255, 228/255, 43/255, 1)
@@ -24,9 +27,6 @@ kv_payload = """# You can edit this file to change the UI.
 #:set bk_grey_1 (50/255, 50/255, 50/255, 1)
 #:set bk_grey_2 (55/255, 55/255, 55/255, 1)
 #:set bk_grey_3 (60/255, 60/255, 60/255, 1)
-
-#:set r_coin_orange (245/255, 112/255, 15/255, 1)
-#:set d_coin_blue (93/255, 93255, 218/255, 1)
     
     
 ### Templates ### 
@@ -35,7 +35,7 @@ kv_payload = """# You can edit this file to change the UI.
 <GreyFloatLayout@FloatLayout>:
     canvas.before:
         Color:
-            rgba: bk_grey_1
+            rgba: app.bk_grey_1
         Rectangle:
             pos: self.pos
             size: self.size    
@@ -46,7 +46,7 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.3, 0.1
     canvas.before:
         Color:
-            rgba: app.rdisc_purple if self.state == 'normal' else rdisc_purple_dark
+            rgba: app.rdisc_purple if self.state == 'normal' else app.rdisc_purple_dark
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -56,7 +56,7 @@ kv_payload = """# You can edit this file to change the UI.
     background_color: 0,0,0,0
     canvas.before:
         Color:
-            rgba: bk_grey_3
+            rgba: app.bk_grey_3
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -66,13 +66,13 @@ kv_payload = """# You can edit this file to change the UI.
     font_size: '16dp'
     multiline: False
     halign: "center"
-    hint_text_color: rdisc_cyan_la
-    foreground_color: rdisc_cyan
+    hint_text_color: app.rdisc_cyan_la
+    foreground_color: app.rdisc_cyan
     size_hint: 0.3, 0.1
     padding: [0, self.height/2.0-(self.line_height/2.0)*len(self._lines), 0, 0]
     write_tab: False
     background_color: 0,0,0,0
-    cursor_color: rdisc_cyan
+    cursor_color: app.rdisc_cyan
     canvas.after:
         Color:
             rgba: 0,0,0,0
@@ -107,7 +107,7 @@ kv_payload = """# You can edit this file to change the UI.
         Label:
             text: app.error_reason
             font_size: "16dp"
-            color: orange
+            color: app.orange
             size_hint: 0.9, 0.9
             pos_hint: {"x": 0.05, "top": 1.1}
             
@@ -172,7 +172,7 @@ kv_payload = """# You can edit this file to change the UI.
 <GreyLabel@SizeLabel>
     canvas.before:
         Color:
-            rgba: grey
+            rgba: app.grey
         Rectangle:
             size: self.size
             pos: self.pos
@@ -182,7 +182,7 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.1, 0.05
     canvas.before:
         Color:
-            rgba: yellow
+            rgba: app.yellow
         Rectangle:
             size: self.size
             pos: self.pos
@@ -190,7 +190,7 @@ kv_payload = """# You can edit this file to change the UI.
 <OrangeLabel@YellowLabel>
     canvas.before:
         Color:
-            rgba: orange
+            rgba: app.orange
         Rectangle:
             size: self.size
             pos: self.pos
@@ -198,7 +198,7 @@ kv_payload = """# You can edit this file to change the UI.
 <GreenLabel@YellowLabel>
     canvas.before:
         Color:
-            rgba: green
+            rgba: app.green
         Rectangle:
             size: self.size
             pos: self.pos
@@ -206,7 +206,7 @@ kv_payload = """# You can edit this file to change the UI.
 <BackingLabel@SizeLabel>:
     canvas.before:
         Color: 
-            rgba: bk_grey_3
+            rgba: app.bk_grey_3
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -297,7 +297,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.6}
         Button:
             text: "View Terms and Conditions"
-            color: link_blue
+            color: app.link_blue
             background_color: (1/255, 1/255, 1/255,0)
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45, "top": 0.51}
@@ -652,11 +652,11 @@ kv_payload = """# You can edit this file to change the UI.
     pos_hint: {"x": 0.66, "top": 0.99}
     
 <R_coin_label@BackingLabel>:
-    color: r_coin_orange
+    color: app.r_coin_orange
     pos_hint: {"x": 0.89, "top": 0.99}
     
 <D_coin_label@BackingLabel>:
-    color: d_coin_blue
+    color: app.d_coin_blue
     pos_hint: {"x": 0.78, "top": 0.99}
             
 <Home>:
@@ -669,23 +669,23 @@ kv_payload = """# You can edit this file to change the UI.
             disabled: True
         ChatButton:
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
+                root.manager.transition = WipeTransition(clearcolor=app.bk_grey_1)
                 root.manager.current = 'Chat'
         StoreButton:
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
+                root.manager.transition = WipeTransition(clearcolor=app.bk_grey_1)
                 root.manager.current = 'Store'
         GameButton:
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
+                root.manager.transition = WipeTransition(clearcolor=app.bk_grey_1)
                 root.manager.current = 'Games'
         InventoryButton:
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
+                root.manager.transition = WipeTransition(clearcolor=app.bk_grey_1)
                 root.manager.current = 'Inventory'
         SettingsButton:
             on_press: 
-                root.manager.transition = WipeTransition(clearcolor=bk_grey_1)
+                root.manager.transition = WipeTransition(clearcolor=app.bk_grey_1)
                 root.manager.current = 'Settings'
         R_coin_label:
             text: root.r_coins
@@ -779,7 +779,7 @@ kv_payload = """# You can edit this file to change the UI.
             GreyFloatLayout:
                 canvas.before:
                     Color:
-                        rgba: bk_grey_3
+                        rgba: app.bk_grey_3
                     Rectangle:
                         pos: self.pos
                         size: self.size    
@@ -844,7 +844,7 @@ kv_payload = """# You can edit this file to change the UI.
                 id: public_chat
                 canvas.before:
                     Color:
-                        rgba: bk_grey_2
+                        rgba: app.bk_grey_2
                     Rectangle:
                         pos: self.pos
                         size: self.size    
@@ -1006,7 +1006,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Reload"
             size_hint: 0.05, 0.05
             pos_hint: {"x": 0.79, "top": 0.07}
-            on_press: root.reload()
+            on_press: root.call_reload()
         RoundedButton:
             text: "T's and C's"
             size_hint: 0.1, 0.05
@@ -1096,6 +1096,13 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
+            
+<Reloading>
+    GreyFloatLayout:
+        SizeLabel:
+            text: root.reload_text
+            font_size: "20dp"
+            pos_hint: {"x": 0.45, "top": 0.65}
         
 """
 
