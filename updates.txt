@@ -54,8 +54,8 @@
 0.54 invalid action popups, fixed Rdisc distro popup problems
 0.55 reloads, crash handling and coloring backend
 
-0.56 public chat room, color editing, color-blind modes
-0.57 gift card buying, code claiming, transaction history with xp leveling
+0.56 gift card and d_coin buying, color editing, color-blind modes
+0.57 code claiming, transaction history with xp leveling, public chat room
 0.58 coinflip, client misinformation logging, user pass changing
 0.59 friending
 0.60 scratch cards and other inventory items
@@ -73,8 +73,7 @@
 - nfc experiment <- unlikely, mobile support not a priority
 
 known issues:
-- after first install the app does not launch, but after a restart it does
-- after a crash reload the app cannot be closed with cntl+x and color reloads dont work
+- after a crash reload the app cannot be closed with cntl+x and color reloads don't work
 
 # account key + account pin = master key
 # MASTER KEY MAY BE SAVED TO USB

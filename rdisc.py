@@ -44,11 +44,10 @@ while True:
 
         if path.exists("rdisc.exe"):
             app_hash = enc.hash_a_file("rdisc.exe")
+        elif path.exists("rdisc.py"):
+            app_hash = enc.hash_a_file("rdisc.py")
         else:
-            if path.exists("rdisc.py"):
-                app_hash = enc.hash_a_file("rdisc.py")
-            else:
-                app_hash = f"Unknown distro: {platform}"
+            app_hash = f"Unknown distro: {platform}"
 
         version_ = None
         if path.exists("sha.txt"):
@@ -124,14 +123,10 @@ while True:
 
         s = Server()
 
-
-        class ErrorPopup(Popup):
-            pass
-
-
         def error_popup(error_reason):
             App.error_reason = error_reason
-            Factory.ErrorPopup().open()
+            App.popup = Factory.ErrorPopup()
+            App.popup.open()
 
 
         def connect_system():
@@ -359,18 +354,14 @@ while True:
 
             def start_regeneration(self):
                 if len(self.name_or_uid.text) == 8 and len(self.pass_code.text) == 15 and self.pin_code.text:
-                    App.path = "login"
-                    App.uid, App.pass_code, App.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
+                    App.path, App.uid = "login", self.name_or_uid.text
+                    App.pass_code, App.pin_code = self.pass_code.text, self.pin_code.text
                     App.sm.switch_to(ReCreateGen(), direction="left")
                 if 8 < len(self.name_or_uid.text) < 29 and "#" in self.name_or_uid.text and \
                         len(self.pass_code.text) == 15 and self.pin_code.text:
-                    App.path = "login"
-                    App.uname, App.pass_code, App.pin_code = self.name_or_uid.text, self.pass_code.text, self.pin_code.text
+                    App.path, App.uname = "login", self.name_or_uid.text
+                    App.pass_code, App.pin_code = self.pass_code.text, self.pin_code.text
                     App.sm.switch_to(ReCreateGen(), direction="left")
-
-
-        def switch_to_captcha():
-            App.sm.switch_to(Captcha(), direction="left")
 
 
         class ReCreateGen(Screen):
@@ -393,7 +384,7 @@ while True:
                         except ZeroDivisionError:
                             pass
                 App.master_key = enc.to_base(96, 16, master_key.hex())
-                Clock.schedule_once(lambda dt: switch_to_captcha())
+                Clock.schedule_once(lambda dt: App.sm.switch_to(Captcha(), direction="left"))
 
             def on_enter(self, *args):
                 self.gen_left_text = f"Generating master key"
@@ -887,6 +878,7 @@ while True:
                 App.acc_key = None
                 App.path = None  # Make or Login
                 App.xp = None
+                App.popup = None
                 App.reload_text = ""
 
                 # app defaults and window manager
@@ -911,18 +903,21 @@ while True:
                 if platform in ["win32", "linux"]:
                     Window.size = (1264, 681)
 
-                Window.bind(on_keyboard=self.on_keyboard)
+                Window.bind(on_keyboard=on_keyboard)
                 Config.set('input', 'mouse', 'mouse,disable_multitouch')
                 Config.set('kivy', 'exit_on_escape', '0')
                 return App.sm
 
-            def on_keyboard(self, window, key, scancode, text, modifiers):
-                if 'ctrl' in modifiers and text == 'r':
-                    reload("reload")
-                if 'ctrl' in modifiers and text == 'x':
-                    App.get_running_app().stop()
-                if 'ctrl' and 'alt' in modifiers and text == 'c':
-                    App.stop()  # Forces a crash
+        def on_keyboard(window, key, scancode, text, modifiers):
+            if 'ctrl' in modifiers and text == 'r':
+                reload("reload")
+            if 'ctrl' in modifiers and text == 'x':
+                App.get_running_app().stop()
+            if 'ctrl' and 'alt' in modifiers and text == 'c':
+                App.stop()  # Forces a crash
+            if App.popup and key == 8:
+                App.popup.dismiss()
+                App.popup = None
 
         def reload(reason):
             current_screen = App.sm.current

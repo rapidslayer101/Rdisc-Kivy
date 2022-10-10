@@ -172,8 +172,8 @@ class Update(Screen):
             self.update_text = f"Successfully updated to {file_name[:-4].replace('rdisc', 'Rdisc')}."
             if path.exists(f"old_rdisc.kv"):
                 remove(f"old_rdisc.kv")
-            rename("rdisc.kv", "old_rdisc.kv")
-            sleep(1)
+            if path.exists("rdisc.kv"):
+                rename("rdisc.kv", "old_rdisc.kv")
             remove(f"app/{file_name}")
             for file in listdir("app"):
                 if file.endswith(".exe") and file != f"{file_name[:-4]}.exe":
@@ -379,9 +379,9 @@ sm = WindowManager()
 [sm.add_widget(screen) for screen in [Loading(), ChooseDistro(), AttemptConnection(), IpSet(), Update(), CreateDev()]]
 
 
-class RdiscUpdater(App):
+class RdiscLauncher(App):
     def build(self):
-        self.title = f"Rdisc Updater"
+        self.title = f"Rdisc Launcher"
         Window.size = (500, 600)
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.set('kivy', 'exit_on_escape', '0')
@@ -389,4 +389,4 @@ class RdiscUpdater(App):
 
 
 if __name__ == "__main__":
-    RdiscUpdater().run()
+    RdiscLauncher().run()

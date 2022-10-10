@@ -19,10 +19,6 @@ class InvalidClientData(Exception):
     pass
 
 
-class SessionTaken(Exception):
-    pass
-
-
 class Users:
     def __init__(self):
         self.logged_in_users = []
@@ -258,7 +254,6 @@ def client_connection(cs):
                 uid, u_ipk = login_request[4:].split("🱫")
                 if users.check_logged_in(uid, ip):
                     send_e("SESH_T")
-                    raise SessionTaken
                 else:
                     try:
                         ipk1, ipk2, ipk3, ipk4, u_name, xp, r_coin, d_coin = \
@@ -391,8 +386,6 @@ def client_connection(cs):
         print(f"{uid}-{ip}:{port} DC")
         if ip in users.logged_in_users:
             users.logout(uid, ip, cs)
-    except SessionTaken:
-        print(f"{uid}-{ip}:{port} DC - 1 session limit")
     except InvalidClientData:
         print(f"{uid}-{ip}:{port} DC - modified/invalid client request")
         if ip in users.logged_in_users:

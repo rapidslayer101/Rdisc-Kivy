@@ -6,7 +6,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['updater.py'],
+    ['launcher.py'],
     pathex=["C:/Users/rapid/PycharmProjects/Rdisc-Kivy"],
     binaries=[],
     datas=[],
