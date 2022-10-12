@@ -124,8 +124,13 @@ while True:
         s = Server()
 
         def error_popup(error_reason):
-            App.error_reason = error_reason
+            App.popup_text = error_reason
             App.popup = Factory.ErrorPopup()
+            App.popup.open()
+
+        def claim_code_popup(code_text):
+            App.popup_text = code_text
+            App.popup = Factory.ClaimCodePopup()
             App.popup.open()
 
 
@@ -247,7 +252,7 @@ while True:
                             self.pin_code_text = f"Generating Key and Pin ({round(time_left, 2)}s left)"
                         except ZeroDivisionError:
                             pass
-                App.master_key = enc.to_base(96, 16, master_key.hex())
+                App.mkey = enc.to_base(96, 16, master_key.hex())
                 self.rand_confirmation = str(randint(0, 9))
                 self.pin_code_text = f"Account Pin: {enc.to_base(36, 10, current_depth)}"
                 self.rand_confirm_text = f"Once you have written down your Account Key " \
@@ -383,7 +388,7 @@ while True:
                             self.gen_left_text = f"Generating master key ({round((depth_left-depth_count)/real_dps, 2)}s left)"
                         except ZeroDivisionError:
                             pass
-                App.master_key = enc.to_base(96, 16, master_key.hex())
+                App.mkey = enc.to_base(96, 16, master_key.hex())
                 Clock.schedule_once(lambda dt: App.sm.switch_to(Captcha(), direction="left"))
 
             def on_enter(self, *args):
@@ -418,12 +423,13 @@ while True:
                             App.sm.switch_to(NacPassword(), direction="left")
                         if App.path == "login":
                             if App.uname:
-                                s.send_e(f"LOG:{App.master_key}🱫u🱫{App.uname}")
+                                s.send_e(f"LOG:{App.mkey}🱫u🱫{App.uname}")
                             else:
-                                s.send_e(f"LOG:{App.master_key}🱫i🱫{App.uid}")
+                                s.send_e(f"LOG:{App.mkey}🱫i🱫{App.uid}")
                             log_resp = s.recv_d(1024)
                             if log_resp == "IMK":
                                 error_popup("Invalid Master Key")
+                                App.sm.switch_to(ReCreateKey(), direction="left")
                             elif log_resp == "NU":
                                 error_popup("Username/UID does not exist")
                                 App.sm.switch_to(ReCreateKey(), direction="right")
@@ -451,7 +457,7 @@ while True:
                     error_popup("Password Mismatch\n- Password must be the same")
                 else:
                     pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
-                    s.send_e(f"NAC:{App.master_key}🱫{pass_send}")
+                    s.send_e(f"NAC:{App.mkey}🱫{pass_send}")
                     App.sm.switch_to(TwoFacSetup(), direction="left")
 
 
@@ -487,8 +493,8 @@ while True:
                 self.two_fac_wait_text = "Waiting for 2fa QR code..."
 
             def on_enter(self, *args):
-                App.uid, App.secret_code = s.recv_d(1024).split("🱫")
-                secret_code = b32encode(App.secret_code.encode()).decode().replace('=', '')
+                App.uid, secret_code = s.recv_d(1024).split("🱫")
+                secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
                 print(secret_code)  # todo mention in UI text
                 self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
                                              f"F%2Ftotp%2F{App.uid}%3Fsecret%3D{secret_code}%26issuer%3DApp"
@@ -537,14 +543,6 @@ while True:
                             error_popup("2FA Failed\n- Please Try Again")
                     else:
                         error_popup("Invalid 2FA Code")
-
-
-        class InvalidCodePopup(Popup):
-            pass
-
-
-        class ClaimCodePopup(Popup):
-            pass
 
 
         class Home(Screen):
@@ -627,8 +625,7 @@ while True:
                     if self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
                         s.send_e(f"CLM:{self.code.text}")
                         if s.recv_d(1024) != "N":
-                            App.claim_result = "Code is for xxx"
-                            ClaimCodePopup().open()
+                            claim_code_popup("Code is for xxx")
                         else:
                             error_popup("Invalid Code")
                     else:
@@ -848,7 +845,7 @@ while True:
 
         class App(KivyApp):
             def build(self):
-                # colors
+                # default colors
                 App.rdisc_purple = (104/255, 84/255, 252/255, 1)
                 App.rdisc_purple_dark = (104/255, 73/255, 160/255, 1)
                 App.rdisc_cyan = (37/255, 190/255, 150/255, 1)
@@ -868,15 +865,14 @@ while True:
                 App.bk_grey_3 = (60/255, 60/255, 60/255, 1)
 
                 App.t_and_c = rdisc_kv.t_and_c()
-                App.master_key = None
                 App.uid = None  # user id
                 App.uname = None  # username
-                App.secret_code = None
+                App.mkey = None  # master key
                 App.ipk = None  # ip key
                 App.pass_code = None
                 App.pin_code = None
                 App.acc_key = None
-                App.path = None  # Make or Login
+                # App.path = None  # todo test removal of
                 App.xp = None
                 App.popup = None
                 App.reload_text = ""
@@ -930,8 +926,11 @@ while True:
             #if reason == "crash_loop":
             #    App.reload_text = "Rdisc crashed and was unable to reload."
             App.sm.current = "Reloading"
+            Builder.unload_file("rdisc.kv")
             while len(App.sm.screens) > 2:
                 [App.sm.remove_widget(screen) for screen in App.sm.screens if screen.name not in ["Reloading", ""]]
+            if reason == "reload":
+                Builder.load_file("rdisc.kv")
             [App.sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"),
              IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"),
              CreateKey(name="CreateKey"), UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"),

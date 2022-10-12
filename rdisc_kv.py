@@ -5,28 +5,6 @@ kv_payload = """# You can edit this file to change the UI.
 
 #:import WipeTransition kivy.uix.screenmanager.WipeTransition
 #:import Factory kivy.factory.Factory
-
-### Colors ###
-# edits the color scheme of the UI
-
-# THESE NO LONGER DO ANYTHING AS OF 0.55, they might do something in the future
-#:set rdisc_purple (104/255, 84/255, 252/255, 1)
-#:set rdisc_purple_dark (104/255, 73/255, 160/255, 1)
-#:set rdisc_cyan (37/255, 190/255, 150/255, 1)
-#:set rdisc_cyan_la (37/255, 190/255, 150/255, 0.6)
-#:set r_coin_orange (245/255, 112/255, 15/255, 1)
-#:set d_coin_blue (93/255, 93255, 218/255, 1)
-
-#:set link_blue (80/255, 154/255, 228/255, 1)
-#:set green (20/255, 228/255, 43/255, 1)
-#:set yellow (243/255, 240/255, 51/255, 1)
-#:set orange (243/255, 132/255, 1/255, 1)
-#:set red (251/255, 30/255, 5/255, 1)
-#:set grey (60/255, 60/255, 50/255, 1)
-
-#:set bk_grey_1 (50/255, 50/255, 50/255, 1)
-#:set bk_grey_2 (55/255, 55/255, 55/255, 1)
-#:set bk_grey_3 (60/255, 60/255, 60/255, 1)
     
     
 ### Templates ### 
@@ -105,7 +83,7 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.32, 0.27
     GreyFloatLayout:
         Label:
-            text: app.error_reason
+            text: app.popup_text
             font_size: "16dp"
             color: app.orange
             size_hint: 0.9, 0.9

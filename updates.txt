@@ -37,7 +37,7 @@
 0.37 removed build nums, change pass, rebuilt account delete
 0.38 key generator and resuming generation, key regeneration and resuming regeneration
 0.39 better installers, smaller app size, account key creator
-0.40 changing to rdisc-4c5, the kivy GUI, exes back and in one file
+0.40 changing to rdisc-rc5, the kivy GUI, exes back and in one file
 0.41 captcha human verification, password setting screen, 2fa setup
 0.42 account creation with sql user tables
 0.43 ip keys, pack blank images into exe
@@ -57,8 +57,13 @@
 0.56 gift card and d_coin buying, color editing, color-blind modes
 0.57 code claiming, transaction history with xp leveling, public chat room
 0.58 coinflip, client misinformation logging, user pass changing
-0.59 friending
-0.60 scratch cards and other inventory items
+0.59 friending and friends list
+0.60 scratch cards and inventory items support
+0.61 direct messaging
+
+known issues:
+- after a crash reload the app cannot be closed with cntl+x and color reloads don't work
+- crash text does not show, neither do crash loops
 
 - distro types:
   - updator
@@ -72,11 +77,8 @@
 - connection rate limit and checks for entire login paths
 - nfc experiment <- unlikely, mobile support not a priority
 
-known issues:
-- after a crash reload the app cannot be closed with cntl+x and color reloads don't work
-
 # account key + account pin = master key
 # MASTER KEY MAY BE SAVED TO USB
-#-> set master key and password
+# -> set master key and password
 # master key + 2fa = ip key enc
 # ip key + password= login
