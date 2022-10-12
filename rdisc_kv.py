@@ -34,7 +34,7 @@ kv_payload = """# You can edit this file to change the UI.
     background_color: 0,0,0,0
     canvas.before:
         Color:
-            rgba: app.bk_grey_3
+            rgba: app.bk_grey_3 if self.state == 'normal' else app.bk_grey_2
         RoundedRectangle:
             size: self.size
             pos: self.pos
@@ -1031,10 +1031,21 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: f"UID: {root.uid}"
             pos_hint: {"x": 0.14, "top": 0.73}
+        RoundedBackingButton:
+            size_hint: 0.2, 0.4
+            pos_hint: {"x": 0.38, "top": 0.92}
+            on_press: root.manager.current = 'ColorSettings'
+        SizeLabel:
+            text: "Color settings"
+            pos_hint: {"x": 0.43, "top": 0.9}
+        AsyncImage:
+            source: "https://i.pinimg.com/originals/46/df/8a/46df8ac05dae334c4b473987f2d90574.png"
+            size_hint: 0.16, 0.3
+            pos_hint: {"x": 0.4, "top": 0.85}
         RoundedButton:
             text: "Reload"
             size_hint: 0.05, 0.05
-            pos_hint: {"x": 0.79, "top": 0.07}
+            pos_hint: {"x": 0.83, "top": 0.07}
             on_press: root.call_reload()
         RoundedButton:
             text: "T's and C's"
@@ -1042,6 +1053,116 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.89, "top": 0.07}
             on_press: Factory.TermsPopup().open()
             
+<ColorSettings>:
+    GreyFloatLayout:
+        Button:
+            text: "<< Back"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
+            on_press: root.manager.current = 'Settings'
+        SizeLabel:
+            text: "Rdisc Purple:"
+            pos_hint: {"x": 0.1, "top": 0.9}
+        RoundedButton:
+            id: rdisc_purple_button
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.22, "top": 0.9}
+            on_press: root.select_color("rdisc_purple")
+            canvas.before:
+                Color:
+                    rgba: app.rdisc_purple
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        SizeLabel:
+            text: "Rdisc Purple Dark:"
+            pos_hint: {"x": 0.1, "top": 0.84}
+        RoundedButton:
+            id: rdisc_purple_dark_button
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.22, "top": 0.84}
+            on_press: root.select_color("rdisc_purple_dark")
+            canvas.before:
+                Color:
+                    rgba: app.rdisc_purple_dark
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        SizeLabel:
+            text: "Rdisc Cyan:"
+            pos_hint: {"x": 0.1, "top": 0.78}
+        RoundedButton:
+            id: rdisc_cyan_button
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.22, "top": 0.78}
+            on_press: root.select_color("rdisc_cyan")
+            canvas.before:
+                Color:
+                    rgba: app.rdisc_cyan
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        SizeLabel:
+            text: "Rdisc Cyan Light:"
+            pos_hint: {"x": 0.1, "top": 0.72}
+        RoundedButton:
+            id: rdisc_cyan_la_button
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.22, "top": 0.72}
+            on_press: root.select_color("rdisc_cyan_la")
+            canvas.before:
+                Color:
+                    rgba: app.rdisc_cyan_la
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        SizeLabel:
+            text: "R Coin Orange:"
+            pos_hint: {"x": 0.1, "top": 0.66}
+        RoundedButton:
+            id: rcoin_orange_button
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.22, "top": 0.66}
+            on_press: root.select_color("rcoin_orange")
+            canvas.before:
+                Color:
+                    rgba: app.r_coin_orange
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        SizeLabel:
+            text: "D Coin Blue:"
+            pos_hint: {"x": 0.1, "top": 0.6}
+        RoundedButton:
+            id: dcoin_blue_button
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0.22, "top": 0.6}
+            on_press: root.select_color("dcoin_blue")
+            canvas.before:
+                Color:
+                    rgba: app.d_coin_blue
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        
+        ColorPicker:
+            id: color_picker
+            size_hint: 0.6, 0.8
+            pos_hint: {"x": 0.4, "top": 0.9}
+            on_color: root.change_color()
+
+        #RoundedButton:
+        #    text: "Change"
+        #    size_hint: 0.1, 0.05
+        #    pos_hint: {"x": 0.45, "top": 0.1}
+        #    on_press: root.change_color()
+        
 <GiftCards>:
     GreyFloatLayout:
         Button:

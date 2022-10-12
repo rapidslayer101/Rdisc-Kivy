@@ -1,30 +1,31 @@
-import enclib as enc
-import rdisc_kv
-from rsa import newkeys, PublicKey, decrypt
-from time import sleep
-from sys import platform
-from zlib import error as zl_error
-from random import randint, uniform
-from time import perf_counter
-from random import choices
+from base64 import b32encode
+from datetime import datetime
 from hashlib import sha512
 from os import path, mkdir, listdir
-from datetime import datetime
-from threading import Thread
+from random import choices
+from random import randint, uniform
 from socket import socket
-from base64 import b32encode
+from sys import platform
+from threading import Thread
+from time import perf_counter
+from time import sleep
+from zlib import error as zl_error
 
 from kivy.app import App as KivyApp
-from kivy.lang import Builder
-from kivy.core.window import Window
-from kivy.config import Config
 from kivy.clock import Clock
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix.label import Label
-from kivy.uix.image import AsyncImage
+from kivy.config import Config
+from kivy.core.window import Window
 from kivy.factory import Factory
+from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
+from kivy.uix.image import AsyncImage
+from kivy.uix.label import Label
+from kivy.uix.screenmanager import ScreenManager, Screen
+from rsa import newkeys, PublicKey, decrypt
+
+import enclib as enc
+import rdisc_kv
 
 crash_num = 0
 while True:
@@ -804,6 +805,64 @@ while True:
                 reload("reload")
 
 
+        class ColorSettings(Screen):
+            r_coins = StringProperty()
+            d_coins = StringProperty()
+            selected_color = None
+
+            def on_pre_enter(self, *args):
+                self.r_coins = App.r_coin+" R"
+                self.d_coins = App.d_coin+" D"
+
+            def select_color(self, color_name):
+                self.selected_color = color_name
+                color = {"rdisc_purple": App.rdisc_purple, "rdisc_purple_dark": App.rdisc_purple_dark,
+                         "rdisc_cyan": App.rdisc_cyan, "rdisc_cyan_la": App.rdisc_cyan_la,
+                         "rcoin_orange": App.r_coin_orange, "dcoin_blue": App.d_coin_blue}.get(color_name)
+                self.ids.color_picker.color = color
+
+            def change_color(self):
+                color = [round(rgb, 4) for rgb in self.ids.color_picker.color]
+                from kivy.graphics import Color, RoundedRectangle
+                if self.selected_color is not None:
+                    if self.selected_color == "rdisc_purple":
+                        with self.ids.rdisc_purple_button.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.rdisc_purple_button.pos,
+                                             size=self.ids.rdisc_purple_button.size, radius=[10])
+                            App.rdisc_purple = color
+                    if self.selected_color == "rdisc_purple_dark":
+                        with self.ids.rdisc_purple_dark_button.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.rdisc_purple_dark_button.pos,
+                                             size=self.ids.rdisc_purple_dark_button.size, radius=[10])
+                            App.rdisc_purple_dark = color
+                    if self.selected_color == "rdisc_cyan":
+                        with self.ids.rdisc_cyan_button.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.rdisc_cyan_button.pos,
+                                             size=self.ids.rdisc_cyan_button.size, radius=[10])
+                            App.rdisc_cyan = color
+                    if self.selected_color == "rdisc_cyan_la":
+                        with self.ids.rdisc_cyan_la_button.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.rdisc_cyan_la_button.pos,
+                                             size=self.ids.rdisc_cyan_la_button.size, radius=[10])
+                            App.rdisc_cyan_la = color
+                    if self.selected_color == "rcoin_orange":
+                        with self.ids.rcoin_orange_button.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.rcoin_orange_button.pos,
+                                             size=self.ids.rcoin_orange_button.size, radius=[10])
+                            App.r_coin_orange = color
+                    if self.selected_color == "dcoin_blue":
+                        with self.ids.dcoin_blue_button.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.dcoin_blue_button.pos,
+                                             size=self.ids.dcoin_blue_button.size, radius=[10])
+                            App.d_coin_blue = color
+
+
         class GiftCards(Screen):
             r_coins = StringProperty()
             d_coins = StringProperty()
@@ -915,8 +974,9 @@ while True:
                  ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPassword(name="NacPassword"),
                  LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
                  Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
-                 Inventory(name="Inventory"), Settings(name="Settings"), GiftCards(name="GiftCards"),
-                 DataCoins(name="DataCoins"), Coinflip(name="Coinflip"), Reloading(name="Reloading")]]
+                 Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
+                 GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Coinflip(name="Coinflip"),
+                 Reloading(name="Reloading")]]
 
                 if version_:
                     App.title = f"Rdisc-{version_}"
@@ -966,8 +1026,8 @@ while True:
              ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPassword(name="NacPassword"),
              LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
              Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
-             Inventory(name="Inventory"), Settings(name="Settings"), GiftCards(name="GiftCards"),
-             DataCoins(name="DataCoins"), Coinflip(name="Coinflip")]]
+             Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
+             GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Coinflip(name="Coinflip")]]
             if reason == "reload":
                 if current_screen == "_screen0":
                     current_screen = "Home"
