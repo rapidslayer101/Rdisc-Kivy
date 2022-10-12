@@ -20,7 +20,6 @@ from kivy.core.window import Window
 from kivy.config import Config
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.image import AsyncImage
 from kivy.factory import Factory
@@ -133,6 +132,10 @@ while True:
             App.popup = Factory.ClaimCodePopup()
             App.popup.open()
 
+        def success_popup(success_text):
+            App.popup_text = success_text
+            App.popup = Factory.SuccessPopup()
+            App.popup.open()
 
         def connect_system():
             if s.ip and s.connect():
@@ -219,6 +222,10 @@ while True:
                                 error_popup("Incorrect Password\n- How exactly did you manage to trigger this.")
                             else:
                                 App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
+                                if App.r_coin.endswith(".0"):
+                                    App.r_coin = App.r_coin[:-2]
+                                if App.d_coin.endswith(".0"):
+                                    App.d_coin = App.d_coin[:-2]
                                 App.sm.switch_to(Home(), direction="left")
                     except zl_error:
                         error_popup("Incorrect Password")
@@ -385,7 +392,8 @@ while True:
                                   f"DPS: {round(real_dps/1000000, 3)}M  "
                                   f"Depth: {current_depth+depth_count}/{depth_to}  "
                                   f"Progress: {round((current_depth+depth_count)/depth_to*100, 3)}%")
-                            self.gen_left_text = f"Generating master key ({round((depth_left-depth_count)/real_dps, 2)}s left)"
+                            self.gen_left_text = f"Generating master key " \
+                                                 f"({round((depth_left-depth_count)/real_dps, 2)}s left)"
                         except ZeroDivisionError:
                             pass
                 App.mkey = enc.to_base(96, 16, master_key.hex())
@@ -399,7 +407,7 @@ while True:
 
         class Captcha(Screen):
             captcha_prompt_text = StringProperty()
-            captcha_input = ObjectProperty(None)
+            captcha_inp = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.captcha_prompt_text = "Waiting for captcha..."
@@ -416,8 +424,8 @@ while True:
                 self.ids.captcha_image.source = 'captcha.jpg'
 
             def try_captcha(self):
-                if len(self.captcha_input.text) == 10:
-                    s.send_e(self.captcha_input.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
+                if len(self.captcha_inp.text) == 10:
+                    s.send_e(self.captcha_inp.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
                     if s.recv_d(1024) == "V":
                         if App.path == "make":
                             App.sm.switch_to(NacPassword(), direction="left")
@@ -513,6 +521,10 @@ while True:
                             with open("userdata/key", "wb") as f:
                                 f.write(App.uid.encode()+ipk)
                             App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
+                            if App.r_coin.endswith(".0"):
+                                App.r_coin = App.r_coin[:-2]
+                            if App.d_coin.endswith(".0"):
+                                App.d_coin = App.d_coin[:-2]
                             if App.new_drive:
                                 with open(f"{App.new_drive}mkey", "w", encoding="utf-8") as f:
                                     f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
@@ -538,6 +550,10 @@ while True:
                             with open("userdata/key", "wb") as f:
                                 f.write(App.uid.encode()+App.ipk)
                             App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
+                            if App.r_coin.endswith(".0"):
+                                App.r_coin = App.r_coin[:-2]
+                            if App.d_coin.endswith(".0"):
+                                App.d_coin = App.d_coin[:-2]
                             App.sm.switch_to(Home(), direction="left")
                         else:
                             error_popup("2FA Failed\n- Please Try Again")
@@ -550,7 +566,7 @@ while True:
             d_coins = StringProperty()
             welcome_text = StringProperty()
             transfer_uid = ObjectProperty(None)
-            transfer_amount = ObjectProperty(None)
+            transfer_amt = ObjectProperty(None)
             transfer_cost = StringProperty()
             transfer_send = StringProperty()
             transfer_fee = StringProperty()
@@ -561,10 +577,6 @@ while True:
             code = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
                 self.welcome_text = f"Welcome back {App.uname}"
@@ -575,38 +587,43 @@ while True:
                 self.direction_text = "Conversion Calculator (£->R)"
 
             def check_transfer(self):
-                if self.transfer_amount.text not in ["", "."]:
-                    self.transfer_amount.text = self.transfer_amount.text[:12]
-                    if float(self.transfer_amount.text) > float(App.r_coin)*0.995:
-                        self.transfer_amount.text = str(float(App.r_coin)*0.995)
-                    if "." in self.transfer_amount.text:
-                        if len(self.transfer_amount.text.split(".")[1]) > 2:
-                            self.transfer_amount.text = self.transfer_amount.text[:-1]
-                    self.transfer_cost = str(round(float(self.transfer_amount.text)/0.995, 2))
-                    self.transfer_send = self.transfer_amount.text
-                    self.transfer_fee = str(round(float(self.transfer_cost)-float(self.transfer_amount.text), 2))
-                if self.transfer_amount.text == ".":
-                    self.transfer_amount.text = ""
-                if self.transfer_amount.text == "":
+                if self.transfer_amt.text not in ["", "."]:
+                    self.transfer_amt.text = self.transfer_amt.text[:12]
+                    if float(self.transfer_amt.text) > float(App.r_coin)*0.995:
+                        self.transfer_amt.text = str(round(float(App.r_coin)*0.995, 2))
+                    if "." in self.transfer_amt.text:
+                        if len(self.transfer_amt.text.split(".")[1]) > 2:
+                            self.transfer_amt.text = self.transfer_amt.text[:-1]
+                    self.transfer_cost = str(round(float(self.transfer_amt.text) / 0.995, 2))
+                    self.transfer_send = self.transfer_amt.text
+                    self.transfer_fee = str(round(float(self.transfer_cost) - float(self.transfer_amt.text), 2))
+                if self.transfer_amt.text == ".":
+                    self.transfer_amt.text = ""
+                if self.transfer_amt.text == "":
                     self.transfer_cost = "0.00"
                     self.transfer_send = "0.00"
                     self.transfer_fee = "0.00"
 
             def transfer_coins(self):
-                if self.transfer_amount.text != "":
+                if self.transfer_amt.text != "":
                     if len(self.transfer_uid.text) > 7:
                         if self.transfer_uid.text != App.uid:
-                            if float(self.transfer_amount.text) >= 3:
-                                if float(self.transfer_amount.text) <= float(App.r_coin)*0.995:
-                                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amount.text}")
+                            if float(self.transfer_amt.text) >= 3:
+                                if float(self.transfer_amt.text) <= float(App.r_coin)*0.995:
+                                    #App.popup_text = f"Send {self.transfer_uid.text} R to {self.transfer_send}\n" \
+                                    #                 f"Fee: {self.transfer_fee}\nTotal Cost: {self.transfer_cost}"
+                                    #App.popup = Factory.TransferConfirmPopup()
+                                    #App.popup.open()
+                                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
                                     if s.recv_d(1024) == "V":
-                                        print("Transfer successful")  # todo green popup
-                                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amount.text)/0.995, 2))
+                                        success_popup(f"Transfer of {self.transfer_amt.text} R to "
+                                                      f"{self.transfer_uid.text} Successful")
+                                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
                                         if App.r_coin.endswith(".0"):
                                             App.r_coin = App.r_coin[:-2]
                                         self.r_coins = App.r_coin+" R"
                                         self.transfer_uid.text = ""
-                                        self.transfer_amount.text = ""
+                                        self.transfer_amt.text = ""
                                     else:
                                         error_popup("Invalid Username/UID For Transfer")
                                 else:
@@ -640,9 +657,9 @@ while True:
                         if len(self.amount_convert.text.split(".")[1]) > 2:
                             self.amount_convert.text = self.amount_convert.text[:-1]
                     if self.transfer_direction == "R":
-                        amount_converted = str(float(self.amount_convert.text)/0.06)
+                        amount_converted = str(round(float(self.amount_convert.text)/0.06, 2))
                     else:
-                        amount_converted = str(float(self.amount_convert.text)*0.0585)
+                        amount_converted = str(round(float(self.amount_convert.text)*0.0585, 2))
                     if "." in amount_converted:
                         amount_converted = amount_converted[:amount_converted.index(".")+3]
                     if self.transfer_direction == "R":
@@ -668,27 +685,24 @@ while True:
         class Chat(Screen):
             r_coins = StringProperty()
             d_coins = StringProperty()
-            public_room_input = ObjectProperty(None)
+            public_room_inp = ObjectProperty(None)
             public_room_msg_counter = 0
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
                 self.ids.public_chat_scroll.scroll_y = 0
 
             def send_public_message(self):
-                if self.public_room_input.text != "":
-                    if "https://" in self.public_room_input.text or "http://" in self.public_room_input.text:
-                        self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_input.text, size_hint_y=None,
-                                                                   height=300, anim_delay=0.05))
+                if self.public_room_inp.text != "":
+                    if "https://" in self.public_room_inp.text or "http://" in self.public_room_inp.text:
+                        self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text,
+                                                                   size_hint_y=None, height=300, anim_delay=0.05))
                     else:
-                        self.ids.public_chat.add_widget(Label(text=self.public_room_input.text, font_size=16,
-                                                              color=(1, 1, 1, 1), size_hint_y=None, height=40, halign="left"))
-                    #s.send_e(f"MSG:{self.public_room_input.text}")
+                        self.ids.public_chat.add_widget(Label(text=self.public_room_inp.text, font_size=16,
+                                                              color=(1, 1, 1, 1), size_hint_y=None, height=40,
+                                                              halign="left"))
+                    #s.send_e(f"MSG:{self.public_room_inp.text}")
                     self.public_room_msg_counter += 1
                     if self.ids.public_chat_scroll.scroll_y == 0:
                         scroll_down = True
@@ -696,7 +710,7 @@ while True:
                         scroll_down = False
                     if self.public_room_msg_counter > 101:
                         self.ids.public_chat.remove_widget(self.ids.public_chat.children[-1])
-                        self.ids.public_chat.children[-1].text = "MESSAGES ABOVE HAVE BEEN DELETED DUE 100 MESSAGE LIMIT"
+                        self.ids.public_chat.children[-1].text = "MESSAGES ABOVE DELETED DUE 100 MESSAGE LIMIT"
                         self.public_room_msg_counter -= 1
                     message_height = 0
                     for i in range(self.public_room_msg_counter):
@@ -704,7 +718,7 @@ while True:
                         self.ids.public_chat.children[i].x = 0
                         message_height += self.ids.public_chat.children[i].height
                     self.ids.public_chat.height = message_height
-                    self.public_room_input.text = ""
+                    self.public_room_inp.text = ""
                     if scroll_down:
                         self.ids.public_chat_scroll.scroll_y = 0
                     else:
@@ -716,10 +730,6 @@ while True:
             d_coins = StringProperty()
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
 
@@ -729,10 +739,6 @@ while True:
             d_coins = StringProperty()
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
 
@@ -742,10 +748,6 @@ while True:
             d_coins = StringProperty()
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
 
@@ -758,28 +760,24 @@ while True:
             uname_to = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
                 self.uname = App.uname
                 self.uid = App.uid
 
             def change_name(self):
-                if float(App.d_coin) > 4:
+                if float(App.d_coin) >= 5:
                     if 4 < len(self.uname_to.text) < 25:
                         s.send_e(f"CUN:{self.uname_to.text}")
                         new_uname = s.recv_d(1024)
                         if new_uname != "N":
                             App.uname = new_uname
                             self.uname = App.uname
-                            App.d_coin = str(float(App.d_coin)-5)
+                            App.d_coin = str(round(float(App.d_coin)-5, 2))
                             if App.d_coin.endswith(".0"):
                                 App.d_coin = App.d_coin[:-2]
                             self.d_coins = App.d_coin+" D"
-                            print("Username changed")  # todo green popup
+                            success_popup(f"Username changed to {self.uname}")
                     else:
                         error_popup("Invalid Username\n- Username must be between 5 and 24 characters")
                 else:
@@ -811,12 +809,47 @@ while True:
             d_coins = StringProperty()
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
+
+            def buy_gift_card(self, amount):
+                if float(App.r_coin) >= float(amount):
+                    s.send_e(f"BGC:{amount}")
+                    gift_code = s.recv_d(1024)
+                    App.r_coin = str(round(float(App.r_coin)-float(amount), 2))
+                    if App.r_coin.endswith(".0"):
+                        App.r_coin = App.r_coin[:-2]
+                    self.r_coins = App.r_coin+" R"
+                    success_popup(f"Successfully bought {amount} R gift card\nCode: {gift_code}\n\n"
+                                  f"To view this code again,\ngo to your transaction history")
+                    # todo save code to transaction history
+                else:
+                    error_popup("Insufficient Funds\n- You require more R Coins")
+
+        class DataCoins(Screen):
+            r_coins = StringProperty()
+            d_coins = StringProperty()
+
+            def on_pre_enter(self, *args):
+                self.r_coins = App.r_coin+" R"
+                self.d_coins = App.d_coin+" D"
+
+            def buy_d(self, amount):
+                if float(App.r_coin) >= float(amount):
+                    s.send_e(f"BYD:{amount}")
+                    if s.recv_d(1024) == "V":
+                        App.r_coin = str(round(float(App.r_coin)-float(amount), 2))
+                        d_amount = {15: 150, 35: 375, 50: 550, 100: 1150, 210: 2500}.get(amount)
+                        App.d_coin = str(round(float(App.d_coin)+d_amount, 2))
+                        if App.r_coin.endswith(".0"):
+                            App.r_coin = App.r_coin[:-2]
+                        if App.d_coin.endswith(".0"):
+                            App.d_coin = App.d_coin[:-2]
+                        self.d_coins = App.d_coin+" D"
+                        self.r_coins = App.r_coin+" R"
+                        success_popup(f"Successfully bought {d_amount} D for {amount} R")
+                else:
+                    error_popup("Insufficient Funds\n- You require more R Coins")
 
 
         class Coinflip(Screen):
@@ -824,10 +857,6 @@ while True:
             d_coins = StringProperty()
 
             def on_pre_enter(self, *args):
-                if App.r_coin.endswith(".0"):
-                    App.r_coin = App.r_coin[:-2]
-                if App.d_coin.endswith(".0"):
-                    App.d_coin = App.d_coin[:-2]
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
                 # request coinflip data
@@ -887,7 +916,7 @@ while True:
                  LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
                  Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
                  Inventory(name="Inventory"), Settings(name="Settings"), GiftCards(name="GiftCards"),
-                 Coinflip(name="Coinflip"), Reloading(name="Reloading")]]
+                 DataCoins(name="DataCoins"), Coinflip(name="Coinflip"), Reloading(name="Reloading")]]
 
                 if version_:
                     App.title = f"Rdisc-{version_}"
@@ -938,7 +967,7 @@ while True:
              LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
              Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
              Inventory(name="Inventory"), Settings(name="Settings"), GiftCards(name="GiftCards"),
-             Coinflip(name="Coinflip")]]
+             DataCoins(name="DataCoins"), Coinflip(name="Coinflip")]]
             if reason == "reload":
                 if current_screen == "_screen0":
                     current_screen = "Home"
@@ -959,4 +988,3 @@ while True:
             break
         else:
             reload("crash")
-

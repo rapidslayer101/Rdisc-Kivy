@@ -305,15 +305,56 @@ def client_connection(cs):
             if request.startswith("LOG_A"):  # deletes all IP keys
                 raise ConnectionResetError
 
-            if request.startswith("DLAC:"):
-                # todo delete account
+            if request.startswith("DLAC:"):  # todo delete account
                 pass
 
+            if request.startswith("BGC:"):  # buy gift card
+                try:
+                    amount = int(request[4:])
+                except ValueError:
+                    raise InvalidClientData
+                if amount in [25, 40, 100, 250, 600]:
+                    if r_coin >= amount:
+                        r_coin = round(r_coin - amount, 2)
+                        users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?", (r_coin, uid))
+                        while True:
+                            code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXY", k=16))
+                            try:
+                                users.db.execute("INSERT INTO codes VALUES (?, ?, ?, ?, ?)", (code,
+                                                 str(datetime.now()+timedelta(days=14))[:-7], False, "R", amount))
+                                break
+                            except sqlite3.IntegrityError:
+                                pass
+                        users.db.commit()
+                        send_e(f"{code[:4]}-{code[4:8]}-{code[8:12]}-{code[12:]}")
+                    else:
+                        raise InvalidClientData
+                else:
+                    raise InvalidClientData
+
+            if request.startswith("BYD:"):  # buy d_coin
+                try:
+                    amount = int(request[4:])
+                except ValueError:
+                    raise InvalidClientData
+                if amount in [15, 35, 50, 100, 210]:
+                    if r_coin >= amount:
+                        r_coin = round(r_coin-amount, 2)
+                        users.db.execute("UPDATE users SET r_coin = ?, d_coin = ? WHERE user_id = ?",
+                                         (r_coin, d_coin+{15: 150, 35: 375, 50: 550, 100: 1150, 210: 2500}.get(amount),
+                                          uid))
+                        users.db.commit()
+                        send_e("V")
+                    else:
+                        raise InvalidClientData
+                else:
+                    raise InvalidClientData
+
             if request.startswith("CUP:"):
-                print("Triggered CUP an not built feature")
+                print("Triggered CUP, not yet built feature")
 
             if request.startswith("CUN:"):  # change username
-                if d_coin > 4:
+                if d_coin >= 5:
                     n_u_name = request[4:]
                     if not 4 < len(n_u_name) < 25:
                         raise InvalidClientData
@@ -326,7 +367,7 @@ def client_connection(cs):
                         try:
                             if users.db.execute("SELECT * FROM users WHERE username = ?",
                                                 (n_u_name_i,)).fetchone() is None:
-                                d_coin -= 5
+                                d_coin = round(d_coin-5, 2)
                                 users.db.execute("UPDATE users SET username = ?, d_coin = ? WHERE user_id = ?",
                                                  (n_u_name_i, d_coin, uid))
                                 users.db.commit()

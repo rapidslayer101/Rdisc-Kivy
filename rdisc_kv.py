@@ -117,14 +117,53 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.6, 0.6
     GreyFloatLayout:
         Label:
-            text: app.claim_result
+            text: app.popup_text
             size_hint: 0.9, 0.9
             pos_hint: {"x": 0.05, "top": 1.2}
         RoundedButton:
-            text: 'Exit'
+            text: 'Close'
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.2}
             on_release: root.dismiss()
+            
+<TransferConfirmPopup@Popup>:
+    title: "Transfer Confirmation"
+    auto_dismiss: False
+    size_hint: 0.6, 0.6
+    GreyFloatLayout:
+        Label:
+            text: app.popup_text
+            font_size: "20dp"
+            size_hint: 0.9, 0.9
+            pos_hint: {"x": 0.05, "top": 1.2}
+        RoundedButton:
+            canvas.before:
+                Color:
+                    rgba: app.red
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+            text: 'Cancel'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.19, "top": 0.2}
+            on_release: root.dismiss()
+        RoundedButton:
+            text: 'Confirm'
+            size_hint: 0.3, 0.1
+            pos_hint: {"x": 0.51, "top": 0.2}
+            on_release: root.dismiss()
+            
+<SuccessPopup@Popup>:
+    title: "Success"
+    size_hint: 0.32, 0.27
+    GreyFloatLayout:
+        Label:
+            text: app.popup_text
+            font_size: "16dp"
+            color: app.green
+            size_hint: 0.9, 0.9
+            pos_hint: {"x": 0.05, "top": 1.1}
             
 <ClaimCodePopup@Popup>:
     title: "Claim Code"
@@ -156,7 +195,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos: self.pos
 
 <YellowLabel@SizeLabel>
-    color: 0, 0, 0, 1
+    color: 0,0,0,1
     size_hint: 0.1, 0.05
     canvas.before:
         Color:
@@ -426,7 +465,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
 
 <Captcha>:
-    captcha_input: captcha_input
+    captcha_inp: captcha_inp
     GreyFloatLayout:
         Label:
             text: root.captcha_prompt_text
@@ -438,7 +477,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0, "top": 1.15}
             
         RoundedTextInput:
-            id: captcha_input
+            id: captcha_inp
             pos_hint: {"x": 0.35, "top": 0.5}
             on_text: self.text = self.text[:10].upper()
             on_text_validate: root.try_captcha()
@@ -639,7 +678,7 @@ kv_payload = """# You can edit this file to change the UI.
             
 <Home>:
     transfer_uid: transfer_uid
-    transfer_amount: transfer_amount
+    transfer_amt: transfer_amt
     amount_convert: amount_convert
     code: code
     GreyFloatLayout:
@@ -682,9 +721,9 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.07, "top": 0.82}
             on_text: self.text = self.text[:28]
-            on_text_validate: transfer_amount.focus = True
+            on_text_validate: transfer_amt.focus = True
         RoundedTextInput
-            id: transfer_amount
+            id: transfer_amt
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.2, 0.1
@@ -788,7 +827,7 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.check_code()
             
 <Chat>:
-    public_room_input: public_room_input
+    public_room_inp: public_room_inp
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -829,7 +868,7 @@ kv_payload = """# You can edit this file to change the UI.
                 size_hint_y: None
                 height: root.height
         RoundedTextInput:
-            id: public_room_input
+            id: public_room_inp
             size_hint: 0.4, 0.1
             pos_hint: {"x": 0.3, "top": 0.15}
             text_validate_unfocus: False
@@ -865,6 +904,18 @@ kv_payload = """# You can edit this file to change the UI.
             anim_delay: 0.05
             size_hint: 0.16, 0.3
             pos_hint: {"x": 0.03, "top": 0.85}
+        RoundedBackingButton:
+            size_hint: 0.2, 0.4
+            pos_hint: {"x": 0.22, "top": 0.92}
+            on_press: root.manager.current = 'DataCoins'
+        SizeLabel:
+            text: "Buy D-Coin"
+            pos_hint: {"x": 0.27, "top": 0.91}
+        AsyncImage:
+            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+            anim_delay: 0.05
+            size_hint: 0.16, 0.3
+            pos_hint: {"x": 0.24, "top": 0.85}
         
 <Games>:
     GreyFloatLayout:
@@ -1005,7 +1056,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.27, 0.42
             pos_hint: {"x": 0.23, "top": 0.89}
-            on_press: root.manager.current = 'GiftCards'
+            on_press: root.buy_gift_card(25)
         SizeLabel:
             text: "25 R Gift Card"
             font_size: "20dp"
@@ -1017,7 +1068,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.27, 0.42
             pos_hint: {"x": 0.51, "top": 0.89}
-            on_press: root.manager.current = 'GiftCards'
+            on_press: root.buy_gift_card(40)
         SizeLabel:
             text: "40 R Gift Card"
             font_size: "20dp"
@@ -1029,7 +1080,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.27, 0.42
             pos_hint: {"x": 0.09, "top": 0.45}
-            on_press: root.manager.current = 'GiftCards'
+            on_press: root.buy_gift_card(100)
         SizeLabel:
             text: "100 R Gift Card"
             font_size: "20dp"
@@ -1041,7 +1092,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.27, 0.42
             pos_hint: {"x": 0.37, "top": 0.45}
-            on_press: root.manager.current = 'GiftCards'
+            on_press: root.buy_gift_card(250)
         SizeLabel:
             text: "250 R Gift Card"
             font_size: "20dp"
@@ -1053,7 +1104,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.27, 0.42
             pos_hint: {"x": 0.65, "top": 0.45}
-            on_press: root.manager.current = 'GiftCards'
+            on_press: root.buy_gift_card(600)
         SizeLabel:
             text: "600 R Gift Card"
             font_size: "20dp"
@@ -1062,6 +1113,78 @@ kv_payload = """# You can edit this file to change the UI.
             source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
             size_hint: 0.23, 0.35
             pos_hint: {"x": 0.67, "top": 0.36}
+            
+<DataCoins>:
+    GreyFloatLayout:
+        Button:
+            text: "<< Back"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
+            on_press: root.manager.current = 'Store'
+        R_coin_label:   
+            text: root.r_coins
+        D_coin_label:
+            text: root.d_coins
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.23, "top": 0.89}
+            on_press: root.buy_d(15)
+        SizeLabel:
+            text: "150 D - 15 R"
+            font_size: "20dp"
+            pos_hint: {"x": 0.31, "top": 0.85}
+        AsyncImage:
+            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+            size_hint: 0.21, 0.33
+            pos_hint: {"x": 0.26, "top": 0.8}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.51, "top": 0.89}
+            on_press: root.buy_d(35)
+        SizeLabel:
+            text: "375 D - 35 R"
+            font_size: "20dp"
+            pos_hint: {"x": 0.59, "top": 0.85}
+        AsyncImage:
+            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+            size_hint: 0.21, 0.33
+            pos_hint: {"x": 0.54, "top": 0.8}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.09, "top": 0.45}
+            on_press: root.buy_d(50)
+        SizeLabel:
+            text: "550 D - 50 R"
+            font_size: "20dp"
+            pos_hint: {"x": 0.17, "top": 0.41}
+        AsyncImage:
+            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+            size_hint: 0.21, 0.33
+            pos_hint: {"x": 0.12, "top": 0.36}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.37, "top": 0.45}
+            on_press: root.buy_d(100)
+        SizeLabel:
+            text: "1150  D - 100 R"
+            font_size: "20dp"
+            pos_hint: {"x": 0.45, "top": 0.41}
+        AsyncImage:
+            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+            size_hint: 0.21, 0.33
+            pos_hint: {"x": 0.4, "top": 0.36}
+        RoundedBackingButton:
+            size_hint: 0.27, 0.42
+            pos_hint: {"x": 0.65, "top": 0.45}
+            on_press: root.buy_d(210)
+        SizeLabel:
+            text: "2500 D - 210 R"
+            font_size: "20dp"
+            pos_hint: {"x": 0.73, "top": 0.41}
+        AsyncImage:
+            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+            size_hint: 0.21, 0.33
+            pos_hint: {"x": 0.68, "top": 0.36}
             
 <Coinflip>:
     GreyFloatLayout:

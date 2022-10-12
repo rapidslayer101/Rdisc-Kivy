@@ -54,10 +54,12 @@
 0.54 invalid action popups, fixed Rdisc distro popup problems
 0.55 reloads, crash handling and coloring backend
 
-0.56 gift card and d_coin buying, color editing, color-blind modes
-0.57 code claiming, transaction history with xp leveling, public chat room
-0.58 coinflip, client misinformation logging, user pass changing
-0.59 friending and friends list
+0.56 gift card and d_coin buying
+0.56 color editing, color-blind modes
+
+0.57 code claiming, transaction history with xp leveling
+0.58 coinflip, public chat room, user pass changing
+0.59 friending and friends list, client misinformation logging
 0.60 scratch cards and inventory items support
 0.61 direct messaging
 
@@ -71,6 +73,9 @@ known issues:
     - updating rdisc source code
   - downloadable apk
 
+- check for refactor possibilities with kv pass to function
+- hide secret by encrypting with user pass hash 1
+- buying confirmations
 - check for rounding errors in transfers
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
