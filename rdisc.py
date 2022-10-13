@@ -213,8 +213,8 @@ while True:
                     try:
                         user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
                         user_pass = enc.pass_to_key(user_pass, App.uid)
-                        ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
-                        s.send_e(f"ULK:{App.uid}🱫{ipk}")
+                        App.ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
+                        s.send_e(f"ULK:{App.uid}🱫{App.ipk}")
                         ulk_resp = s.recv_d(128)
                         if ulk_resp == "SESH_T":
                             error_popup("This accounts session is taken.")  # todo loop here?
@@ -269,16 +269,16 @@ while True:
                 App.pin_code = enc.to_base(36, 10, current_depth)
 
             def on_pre_enter(self, *args):
-                if App.sm.previous == "LogInOrSignUp":
-                    App.path = "make"
-                    acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
-                    time_depth = uniform(3, 5)
-                    Thread(target=self.generate_master_key, args=(acc_key[:6].encode(),
-                           acc_key[6:].encode(), time_depth,), daemon=True).start()
-                    self.pin_code_text = f"Generating Key and Pin ({time_depth}s left)"
-                    acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}"
-                    self.pass_code_text = f"Your Account Key is: {acc_key_print}"
-                    App.acc_key = acc_key
+                #if App.sm.previous == "LogInOrSignUp":
+                App.path = "make"
+                acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
+                time_depth = uniform(3, 5)
+                Thread(target=self.generate_master_key, args=(acc_key[:6].encode(),
+                       acc_key[6:].encode(), time_depth,), daemon=True).start()
+                self.pin_code_text = f"Generating Key and Pin ({time_depth}s left)"
+                acc_key_print = f"{acc_key[:5]}-{acc_key[5:10]}-{acc_key[10:15]}"
+                self.pass_code_text = f"Your Account Key is: {acc_key_print}"
+                App.acc_key = acc_key
 
             def continue_confirmation(self):
                 if self.rand_confirmation:
@@ -430,7 +430,7 @@ while True:
                     if s.recv_d(1024) == "V":
                         if App.path == "make":
                             App.sm.switch_to(NacPassword(), direction="left")
-                        if App.path == "login":
+                        if App.path == "login":  # todo check here
                             if App.uname:
                                 s.send_e(f"LOG:{App.mkey}🱫u🱫{App.uname}")
                             else:
@@ -482,10 +482,15 @@ while True:
                     error_popup("Password Blank\n- The question is, why is it blank?")
                 else:
                     try:
+                        print(App.ipk)
                         user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
+                        print(user_pass)
                         user_pass = enc.pass_to_key(user_pass, App.uid)
-                        ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
-                        s.send_e(ipk)
+                        print(user_pass)
+                        App.ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
+                        print(App.ipk)
+                        print()
+                        s.send_e(App.ipk)
                         if s.recv_d(1024) == "V":
                             App.sm.switch_to(TwoFacLog(), direction="left")
                         else:
@@ -784,26 +789,6 @@ while True:
                 else:
                     error_popup("Insufficient Funds\n- You require 5 D to change your username")
 
-            def call_reload(self):
-                App.rdisc_purple = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.rdisc_purple_dark = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.rdisc_cyan = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.rdisc_cyan_la = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.r_coin_orange = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.d_coin_blue = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-
-                App.link_blue = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.green = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.yellow = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.orange = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.red = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.grey = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-
-                App.bk_grey_1 = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.bk_grey_2 = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                App.bk_grey_3 = (randint(1, 255)/255, randint(1, 255)/255, randint(1, 255)/255, 1)
-                reload("reload")
-
 
         class ColorSettings(Screen):
             r_coins = StringProperty()
@@ -953,9 +938,9 @@ while True:
                 App.bk_grey_3 = (60/255, 60/255, 60/255, 1)
 
                 App.t_and_c = rdisc_kv.t_and_c()
+                App.mkey = None  # todo test removal of
                 App.uid = None  # user id
                 App.uname = None  # username
-                App.mkey = None  # master key
                 App.ipk = None  # ip key
                 App.pass_code = None
                 App.pin_code = None
@@ -964,6 +949,7 @@ while True:
                 App.xp = None
                 App.popup = None
                 App.reload_text = ""
+                App.popup_text = "Popup Error"
 
                 # app defaults and window manager
                 Builder.load_file("rdisc.kv")

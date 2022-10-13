@@ -1046,7 +1046,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Reload"
             size_hint: 0.05, 0.05
             pos_hint: {"x": 0.83, "top": 0.07}
-            on_press: root.call_reload()
+            on_press: app.reload()
         RoundedButton:
             text: "T's and C's"
             size_hint: 0.1, 0.05

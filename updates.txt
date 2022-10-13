@@ -64,6 +64,8 @@
 0.61 direct messaging
 
 known issues:
+- captcha does not update
+- login error, cannot log in on another device.
 - after a crash reload the app cannot be closed with cntl+x and color reloads don't work
 - crash text does not show, neither do crash loops
 
