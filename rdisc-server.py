@@ -195,7 +195,6 @@ def client_connection(cs):
                     if uid:
                         if enc.pass_to_key(master_key_c, uid) == master_key:
                             ip_key = enc.rand_b96_str(24)
-                            print("IP KEY:", ip_key)
                             send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
                             if search_for == "u":
                                 send_e(uid)

@@ -64,7 +64,8 @@
 0.61 direct messaging
 
 known issues:
-- captcha does not update
+- captcha does not update sometimes (not confirmed)
+- spaces in 2fa codes causes errors (not confirmed)
 - login error, cannot log in on another device.
 - after a crash reload the app cannot be closed with cntl+x and color reloads don't work
 - crash text does not show, neither do crash loops

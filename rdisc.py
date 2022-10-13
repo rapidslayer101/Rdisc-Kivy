@@ -213,8 +213,8 @@ while True:
                     try:
                         user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
                         user_pass = enc.pass_to_key(user_pass, App.uid)
-                        App.ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
-                        s.send_e(f"ULK:{App.uid}🱫{App.ipk}")
+                        ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
+                        s.send_e(f"ULK:{App.uid}🱫{ipk}")
                         ulk_resp = s.recv_d(128)
                         if ulk_resp == "SESH_T":
                             error_popup("This accounts session is taken.")  # todo loop here?
@@ -482,15 +482,10 @@ while True:
                     error_popup("Password Blank\n- The question is, why is it blank?")
                 else:
                     try:
-                        print(App.ipk)
                         user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
-                        print(user_pass)
                         user_pass = enc.pass_to_key(user_pass, App.uid)
-                        print(user_pass)
-                        App.ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
-                        print(App.ipk)
-                        print()
-                        s.send_e(App.ipk)
+                        ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
+                        s.send_e(ipk)
                         if s.recv_d(1024) == "V":
                             App.sm.switch_to(TwoFacLog(), direction="left")
                         else:
