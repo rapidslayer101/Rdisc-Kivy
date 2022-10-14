@@ -7,9 +7,8 @@ secret_qr.png
 rdisc_server.db
 rdisc.spec
 bin
-.buildozer
 resources
 app
-rdisc-venv
 .idea
 password.txt
+color_scheme.txt

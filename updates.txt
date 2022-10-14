@@ -53,11 +53,10 @@
 0.53 USB master keys, t's and c's popup, gift card screen
 0.54 invalid action popups, fixed Rdisc distro popup problems
 0.55 reloads, crash handling and coloring backend
-
-0.56 gift card and d_coin buying
-0.56 color editing, color-blind modes
+0.56 gift card and d_coin buying, color editing, color-blind modes
 
 0.57 code claiming, transaction history with xp leveling
+
 0.58 coinflip, public chat room, user pass changing
 0.59 friending and friends list, client misinformation logging
 0.60 scratch cards and inventory items support
@@ -65,7 +64,6 @@
 
 known issues:
 - captcha does not update sometimes (not confirmed)
-- spaces in 2fa codes causes errors (not confirmed)
 - login error, cannot log in on another device.
 - after a crash reload the app cannot be closed with cntl+x and color reloads don't work
 - crash text does not show, neither do crash loops

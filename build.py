@@ -66,7 +66,7 @@ exe = EXE(
 """ % (getcwd().replace("\\", "/"), f'rdisc-{release_major}.{major}.{build}.{run}'))
 
 
-system("python -m PyInstaller rdisc.spec")
+system("python -m PyInstaller rdisc.spec --clean")
 hashed = hash_a_file(f"dist/rdisc-{release_major}.{major}.{build}.{run}.exe")
 
 if latest_sha == hashed:

@@ -19,6 +19,7 @@ from kivy.factory import Factory
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
+from kivy.graphics import Color, RoundedRectangle
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -218,16 +219,15 @@ while True:
                         ulk_resp = s.recv_d(128)
                         if ulk_resp == "SESH_T":
                             error_popup("This accounts session is taken.")  # todo loop here?
+                        elif ulk_resp == "N":
+                            error_popup("Incorrect Password\n- How exactly did you manage to trigger this.")
                         else:
-                            if ulk_resp == "N":
-                                error_popup("Incorrect Password\n- How exactly did you manage to trigger this.")
-                            else:
-                                App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
-                                if App.r_coin.endswith(".0"):
-                                    App.r_coin = App.r_coin[:-2]
-                                if App.d_coin.endswith(".0"):
-                                    App.d_coin = App.d_coin[:-2]
-                                App.sm.switch_to(Home(), direction="left")
+                            App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
+                            if App.r_coin.endswith(".0"):
+                                App.r_coin = App.r_coin[:-2]
+                            if App.d_coin.endswith(".0"):
+                                App.d_coin = App.d_coin[:-2]
+                            App.sm.switch_to(Home(), direction="left")
                     except zl_error:
                         error_popup("Incorrect Password")
 
@@ -515,7 +515,9 @@ while True:
                     error_popup("2FA Code Blank\n- Please enter a 2FA code")
                 else:
                     self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
-                    if len(self.two_fac_confirm.text) == 6:
+                    if len(self.two_fac_confirm.text) != 6:
+                        error_popup("Invalid 2FA Code")
+                    else:
                         s.send_e(self.two_fac_confirm.text.replace(" ", ""))
                         ipk = s.recv_d(1024)
                         if ipk != "N":
@@ -532,8 +534,6 @@ while True:
                             App.sm.switch_to(Home(), direction="left")
                         else:
                             error_popup("2FA Failed\n- Please Try Again")
-                    else:
-                        error_popup("Invalid 2FA Code")
 
 
         class TwoFacLog(Screen):
@@ -595,7 +595,7 @@ while True:
                     if "." in self.transfer_amt.text:
                         if len(self.transfer_amt.text.split(".")[1]) > 2:
                             self.transfer_amt.text = self.transfer_amt.text[:-1]
-                    self.transfer_cost = str(round(float(self.transfer_amt.text) / 0.995, 2))
+                    self.transfer_cost = str(round(float(self.transfer_amt.text)/0.995, 2))
                     self.transfer_send = self.transfer_amt.text
                     self.transfer_fee = str(round(float(self.transfer_cost) - float(self.transfer_amt.text), 2))
                 if self.transfer_amt.text == ".":
@@ -606,50 +606,45 @@ while True:
                     self.transfer_fee = "0.00"
 
             def transfer_coins(self):
-                if self.transfer_amt.text != "":
-                    if len(self.transfer_uid.text) > 7:
-                        if self.transfer_uid.text != App.uid:
-                            if float(self.transfer_amt.text) >= 3:
-                                if float(self.transfer_amt.text) <= float(App.r_coin)*0.995:
-                                    #App.popup_text = f"Send {self.transfer_uid.text} R to {self.transfer_send}\n" \
-                                    #                 f"Fee: {self.transfer_fee}\nTotal Cost: {self.transfer_cost}"
-                                    #App.popup = Factory.TransferConfirmPopup()
-                                    #App.popup.open()
-                                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
-                                    if s.recv_d(1024) == "V":
-                                        success_popup(f"Transfer of {self.transfer_amt.text} R to "
-                                                      f"{self.transfer_uid.text} Successful")
-                                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
-                                        if App.r_coin.endswith(".0"):
-                                            App.r_coin = App.r_coin[:-2]
-                                        self.r_coins = App.r_coin+" R"
-                                        self.transfer_uid.text = ""
-                                        self.transfer_amt.text = ""
-                                    else:
-                                        error_popup("Invalid Username/UID For Transfer")
-                                else:
-                                    error_popup("Insufficient funds For Transfer")
-                            else:
-                                error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
-                        else:
-                            error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
+                if self.transfer_amt.text == "":
+                    error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
+                elif len(self.transfer_uid.text) < 8:
+                    error_popup("Invalid Username/UID For Transfer")
+                elif self.transfer_uid.text == App.uid or self.transfer_uid.text == App.uname:
+                    error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
+                elif float(self.transfer_amt.text) < 3:
+                    error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
+                elif float(self.transfer_amt.text) > float(App.r_coin)*0.995:
+                    error_popup("Insufficient funds For Transfer")
+                else:
+                    #App.popup_text = f"Send {self.transfer_uid.text} R to {self.transfer_send}\n" \
+                    #                 f"Fee: {self.transfer_fee}\nTotal Cost: {self.transfer_cost}"
+                    #App.popup = Factory.TransferConfirmPopup()
+                    #App.popup.open()
+                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
+                    if s.recv_d(1024) == "V":
+                        success_popup(f"Transfer of {self.transfer_amt.text} R to "
+                                      f"{self.transfer_uid.text} Successful")
+                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
+                        if App.r_coin.endswith(".0"):
+                            App.r_coin = App.r_coin[:-2]
+                        self.r_coins = App.r_coin+" R"
+                        self.transfer_uid.text = ""
+                        self.transfer_amt.text = ""
                     else:
                         error_popup("Invalid Username/UID For Transfer")
-                else:
-                    error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
 
             def check_code(self):
-                if len(self.code.text) == 19:
-                    if self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
-                        s.send_e(f"CLM:{self.code.text}")
-                        if s.recv_d(1024) != "N":
-                            claim_code_popup("Code is for xxx")
-                        else:
-                            error_popup("Invalid Code")
-                    else:
-                        error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
-                else:
+                if not len(self.code.text) == 19:
                     error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
+                elif not self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
+                    error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
+                else:
+                    s.send_e(f"CLM:{self.code.text}")
+                    if s.recv_d(1024) != "N":
+                        claim_code_popup("Code is for xxx")
+                    else:
+                        error_popup("Invalid Code")
 
             def convert_coins(self):
                 if self.amount_convert.text not in ["", "."]:
@@ -767,81 +762,140 @@ while True:
                 self.uid = App.uid
 
             def change_name(self):
-                if float(App.d_coin) >= 5:
-                    if 4 < len(self.uname_to.text) < 25:
-                        s.send_e(f"CUN:{self.uname_to.text}")
-                        new_uname = s.recv_d(1024)
-                        if new_uname != "N":
-                            App.uname = new_uname
-                            self.uname = App.uname
-                            App.d_coin = str(round(float(App.d_coin)-5, 2))
-                            if App.d_coin.endswith(".0"):
-                                App.d_coin = App.d_coin[:-2]
-                            self.d_coins = App.d_coin+" D"
-                            success_popup(f"Username changed to {self.uname}")
-                    else:
-                        error_popup("Invalid Username\n- Username must be between 5 and 24 characters")
-                else:
+                if float(App.d_coin) < 5:
                     error_popup("Insufficient Funds\n- You require 5 D to change your username")
+                elif 4 < len(self.uname_to.text) < 25:
+                    s.send_e(f"CUN:{self.uname_to.text}")
+                    new_uname = s.recv_d(1024)
+                    if new_uname != "N":
+                        App.uname = new_uname
+                        self.uname = App.uname
+                        App.d_coin = str(round(float(App.d_coin)-5, 2))
+                        if App.d_coin.endswith(".0"):
+                            App.d_coin = App.d_coin[:-2]
+                        self.d_coins = App.d_coin+" D"
+                        success_popup(f"Username changed to {self.uname}")
+                else:
+                    error_popup("Invalid Username\n- Username must be between 5 and 24 characters")
 
 
         class ColorSettings(Screen):
             r_coins = StringProperty()
             d_coins = StringProperty()
             selected_color = None
+            color_list_old = None
 
             def on_pre_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
+                self.color_list_old = App.col.copy()
 
             def select_color(self, color_name):
                 self.selected_color = color_name
-                color = {"rdisc_purple": App.rdisc_purple, "rdisc_purple_dark": App.rdisc_purple_dark,
-                         "rdisc_cyan": App.rdisc_cyan, "rdisc_cyan_la": App.rdisc_cyan_la,
-                         "rcoin_orange": App.r_coin_orange, "dcoin_blue": App.d_coin_blue}.get(color_name)
-                self.ids.color_picker.color = color
+                self.ids.color_picker.color = App.col[color_name]
 
-            def change_color(self):
-                color = [round(rgb, 4) for rgb in self.ids.color_picker.color]
-                from kivy.graphics import Color, RoundedRectangle
+            def change_color(self, color=None):
+                if not color:
+                    color = [round(rgb, 5) for rgb in self.ids.color_picker.color]
                 if self.selected_color is not None:
+                    App.col[self.selected_color] = color
                     if self.selected_color == "rdisc_purple":
-                        with self.ids.rdisc_purple_button.canvas:
+                        with self.ids.rdisc_purple_btn.canvas:
                             Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_purple_button.pos,
-                                             size=self.ids.rdisc_purple_button.size, radius=[10])
-                            App.rdisc_purple = color
+                            RoundedRectangle(pos=self.ids.rdisc_purple_btn.pos,
+                                             size=self.ids.rdisc_purple_btn.size, radius=[10])
                     if self.selected_color == "rdisc_purple_dark":
-                        with self.ids.rdisc_purple_dark_button.canvas:
+                        with self.ids.rdisc_purple_dark_btn.canvas:
                             Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_purple_dark_button.pos,
-                                             size=self.ids.rdisc_purple_dark_button.size, radius=[10])
-                            App.rdisc_purple_dark = color
+                            RoundedRectangle(pos=self.ids.rdisc_purple_dark_btn.pos,
+                                             size=self.ids.rdisc_purple_dark_btn.size, radius=[10])
                     if self.selected_color == "rdisc_cyan":
-                        with self.ids.rdisc_cyan_button.canvas:
+                        with self.ids.rdisc_cyan_btn.canvas:
                             Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_cyan_button.pos,
-                                             size=self.ids.rdisc_cyan_button.size, radius=[10])
-                            App.rdisc_cyan = color
-                    if self.selected_color == "rdisc_cyan_la":
-                        with self.ids.rdisc_cyan_la_button.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_cyan_la_button.pos,
-                                             size=self.ids.rdisc_cyan_la_button.size, radius=[10])
-                            App.rdisc_cyan_la = color
+                            RoundedRectangle(pos=self.ids.rdisc_cyan_btn.pos,
+                                             size=self.ids.rdisc_cyan_btn.size, radius=[10])
                     if self.selected_color == "rcoin_orange":
-                        with self.ids.rcoin_orange_button.canvas:
+                        with self.ids.rcoin_orange_btn.canvas:
                             Color(*color)
-                            RoundedRectangle(pos=self.ids.rcoin_orange_button.pos,
-                                             size=self.ids.rcoin_orange_button.size, radius=[10])
-                            App.r_coin_orange = color
+                            RoundedRectangle(pos=self.ids.rcoin_orange_btn.pos,
+                                             size=self.ids.rcoin_orange_btn.size, radius=[10])
                     if self.selected_color == "dcoin_blue":
-                        with self.ids.dcoin_blue_button.canvas:
+                        with self.ids.dcoin_blue_btn.canvas:
                             Color(*color)
-                            RoundedRectangle(pos=self.ids.dcoin_blue_button.pos,
-                                             size=self.ids.dcoin_blue_button.size, radius=[10])
-                            App.d_coin_blue = color
+                            RoundedRectangle(pos=self.ids.dcoin_blue_btn.pos,
+                                             size=self.ids.dcoin_blue_btn.size, radius=[10])
+                    if self.selected_color == "link_blue":
+                        with self.ids.link_blue_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.link_blue_btn.pos,
+                                             size=self.ids.link_blue_btn.size, radius=[10])
+                    if self.selected_color == "green":
+                        with self.ids.green_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.green_btn.pos,
+                                             size=self.ids.green_btn.size, radius=[10])
+                    if self.selected_color == "yellow":
+                        with self.ids.yellow_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.yellow_btn.pos,
+                                             size=self.ids.yellow_btn.size, radius=[10])
+                    if self.selected_color == "orange":
+                        with self.ids.orange_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.orange_btn.pos,
+                                             size=self.ids.orange_btn.size, radius=[10])
+                    if self.selected_color == "red":
+                        with self.ids.red_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.red_btn.pos,
+                                             size=self.ids.red_btn.size, radius=[10])
+                    if self.selected_color == "grey":
+                        with self.ids.grey_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.grey_btn.pos,
+                                             size=self.ids.grey_btn.size, radius=[10])
+                    if self.selected_color == "bk_grey_1":
+                        with self.ids.bk_grey_1_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.bk_grey_1_btn.pos,
+                                             size=self.ids.bk_grey_1_btn.size, radius=[10])
+                    if self.selected_color == "bk_grey_2":
+                        with self.ids.bk_grey_2_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.bk_grey_2_btn.pos,
+                                             size=self.ids.bk_grey_2_btn.size, radius=[10])
+                    if self.selected_color == "bk_grey_3":
+                        with self.ids.bk_grey_3_btn.canvas:
+                            Color(*color)
+                            RoundedRectangle(pos=self.ids.bk_grey_3_btn.pos,
+                                             size=self.ids.bk_grey_3_btn.size, radius=[10])
 
+            def reset_colors(self, color=None):
+                if self.selected_color:
+                    if color:
+                        self.change_color(self.color_list_old[self.selected_color])
+                    else:
+                        for color in App.col:
+                            self.selected_color = color
+                            self.change_color(self.color_list_old[color])
+
+            @staticmethod
+            def reload():
+                reload("reload")
+
+            @staticmethod
+            def save_colors():
+                with open("color_scheme.txt", "w", encoding="utf-8") as f:
+                    f.write(f"# CUSTOM COLOR SCHEME #\n")
+                    for color in App.col:
+                        f.write(f"{color}: {[round(rgb, 5) for rgb in App.col[color]]}\n")
+
+            def default_theme(self, theme):
+                if theme in ["purple", "pink", "green"]:
+                    App.col = App.theme[theme]
+                    for color in App.col:
+                        self.selected_color = color
+                        self.change_color(App.theme[theme][color])
 
         class GiftCards(Screen):
             r_coins = StringProperty()
@@ -874,7 +928,9 @@ while True:
                 self.d_coins = App.d_coin+" D"
 
             def buy_d(self, amount):
-                if float(App.r_coin) >= float(amount):
+                if float(App.r_coin) < float(amount):
+                    error_popup("Insufficient Funds\n- You require more R Coins")
+                else:
                     s.send_e(f"BYD:{amount}")
                     if s.recv_d(1024) == "V":
                         App.r_coin = str(round(float(App.r_coin)-float(amount), 2))
@@ -887,8 +943,6 @@ while True:
                         self.d_coins = App.d_coin+" D"
                         self.r_coins = App.r_coin+" R"
                         success_popup(f"Successfully bought {d_amount} D for {amount} R")
-                else:
-                    error_popup("Insufficient Funds\n- You require more R Coins")
 
 
         class Coinflip(Screen):
@@ -913,24 +967,57 @@ while True:
 
         class App(KivyApp):
             def build(self):
-                # default colors
-                App.rdisc_purple = (104/255, 84/255, 252/255, 1)
-                App.rdisc_purple_dark = (104/255, 73/255, 160/255, 1)
-                App.rdisc_cyan = (37/255, 190/255, 150/255, 1)
-                App.rdisc_cyan_la = (37/255, 190/255, 150/255, 0.6)
-                App.r_coin_orange = (245/255, 112/255, 15/255, 1)
-                App.d_coin_blue = (93/255, 93255, 218/255, 1)
+                App.col = {"rdisc_purple": [104/255, 84/255, 252/255, 1],
+                           "rdisc_purple_dark": [104/255, 73/255, 160/255, 1],
+                           "rdisc_cyan": [37/255, 190/255, 150/255, 1],
+                           "rcoin_orange": [245/255, 112/255, 15/255, 1],
+                           "dcoin_blue": [22/255, 194/255, 225/255, 1],
+                           "link_blue": [80/255, 154/255, 228/255, 1],
+                           "green": [20/255, 228/255, 43/255, 1],
+                           "yellow": [243/255, 240/255, 51/255, 1],
+                           "orange": [243/255, 132/255, 1/255, 1],
+                           "red": [251/255, 30/255, 5/255, 1],
+                           "grey": [60/255, 60/255, 50/255, 1],
+                           "bk_grey_1": [50/255, 50/255, 50/255, 1],
+                           "bk_grey_2": [55/255, 55/255, 55/255, 1],
+                           "bk_grey_3": [60/255, 60/255, 60/255, 1]}
+                App.theme = {"purple": App.col.copy()}
+                App.theme.update({"green": {"rdisc_purple": [0.0, 0.62745, 0.44314, 1.0],
+                                            "rdisc_purple_dark": [0.40057, 0.55773, 0.21835, 1.0],
+                                            "rdisc_cyan": [0.1451, 0.7451, 0.26237, 1],
+                                            "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
+                                            "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
+                                            "link_blue": [0.31373, 0.60392, 0.89412, 1],
+                                            "green": [0.07843, 0.89412, 0.16863, 1],
+                                            "yellow": [0.95294, 0.94118, 0.2, 1],
+                                            "orange": [0.95294, 0.51765, 0.00392, 1],
+                                            "red": [0.98431, 0.11765, 0.01961, 1],
+                                            "grey": [0.23529, 0.23529, 0.19608, 1],
+                                            "bk_grey_1": [0.19608, 0.19608, 0.19608, 1],
+                                            "bk_grey_2": [0.21569, 0.21569, 0.21569, 1],
+                                            "bk_grey_3": [0.23529, 0.23529, 0.23529, 1]}})
+                App.theme.update({"pink": {"rdisc_purple": [1.0, 0.27843, 0.44706, 1.0],
+                                           "rdisc_purple_dark": [1.0, 0.42353, 0.44314, 1.0],
+                                           "rdisc_cyan": [0.7687, 0.4043, 0.69965, 1],
+                                           "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
+                                           "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
+                                           "link_blue": [0.31373, 0.60392, 0.89412, 1],
+                                           "green": [0.07843, 0.89412, 0.16863, 1],
+                                           "yellow": [0.95294, 0.94118, 0.2, 1],
+                                           "orange": [0.95294, 0.51765, 0.00392, 1],
+                                           "red": [0.98431, 0.11765, 0.01961, 1],
+                                           "grey": [0.23529, 0.23529, 0.19608, 1],
+                                           "bk_grey_1": [0.19608, 0.19608, 0.19608, 1],
+                                           "bk_grey_2": [0.21569, 0.21569, 0.21569, 1],
+                                           "bk_grey_3": [0.23529, 0.23529, 0.23529, 1]}})
 
-                App.link_blue = (80/255, 154/255, 228/255, 1)
-                App.green = (20/255, 228/255, 43/255, 1)
-                App.yellow = (243/255, 240/255, 51/255, 1)
-                App.orange = (243/255, 132/255, 1/255, 1)
-                App.red = (251/255, 30/255, 5/255, 1)
-                App.grey = (60/255, 60/255, 50/255, 1)
-
-                App.bk_grey_1 = (50/255, 50/255, 50/255, 1)
-                App.bk_grey_2 = (55/255, 55/255, 55/255, 1)
-                App.bk_grey_3 = (60/255, 60/255, 60/255, 1)
+                if path.exists("color_scheme.txt"):
+                    with open("color_scheme.txt", encoding="utf-8") as f:
+                        color_scheme = f.readlines()[1:]
+                    for color in color_scheme:
+                        color_name, color = color.replace("\n", "").split(": ")
+                        color = [float(cl) for cl in color[1:-1].split(", ")]
+                        App.col[color_name] = color
 
                 App.t_and_c = rdisc_kv.t_and_c()
                 App.mkey = None  # todo test removal of
