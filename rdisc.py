@@ -161,14 +161,13 @@ while True:
 
 
         class IpSet(Screen):
-            ip_address = ObjectProperty(None)
-
-            def try_connect(self):
-                if self.ip_address.text == "":
+            @staticmethod
+            def try_connect(ip_address):
+                if ip_address == "":
                     error_popup("IP Blank\n- Type an IP into the IP box")
                 else:
                     try:
-                        server_ip, server_port = self.ip_address.text.split(":")
+                        server_ip, server_port = ip_address.split(":")
                         server_port = int(server_port)
                     except ValueError or NameError:
                         error_popup("Invalid IP address\n- Please type a valid IP")
@@ -192,7 +191,6 @@ while True:
 
 
         class KeyUnlock(Screen):
-            pwd = ObjectProperty(None)
             passcode_prompt_text = StringProperty()
             counter = 0
 
@@ -200,11 +198,10 @@ while True:
                 self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
                 if path.exists("password.txt"):  # this is for testing ONLY
                     with open("password.txt", "r") as f:
-                        self.pwd.text = f.read()
-                    self.login()
+                        self.login(f.read())
 
-            def login(self):
-                if self.pwd.text == "":
+            def login(self, pwd):
+                if pwd == "":
                     self.counter += 1
                     if self.counter != 3:
                         error_popup("Password Blank\n- Top tip, type something in the password box.")
@@ -212,7 +209,7 @@ while True:
                         error_popup("Password Blank\n- WHY IS THE BOX BLANK?")
                 else:
                     try:
-                        user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
+                        user_pass = enc.pass_to_key(pwd, default_salt, 50000)
                         user_pass = enc.pass_to_key(user_pass, App.uid)
                         ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
                         s.send_e(f"ULK:{App.uid}🱫{ipk}")
@@ -233,7 +230,6 @@ while True:
 
 
         class CreateKey(Screen):
-            confirmation_code = ObjectProperty(None)
             pass_code_text = StringProperty()
             pin_code_text = StringProperty()
             rand_confirm_text = StringProperty()
@@ -269,7 +265,6 @@ while True:
                 App.pin_code = enc.to_base(36, 10, current_depth)
 
             def on_pre_enter(self, *args):
-                #if App.sm.previous == "LogInOrSignUp":
                 App.path = "make"
                 acc_key = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=int(15)))
                 time_depth = uniform(3, 5)
@@ -280,11 +275,11 @@ while True:
                 self.pass_code_text = f"Your Account Key is: {acc_key_print}"
                 App.acc_key = acc_key
 
-            def continue_confirmation(self):
+            def continue_confirmation(self, confirmation_code):
                 if self.rand_confirmation:
-                    if self.confirmation_code == "":
+                    if confirmation_code == "":
                         error_popup("Confirmation Empty")
-                    elif self.confirmation_code.text == self.rand_confirmation:
+                    elif confirmation_code == self.rand_confirmation:
                         if platform in ["win32", "linux"]:
                             App.sm.switch_to(UsbSetup(), direction="left")
                         else:
@@ -408,7 +403,6 @@ while True:
 
         class Captcha(Screen):
             captcha_prompt_text = StringProperty()
-            captcha_inp = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.captcha_prompt_text = "Waiting for captcha..."
@@ -424,9 +418,10 @@ while True:
                 self.captcha_prompt_text = f"Enter the text below"
                 self.ids.captcha_image.source = 'captcha.jpg'
 
-            def try_captcha(self):
-                if len(self.captcha_inp.text) == 10:
-                    s.send_e(self.captcha_inp.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
+            @staticmethod
+            def try_captcha(captcha_inp):
+                if len(captcha_inp) == 10:
+                    s.send_e(captcha_inp.replace(" ", "").replace("1", "I").replace("0", "O").upper())
                     if s.recv_d(1024) == "V":
                         if App.path == "make":
                             App.sm.switch_to(NacPassword(), direction="left")
@@ -471,18 +466,18 @@ while True:
 
 
         class LogUnlock(Screen):
-            pwd = ObjectProperty(None)
             passcode_prompt_text = StringProperty()
 
             def on_pre_enter(self, *args):
                 self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
 
-            def login(self):
-                if self.pwd.text == "":
+            @staticmethod
+            def login(pwd):
+                if pwd == "":
                     error_popup("Password Blank\n- The question is, why is it blank?")
                 else:
                     try:
-                        user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
+                        user_pass = enc.pass_to_key(pwd, default_salt, 50000)
                         user_pass = enc.pass_to_key(user_pass, App.uid)
                         ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
                         s.send_e(ipk)
@@ -496,7 +491,6 @@ while True:
 
         class TwoFacSetup(Screen):
             two_fac_wait_text = StringProperty()
-            two_fac_confirm = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.two_fac_wait_text = "Waiting for 2fa QR code..."
@@ -510,56 +504,53 @@ while True:
                 self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
                                          f"Your User ID (UID) is {App.uid}"
 
-            def confirm_2fa(self):
-                if self.two_fac_confirm.text == "":
+            @staticmethod
+            def confirm_2fa(two_fac_confirm):
+                two_fac_confirm = two_fac_confirm.replace(" ", "")
+                if two_fac_confirm == "":
                     error_popup("2FA Code Blank\n- Please enter a 2FA code")
+                elif len(two_fac_confirm) != 6:
+                    error_popup("Invalid 2FA Code")
                 else:
-                    self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
-                    if len(self.two_fac_confirm.text) != 6:
-                        error_popup("Invalid 2FA Code")
+                    s.send_e(two_fac_confirm.replace(" ", ""))
+                    ipk = s.recv_d(1024)
+                    if ipk != "N":
+                        with open("userdata/key", "wb") as f:
+                            f.write(App.uid.encode()+ipk)
+                        App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
+                        if App.r_coin.endswith(".0"):
+                            App.r_coin = App.r_coin[:-2]
+                        if App.d_coin.endswith(".0"):
+                            App.d_coin = App.d_coin[:-2]
+                        if App.new_drive:
+                            with open(f"{App.new_drive}mkey", "w", encoding="utf-8") as f:
+                                f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
+                        App.sm.switch_to(Home(), direction="left")
                     else:
-                        s.send_e(self.two_fac_confirm.text.replace(" ", ""))
-                        ipk = s.recv_d(1024)
-                        if ipk != "N":
-                            with open("userdata/key", "wb") as f:
-                                f.write(App.uid.encode()+ipk)
-                            App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
-                            if App.r_coin.endswith(".0"):
-                                App.r_coin = App.r_coin[:-2]
-                            if App.d_coin.endswith(".0"):
-                                App.d_coin = App.d_coin[:-2]
-                            if App.new_drive:
-                                with open(f"{App.new_drive}mkey", "w", encoding="utf-8") as f:
-                                    f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
-                            App.sm.switch_to(Home(), direction="left")
-                        else:
-                            error_popup("2FA Failed\n- Please Try Again")
-
+                        error_popup("2FA Failed\n- Please Try Again")
 
         class TwoFacLog(Screen):
-            two_fac_confirm = ObjectProperty(None)
-
-            def confirm_2fa(self):
-                if self.two_fac_confirm.text == "":
+            @staticmethod
+            def confirm_2fa(two_fac_confirm):
+                two_fac_confirm = two_fac_confirm.replace(" ", "")
+                if two_fac_confirm == "":
                     error_popup("2FA Code Blank\n- Please enter a 2FA code")
+                elif len(two_fac_confirm) != 6:
+                    error_popup("Invalid 2FA Code")
                 else:
-                    self.two_fac_confirm.text = self.two_fac_confirm.text.replace(" ", "")
-                    if len(self.two_fac_confirm.text) == 6:
-                        s.send_e(self.two_fac_confirm.text.replace(" ", ""))
-                        two_fa_valid = s.recv_d(1024)
-                        if two_fa_valid != "N":
-                            with open("userdata/key", "wb") as f:
-                                f.write(App.uid.encode()+App.ipk)
-                            App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
-                            if App.r_coin.endswith(".0"):
-                                App.r_coin = App.r_coin[:-2]
-                            if App.d_coin.endswith(".0"):
-                                App.d_coin = App.d_coin[:-2]
-                            App.sm.switch_to(Home(), direction="left")
-                        else:
-                            error_popup("2FA Failed\n- Please Try Again")
+                    s.send_e(two_fac_confirm.replace(" ", ""))
+                    two_fa_valid = s.recv_d(1024)
+                    if two_fa_valid != "N":
+                        with open("userdata/key", "wb") as f:
+                            f.write(App.uid.encode()+App.ipk)
+                        App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
+                        if App.r_coin.endswith(".0"):
+                            App.r_coin = App.r_coin[:-2]
+                        if App.d_coin.endswith(".0"):
+                            App.d_coin = App.d_coin[:-2]
+                        App.sm.switch_to(Home(), direction="left")
                     else:
-                        error_popup("Invalid 2FA Code")
+                        error_popup("2FA Failed\n- Please Try Again")
 
 
         class Home(Screen):
@@ -567,15 +558,14 @@ while True:
             d_coins = StringProperty()
             welcome_text = StringProperty()
             transfer_uid = ObjectProperty(None)
-            transfer_amt = ObjectProperty(None)
             transfer_cost = StringProperty()
             transfer_send = StringProperty()
             transfer_fee = StringProperty()
             transfer_direction = "R"
             direction_text = StringProperty()
-            amount_convert = ObjectProperty(None)
             coin_conversion = StringProperty()
             code = ObjectProperty(None)
+            level_progress = [0, 100]
 
             def on_pre_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
@@ -587,50 +577,52 @@ while True:
                 self.coin_conversion = "0.00 R"
                 self.direction_text = "Conversion Calculator (£->R)"
 
-            def check_transfer(self):
-                if self.transfer_amt.text not in ["", "."]:
-                    self.transfer_amt.text = self.transfer_amt.text[:12]
-                    if float(self.transfer_amt.text) > float(App.r_coin)*0.995:
-                        self.transfer_amt.text = str(round(float(App.r_coin)*0.995, 2))
-                    if "." in self.transfer_amt.text:
-                        if len(self.transfer_amt.text.split(".")[1]) > 2:
-                            self.transfer_amt.text = self.transfer_amt.text[:-1]
-                    self.transfer_cost = str(round(float(self.transfer_amt.text)/0.995, 2))
-                    self.transfer_send = self.transfer_amt.text
-                    self.transfer_fee = str(round(float(self.transfer_cost) - float(self.transfer_amt.text), 2))
-                if self.transfer_amt.text == ".":
-                    self.transfer_amt.text = ""
-                if self.transfer_amt.text == "":
+            def check_transfer(self, transfer_amt):
+                if transfer_amt not in ["", "."]:
+                    transfer_amt = transfer_amt[:12]
+                    if float(transfer_amt) > float(App.r_coin)*0.995:
+                        transfer_amt = str(round(float(App.r_coin)*0.995, 2))
+                    if "." in transfer_amt:
+                        if len(transfer_amt.split(".")[1]) > 2:
+                            transfer_amt = transfer_amt[:-1]
+                    self.transfer_cost = str(round(float(transfer_amt)/0.995, 2))
+                    self.transfer_send = transfer_amt
+                    self.transfer_fee = str(round(float(self.transfer_cost) - float(transfer_amt), 2))
+                if transfer_amt == ".":
+                    self.transfer_amt = ""
+                else:
+                    self.transfer_amt = transfer_amt
+                if transfer_amt == "":
                     self.transfer_cost = "0.00"
                     self.transfer_send = "0.00"
                     self.transfer_fee = "0.00"
 
             def transfer_coins(self):
-                if self.transfer_amt.text == "":
+                if self.transfer_amt == "":
                     error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
                 elif len(self.transfer_uid.text) < 8:
                     error_popup("Invalid Username/UID For Transfer")
                 elif self.transfer_uid.text == App.uid or self.transfer_uid.text == App.uname:
                     error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
-                elif float(self.transfer_amt.text) < 3:
+                elif float(self.transfer_amt) < 3:
                     error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
-                elif float(self.transfer_amt.text) > float(App.r_coin)*0.995:
+                elif float(self.transfer_amt) > float(App.r_coin)*0.995:
                     error_popup("Insufficient funds For Transfer")
                 else:
                     #App.popup_text = f"Send {self.transfer_uid.text} R to {self.transfer_send}\n" \
                     #                 f"Fee: {self.transfer_fee}\nTotal Cost: {self.transfer_cost}"
                     #App.popup = Factory.TransferConfirmPopup()
                     #App.popup.open()
-                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
+                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt}")
                     if s.recv_d(1024) == "V":
-                        success_popup(f"Transfer of {self.transfer_amt.text} R to "
+                        success_popup(f"Transfer of {self.transfer_amt} R to "
                                       f"{self.transfer_uid.text} Successful")
-                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
+                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt)/0.995, 2))
                         if App.r_coin.endswith(".0"):
                             App.r_coin = App.r_coin[:-2]
                         self.r_coins = App.r_coin+" R"
                         self.transfer_uid.text = ""
-                        self.transfer_amt.text = ""
+                        self.transfer_amt = ""
                     else:
                         error_popup("Invalid Username/UID For Transfer")
 
@@ -646,16 +638,16 @@ while True:
                     else:
                         error_popup("Invalid Code")
 
-            def convert_coins(self):
-                if self.amount_convert.text not in ["", "."]:
-                    self.amount_convert.text = self.amount_convert.text[:7]
-                    if "." in self.amount_convert.text:
-                        if len(self.amount_convert.text.split(".")[1]) > 2:
-                            self.amount_convert.text = self.amount_convert.text[:-1]
+            def convert_coins(self, amount_convert):
+                if amount_convert not in ["", "."]:
+                    amount_convert = amount_convert[:7]
+                    if "." in amount_convert:
+                        if len(amount_convert.split(".")[1]) > 2:
+                            amount_convert = amount_convert[:-1]
                     if self.transfer_direction == "R":
-                        amount_converted = str(round(float(self.amount_convert.text)/0.06, 2))
+                        amount_converted = str(round(float(amount_convert)/0.06, 2))
                     else:
-                        amount_converted = str(round(float(self.amount_convert.text)*0.0585, 2))
+                        amount_converted = str(round(float(amount_convert)*0.0585, 2))
                     if "." in amount_converted:
                         amount_converted = amount_converted[:amount_converted.index(".")+3]
                     if self.transfer_direction == "R":
@@ -663,13 +655,20 @@ while True:
                     else:
                         self.coin_conversion = f"£{amount_converted}"
                 else:
-                    if self.amount_convert.text == "":
+                    if amount_convert == "":
                         if self.transfer_direction == "R":
                             self.coin_conversion = "0.00 R"
                         else:
                             self.coin_conversion = "£0.00"
 
             def change_transfer_direction(self):
+                self.level_progress[0] += 5
+                with self.ids.level_bar.canvas:
+                    Color(*App.col["green"])
+                    RoundedRectangle(pos=self.ids.level_bar.pos,
+                                     size=(self.ids.level_bar.size[0]*self.level_progress[0]/self.level_progress[1],
+                                           self.ids.level_bar.size[1]))
+                self.ids.level_bar_text.text = f"{self.level_progress[0]}/{self.level_progress[1]} XP"
                 if self.transfer_direction == "R":
                     self.transfer_direction = "D"
                     self.direction_text = "Conversion Calculator (R->£)"
@@ -681,7 +680,6 @@ while True:
         class Chat(Screen):
             r_coins = StringProperty()
             d_coins = StringProperty()
-            public_room_inp = ObjectProperty(None)
             public_room_msg_counter = 0
 
             def on_pre_enter(self, *args):
@@ -689,16 +687,16 @@ while True:
                 self.d_coins = App.d_coin+" D"
                 self.ids.public_chat_scroll.scroll_y = 0
 
-            def send_public_message(self):
-                if self.public_room_inp.text != "":
-                    if "https://" in self.public_room_inp.text or "http://" in self.public_room_inp.text:
-                        self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text,
+            def send_public_message(self, public_room_inp):
+                if public_room_inp != "":
+                    if "https://" in public_room_inp or "http://" in public_room_inp:
+                        self.ids.public_chat.add_widget(AsyncImage(source=public_room_inp,
                                                                    size_hint_y=None, height=300, anim_delay=0.05))
                     else:
-                        self.ids.public_chat.add_widget(Label(text=self.public_room_inp.text, font_size=16,
+                        self.ids.public_chat.add_widget(Label(text=public_room_inp, font_size=16,
                                                               color=(1, 1, 1, 1), size_hint_y=None, height=40,
                                                               halign="left"))
-                    #s.send_e(f"MSG:{self.public_room_inp.text}")
+                    #s.send_e(f"MSG:{public_room_inp}")
                     self.public_room_msg_counter += 1
                     if self.ids.public_chat_scroll.scroll_y == 0:
                         scroll_down = True
@@ -714,7 +712,7 @@ while True:
                         self.ids.public_chat.children[i].x = 0
                         message_height += self.ids.public_chat.children[i].height
                     self.ids.public_chat.height = message_height
-                    self.public_room_inp.text = ""
+                    public_room_inp = ""
                     if scroll_down:
                         self.ids.public_chat_scroll.scroll_y = 0
                     else:
@@ -753,7 +751,6 @@ while True:
             d_coins = StringProperty()
             uname = StringProperty()
             uid = StringProperty()
-            uname_to = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
@@ -761,11 +758,11 @@ while True:
                 self.uname = App.uname
                 self.uid = App.uid
 
-            def change_name(self):
+            def change_name(self, uname_to):
                 if float(App.d_coin) < 5:
                     error_popup("Insufficient Funds\n- You require 5 D to change your username")
-                elif 4 < len(self.uname_to.text) < 25:
-                    s.send_e(f"CUN:{self.uname_to.text}")
+                elif 4 < len(uname_to) < 25:
+                    s.send_e(f"CUN:{uname_to}")
                     new_uname = s.recv_d(1024)
                     if new_uname != "N":
                         App.uname = new_uname
@@ -1020,15 +1017,13 @@ while True:
                         App.col[color_name] = color
 
                 App.t_and_c = rdisc_kv.t_and_c()
-                App.mkey = None  # todo test removal of
-                App.uid = None  # user id
-                App.uname = None  # username
-                App.ipk = None  # ip key
-                App.pass_code = None
-                App.pin_code = None
-                App.acc_key = None
-                # App.path = None  # todo test removal of
-                App.xp = None
+                #App.uid = None  # user id
+                #App.uname = None  # username
+                #App.ipk = None  # ip key
+                #App.pass_code = None
+                #App.pin_code = None
+                #App.acc_key = None
+                #App.xp = None
                 App.popup = None
                 App.reload_text = ""
                 App.popup_text = "Popup Error"

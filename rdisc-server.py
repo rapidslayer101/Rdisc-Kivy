@@ -53,7 +53,7 @@ class Users:
         expiry_time = str(datetime.now()+timedelta(days=14))[:-7]
         self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (user_id, now,
                         enc.pass_to_key(master_key, user_id), secret, user_pass, ip_key+"🱫"+expiry_time, None,
-                        None, None, username, now, 0, 0, 1000))
+                        None, None, username, now, 0, 0, 350))
         self.db.commit()
 
     def check_logged_in(self, uid, ip):
@@ -166,7 +166,7 @@ def client_connection(cs):
                             ip_key = enc.rand_b96_str(24)
                             user_pass = enc.pass_to_key(user_pass, uid)
                             send_e(enc.enc_from_pass(ip_key, user_pass[:40], user_pass[40:]))
-                            send_e(f"{u_name}🱫0🱫0🱫1000")
+                            send_e(f"{u_name}🱫0🱫0🱫350")
                             users.add_user(uid, master_key, user_secret, user_pass,
                                            enc.pass_to_key(ip+ip_key, uid), u_name)
                             break

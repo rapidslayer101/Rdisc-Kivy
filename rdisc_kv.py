@@ -241,16 +241,14 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.6}
 
 <IpSet>:
-    ip_address: ip_address
     GreyFloatLayout:
         SizeLabel:
             text: "Enter server IP address"
             pos_hint: {"x": 0.45, "top": 0.8}
         RoundedTextInput:
-            id: ip_address
             hint_text: "0.0.0.0:1337"
             pos_hint: {"x": 0.35, "top": 0.65}
-            on_text_validate: root.try_connect()
+            on_text_validate: root.try_connect(self.text)
         RoundedButton:
             text: "Connect"
             pos_hint: {"x": 0.35, "top": 0.45}
@@ -276,24 +274,21 @@ kv_payload = """# You can edit this file to change the UI.
                 root.manager.transition.direction = "left"
 
 <KeyUnlock>:
-    pwd: pwd
     GreyFloatLayout:
         SizeLabel:
             text: root.passcode_prompt_text
             pos_hint: {"x": 0.45, "top": 0.75}
         RoundedTextInput:
-            id: pwd
             hint_text: "Password"
             password: True
             pos_hint: {"x": 0.35, "top": 0.65}
-            on_text_validate: root.login()
+            on_text_validate: root.login(self.text)
         RoundedButton:
             text: "LOGIN"
             pos_hint: {"x": 0.35, "top": 0.5}
             on_release: root.login()
 
 <CreateKey>:
-    confirmation_code: confirmation_code
     GreyFloatLayout:
         Label:
             text: root.pass_code_text
@@ -320,9 +315,8 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.45, "top": 0.51}
             on_release: Factory.TermsPopup().open()
         RoundedTextInput:
-            id: confirmation_code
             pos_hint: {"x": 0.35, "top": 0.4}
-            on_text: root.continue_confirmation()
+            on_text: root.continue_confirmation(self.text)
         YellowLabel:
             text: "User Keys >>"
             pos_hint: {"x": 0.3,  "top": 1}
@@ -465,7 +459,6 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
 
 <Captcha>:
-    captcha_inp: captcha_inp
     GreyFloatLayout:
         Label:
             text: root.captcha_prompt_text
@@ -475,12 +468,10 @@ kv_payload = """# You can edit this file to change the UI.
             id: captcha_image
             source: 'resources/blank_captcha.jpg'
             pos_hint: {"x": 0, "top": 1.15}
-            
         RoundedTextInput:
-            id: captcha_inp
             pos_hint: {"x": 0.35, "top": 0.5}
             on_text: self.text = self.text[:10].upper()
-            on_text_validate: root.try_captcha()
+            on_text_validate: root.try_captcha(self.text)
         RoundedButton:
             text: "Next"
             pos_hint: {"x": 0.35, "top": 0.35}
@@ -545,17 +536,15 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.8}
                     
 <LogUnlock>:
-    pwd: pwd
     GreyFloatLayout:
         Label:
             text: root.passcode_prompt_text
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         RoundedTextInput:
-            id: pwd
             password: True
             pos_hint: {"x": 0.35, "top": 0.65}
-            on_text_validate: root.login()
+            on_text_validate: root.login(self.text)
         RoundedButton:
             text: "LOGIN"
             pos_hint: {"x": 0.35, "top": 0.5}
@@ -575,7 +564,6 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
 
 <TwoFacSetup>:
-    two_fac_confirm: two_fac_confirm
     GreyFloatLayout:
         Label:
             text: root.two_fac_wait_text
@@ -586,11 +574,10 @@ kv_payload = """# You can edit this file to change the UI.
             source: 'resources/blank_qr.png'
             pos_hint: {"x": 0, "top": 1.10}
         RoundedTextInput:
-            id: two_fac_confirm
             hint_text: "2FA code"
             size_hint: 0.3, 0.05
             pos_hint: {"x": 0.35, "top": 0.34}
-            on_text_validate: root.confirm_2fa()
+            on_text_validate: root.confirm_2fa(self.text)
         RoundedButton:
             text: "Confirm"
             pos_hint: {"x": 0.35, "top": 0.25}
@@ -609,18 +596,16 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
             
 <TwoFacLog>:
-    two_fac_confirm: two_fac_confirm
     GreyFloatLayout:
         Label:
             text: "Enter 2FA code"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         RoundedTextInput:
-            id: two_fac_confirm
             input_filter: 'int'
             pos_hint: {"x": 0.35, "top": 0.65}
             on_text: self.text = self.text[:6]
-            on_text_validate: root.confirm_2fa()
+            on_text_validate: root.confirm_2fa(self.text)
         RoundedButton:
             text: "Confirm"
             pos_hint: {"x": 0.35, "top": 0.4}
@@ -678,8 +663,6 @@ kv_payload = """# You can edit this file to change the UI.
             
 <Home>:
     transfer_uid: transfer_uid
-    transfer_amt: transfer_amt
-    amount_convert: amount_convert
     code: code
     GreyFloatLayout:
         HomeButton:
@@ -728,7 +711,7 @@ kv_payload = """# You can edit this file to change the UI.
             hint_text: "0.00"
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.07, "top": 0.67}
-            on_text: root.check_transfer()
+            on_text: root.check_transfer(self.text)
         Label:
             text: f"Cost: {root.transfer_cost}R"
             size_hint: 0.1, 0.1
@@ -769,19 +752,42 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.62, "top": 0.15}
             on_press: root.change_transfer_direction()
         RoundedTextInput
-            id: amount_convert
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.4, "top": 0.09}
-            on_text: root.convert_coins()
+            on_text: root.convert_coins(self.text)
         SizeLabel:
             text: root.coin_conversion
             pos_hint: {"x": 0.53, "top": 0.09}
         BackingLabel:
-            text: "Level 0 - 0xp"
             size_hint: 0.32, 0.23
             pos_hint: {"x": 0.67, "top": 0.92}
+        SizeLabel:
+            text: "Level 0"
+            pos_hint: {"x": 0.78, "top": 0.9}
+        Label:
+            id: level_bar
+            size_hint: 0.29, 0.05
+            pos_hint: {"x": 0.69, "top": 0.83}
+            canvas.before:
+                Color:
+                    rgba: app.col['bk_grey_2']
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [6]
+            canvas.after:
+                Color:
+                    rgba: app.col['green']
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size[0]*root.level_progress[0]/root.level_progress[1], self.size[1]
+                    radius: [6]
+        SizeLabel:
+            id: level_bar_text
+            text: "1/100 XP"
+            pos_hint: {"x": 0.78, "top": 0.83}
         BackingLabel:
             size_hint: 0.32, 0.66
             pos_hint: {"x": 0.67, "top": 0.68}
@@ -825,7 +831,6 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.check_code()
             
 <Chat>:
-    public_room_inp: public_room_inp
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -866,11 +871,10 @@ kv_payload = """# You can edit this file to change the UI.
                 size_hint_y: None
                 height: root.height
         RoundedTextInput:
-            id: public_room_inp
             size_hint: 0.4, 0.1
             pos_hint: {"x": 0.3, "top": 0.15}
             text_validate_unfocus: False
-            on_text_validate: root.send_public_message()   
+            on_text_validate: root.send_public_message(self.text)   
             
 <Store>:
     GreyFloatLayout:
@@ -980,7 +984,6 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.7}
             
 <Settings>:
-    uname_to: uname_to
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -1008,12 +1011,11 @@ kv_payload = """# You can edit this file to change the UI.
             text: f"Name:"
             pos_hint: {"x": -0.01, "top": 0.82}
         RoundedTextInput:
-            id: uname_to
             text: root.uname[:-4]
             size_hint: 0.14, 0.05
             pos_hint: {"x": 0.08, "top": 0.82}
             on_text: self.text = self.text.replace("  ", " ").replace("#", "")[:24]
-            on_text_validate: root.change_name()
+            on_text_validate: root.change_name(self.text)
         RoundedButton:
             text: "Change"
             size_hint: 0.05, 0.05
