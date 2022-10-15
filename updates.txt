@@ -74,14 +74,13 @@ known issues:
     - updating rdisc source code
   - downloadable apk
 
-- check for refactor possibilities with kv pass to function
+- leaderboards
 - hide secret by encrypting with user pass hash 1
 - buying confirmations
 - check for rounding errors in transfers
 - ip_key expired removal as well as dealing with other invalid keys
 - asynchronous server
 - connection rate limit and checks for entire login paths
-- nfc experiment <- unlikely, mobile support not a priority
 
 # account key + account pin = master key
 # MASTER KEY MAY BE SAVED TO USB

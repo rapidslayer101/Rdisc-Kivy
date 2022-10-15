@@ -739,6 +739,9 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: "Latest News"
             pos_hint: {"x": 0.45, "top": 0.74}
+        SizeLabel:
+            text: "No news."
+            pos_hint: {"x": 0.45, "top": 0.58}
         BackingLabel:
             size_hint: 0.32, 0.13
             pos_hint: {"x": 0.34, "top": 0.15}
@@ -768,6 +771,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.78, "top": 0.9}
         Label:
             id: level_bar
+            markup: True
             size_hint: 0.29, 0.05
             pos_hint: {"x": 0.69, "top": 0.83}
             canvas.before:
@@ -779,13 +783,14 @@ kv_payload = """# You can edit this file to change the UI.
                     radius: [6]
             canvas.after:
                 Color:
-                    rgba: app.col['green']
+                    rgba: app.col['yellow']
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size[0]*root.level_progress[0]/root.level_progress[1], self.size[1]
                     radius: [6]
         SizeLabel:
             id: level_bar_text
+            color: (0, 0, 0, 1)
             text: "1/100 XP"
             pos_hint: {"x": 0.78, "top": 0.83}
         BackingLabel:
@@ -795,22 +800,20 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Transaction History"
             pos_hint: {"x": 0.78, "top": 0.66}
         ScrollView:
-            size_hint: 0.32, 0.6
-            pos_hint: {"x": 0.67, "top": 0.56}
-            GreyFloatLayout:
+            id: transactions_scroll
+            size_hint: 0.32, 0.53
+            pos_hint: {"x": 0.67, "top": 0.59}
+            scroll_type: ['bars']
+            FloatLayout:
+                id: transactions
                 canvas.before:
                     Color:
-                        rgba: app.col['bk_grey_3']
+                        rgba: app.col['bk_grey_2']
                     Rectangle:
                         pos: self.pos
                         size: self.size    
-                size_hint: 1, None
-                height: self.height
-                Label:
-                    #text: root.transaction_history
-                    text: "No transactions."
-                    size_hint: 1, 1
-                    pos_hint: {"x": 0.01, "top": 0.99}
+                size_hint_y: None
+                height: root.height
         BackingLabel:
             size_hint: 0.32, 0.29
             pos_hint: {"x": 0.01, "top": 0.31}
@@ -831,6 +834,7 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.check_code()
             
 <Chat>:
+    public_room_inp: public_room_inp
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -856,7 +860,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.9}
         ScrollView:
-            id: public_chat_scroll
+            id: public_room_scroll
             size_hint: 0.5, 0.62
             pos_hint: {"x": 0.25, "top": 0.8}
             scroll_type: ['bars']
@@ -871,10 +875,11 @@ kv_payload = """# You can edit this file to change the UI.
                 size_hint_y: None
                 height: root.height
         RoundedTextInput:
+            id: public_room_inp
             size_hint: 0.4, 0.1
             pos_hint: {"x": 0.3, "top": 0.15}
             text_validate_unfocus: False
-            on_text_validate: root.send_public_message(self.text)   
+            on_text_validate: root.send_public_message()   
             
 <Store>:
     GreyFloatLayout:
@@ -1328,6 +1333,17 @@ kv_payload = """# You can edit this file to change the UI.
             canvas.before:
                 Color:
                     rgba: [0.0, 0.62745, 0.44314, 1.0]
+                RoundedRectangle
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+        RoundedColorButton:
+            text: "Lime"
+            pos_hint: {"x": 0.87, "top": 0.1}
+            on_press: root.default_theme("lime")
+            canvas.before:
+                Color:
+                    rgba: [0.60358, 0.75294, 0.22389, 1.0]
                 RoundedRectangle
                     pos: self.pos
                     size: self.size

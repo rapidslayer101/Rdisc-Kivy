@@ -561,11 +561,45 @@ while True:
             transfer_cost = StringProperty()
             transfer_send = StringProperty()
             transfer_fee = StringProperty()
-            transfer_direction = "R"
             direction_text = StringProperty()
             coin_conversion = StringProperty()
             code = ObjectProperty(None)
+            transfer_direction = "R"
+            transfer_amt = None
             level_progress = [0, 100]
+            transactions_counter = 0
+
+            def on_enter(self, *args):
+                self.r_coins = App.r_coin+" R"
+                self.d_coins = App.d_coin+" D"
+                self.add_transaction(f"Spent [color=f46f0eff]15 R[/color] on [color=15c1e0ff]150 D[/color]")
+                self.add_transaction("Coinflip [color=25be42ff]won[/color][color=f46f0eff] 50 R[/color] "
+                                     "[color=25be42ff]gained[/color] [color=f2ef32ff]10 XP[/color]")
+                self.add_transaction("Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] 50 R[/color] "
+                                     "[color=25be42ff]gained[/color] [color=f2ef32ff]10 XP[/color]")
+
+            def add_transaction(self, transaction):
+                self.ids.transactions.add_widget(Label(text=transaction, font_size=16, color=(1, 1, 1, 1),
+                                                       size_hint_y=None, height=40, halign="left", markup=True))
+                self.transactions_counter += 1
+                if self.ids.transactions_scroll.scroll_y == 0:
+                    scroll_down = True
+                else:
+                    scroll_down = False
+                if self.transactions_counter > 101:
+                    self.ids.transactions.remove_widget(self.ids.public_chat.children[-1])
+                    self.ids.transactions.children[-1].text = "ONLY SHOWING LATEST 100 TRANSACTIONS"
+                    self.transactions_counter -= 1
+                message_height = 0
+                for i in reversed(range(self.transactions_counter)):
+                    self.ids.transactions.children[i].y = message_height
+                    self.ids.transactions.children[i].x = 0
+                    message_height += self.ids.transactions.children[i].height
+                self.ids.transactions.height = message_height
+                if scroll_down:
+                    self.ids.transactions_scroll.scroll_y = 0
+                else:
+                    pass  # todo make stay still
 
             def on_pre_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
@@ -664,7 +698,7 @@ while True:
             def change_transfer_direction(self):
                 self.level_progress[0] += 5
                 with self.ids.level_bar.canvas:
-                    Color(*App.col["green"])
+                    Color(*App.col["yellow"])
                     RoundedRectangle(pos=self.ids.level_bar.pos,
                                      size=(self.ids.level_bar.size[0]*self.level_progress[0]/self.level_progress[1],
                                            self.ids.level_bar.size[1]))
@@ -681,24 +715,24 @@ while True:
             r_coins = StringProperty()
             d_coins = StringProperty()
             public_room_msg_counter = 0
+            public_room_inp = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
-                self.ids.public_chat_scroll.scroll_y = 0
 
-            def send_public_message(self, public_room_inp):
-                if public_room_inp != "":
-                    if "https://" in public_room_inp or "http://" in public_room_inp:
-                        self.ids.public_chat.add_widget(AsyncImage(source=public_room_inp,
+            def send_public_message(self):
+                if self.public_room_inp.text != "":
+                    if "https://" in self.public_room_inp.text or "http://" in self.public_room_inp.text:
+                        self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text,
                                                                    size_hint_y=None, height=300, anim_delay=0.05))
                     else:
-                        self.ids.public_chat.add_widget(Label(text=public_room_inp, font_size=16,
+                        self.ids.public_chat.add_widget(Label(text=self.public_room_inp.text, font_size=16,
                                                               color=(1, 1, 1, 1), size_hint_y=None, height=40,
                                                               halign="left"))
-                    #s.send_e(f"MSG:{public_room_inp}")
+                    #s.send_e(f"MSG:{self.public_room_inp.text}")
                     self.public_room_msg_counter += 1
-                    if self.ids.public_chat_scroll.scroll_y == 0:
+                    if self.ids.public_room_scroll.scroll_y == 0:
                         scroll_down = True
                     else:
                         scroll_down = False
@@ -712,9 +746,9 @@ while True:
                         self.ids.public_chat.children[i].x = 0
                         message_height += self.ids.public_chat.children[i].height
                     self.ids.public_chat.height = message_height
-                    public_room_inp = ""
+                    self.public_room_inp.text = ""
                     if scroll_down:
-                        self.ids.public_chat_scroll.scroll_y = 0
+                        self.ids.public_room_scroll.scroll_y = 0
                     else:
                         pass  # todo make stay still
 
@@ -888,7 +922,7 @@ while True:
                         f.write(f"{color}: {[round(rgb, 5) for rgb in App.col[color]]}\n")
 
             def default_theme(self, theme):
-                if theme in ["purple", "pink", "green"]:
+                if theme in ["purple", "pink", "green", "lime"]:
                     App.col = App.theme[theme]
                     for color in App.col:
                         self.selected_color = color
@@ -996,6 +1030,20 @@ while True:
                 App.theme.update({"pink": {"rdisc_purple": [1.0, 0.27843, 0.44706, 1.0],
                                            "rdisc_purple_dark": [1.0, 0.42353, 0.44314, 1.0],
                                            "rdisc_cyan": [0.7687, 0.4043, 0.69965, 1],
+                                           "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
+                                           "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
+                                           "link_blue": [0.31373, 0.60392, 0.89412, 1],
+                                           "green": [0.07843, 0.89412, 0.16863, 1],
+                                           "yellow": [0.95294, 0.94118, 0.2, 1],
+                                           "orange": [0.95294, 0.51765, 0.00392, 1],
+                                           "red": [0.98431, 0.11765, 0.01961, 1],
+                                           "grey": [0.23529, 0.23529, 0.19608, 1],
+                                           "bk_grey_1": [0.19608, 0.19608, 0.19608, 1],
+                                           "bk_grey_2": [0.21569, 0.21569, 0.21569, 1],
+                                           "bk_grey_3": [0.23529, 0.23529, 0.23529, 1]}})
+                App.theme.update({"lime": {"rdisc_purple": [0.60358, 0.75294, 0.22389, 1.0],
+                                           "rdisc_purple_dark": [0.6, 0.53088, 0.22353, 1.0],
+                                           "rdisc_cyan": [0.8761, 0.73725, 0.2231, 1.0],
                                            "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
                                            "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
                                            "link_blue": [0.31373, 0.60392, 0.89412, 1],
