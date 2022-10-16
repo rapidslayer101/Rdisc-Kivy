@@ -30,7 +30,7 @@ class Users:
                         "username TEXT NOT NULL, last_online DATE NOT NULL, xp FLOAT NOT NULL,"
                         "r_coin FLOAT NOT NULL, d_coin FLOAT NOT NULL)")
         self.db.execute("CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY NOT NULL UNIQUE,"
-                        "expiry_date DATE NOT NULL, claimed TEXT NOT NULL,"
+                        "expiry_date DATE NOT NULL, left TEXT NOT NULL,"
                         "reward_type TEXT NOT NULL, amount FLOAT NOT NULL)")
 
     def login(self, u_id, ip, cs):
@@ -321,7 +321,7 @@ def client_connection(cs):
                             code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXY", k=16))
                             try:
                                 users.db.execute("INSERT INTO codes VALUES (?, ?, ?, ?, ?)", (code,
-                                                 str(datetime.now()+timedelta(days=14))[:-7], False, "R", amount))
+                                                 str(datetime.now()+timedelta(days=14))[:-7], 1, "R", amount))
                                 break
                             except sqlite3.IntegrityError:
                                 pass
@@ -401,8 +401,25 @@ def client_connection(cs):
                     send_e("N")  # user not exist
 
             if request.startswith("CLM:"):  # claim code
-                #code = request[4:]
-                send_e("N")
+                code = request[4:].replace("-", "")
+                code_data = users.db.execute("SELECT * FROM codes WHERE code = ?", (code,)).fetchone()
+                if code_data is None:
+                    send_e("N")
+                else:
+                    if code_data[3] == "R":
+                        r_coin = round(r_coin+float(code_data[4]), 2)
+                        users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?", (r_coin, uid))
+                        users.db.commit()
+                        send_e(f"R:{code_data[4]}")
+                    if code_data[2] == "1":
+                        users.db.execute("DELETE FROM codes WHERE code = ?", (code,))
+                        users.db.commit()
+                    elif code_data[2] == "-1":  # infinite code
+                        pass
+                    else:
+                        users.db.execute("UPDATE codes SET left = ? WHERE code = ?",
+                                         (int(code_data[2])-1, code))
+                        users.db.commit()
 
             if request.startswith("AFR:"):
                 add_friend_n = request[6:]

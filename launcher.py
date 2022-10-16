@@ -51,13 +51,21 @@ class Server:
         try:
             self.s.send(enc.enc_from_key(text, self.enc_key))
         except ConnectionResetError:
-            print("CONNECTION_LOST")  # todo deal with this
+            print("CONNECTION_LOST, reconnecting...")
+            if s.ip and s.connect():
+                self.s.send(enc.enc_from_key(text, self.enc_key))
+            else:
+                print("Failed to reconnect")
 
     def recv_d(self, buf_lim):
         try:
             return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
         except ConnectionResetError:
-            print("CONNECTION_LOST")  # todo deal with this
+            print("CONNECTION_LOST, reconnecting...")
+            if s.ip and s.connect():
+                return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
+            else:
+                print("Failed to reconnect")
 
 
 s = Server()

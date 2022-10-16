@@ -74,7 +74,7 @@ known issues:
     - updating rdisc source code
   - downloadable apk
 
-- leaderboards
+- linux support
 - hide secret by encrypting with user pass hash 1
 - buying confirmations
 - check for rounding errors in transfers
@@ -86,4 +86,4 @@ known issues:
 # MASTER KEY MAY BE SAVED TO USB
 # -> set master key and password
 # master key + 2fa = ip key enc
-# ip key + password= login
+# ip key + password = login

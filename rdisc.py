@@ -40,9 +40,6 @@ while True:
         if not path.exists("rdisc.kv"):
             rdisc_kv.kv()
 
-        if path.exists("rdisc.py"):
-            rdisc_kv.kv()
-
         if path.exists("rdisc.exe"):
             app_hash = enc.hash_a_file("rdisc.exe")
         elif path.exists("rdisc.py"):
@@ -52,6 +49,7 @@ while True:
 
         version_ = None
         if path.exists("sha.txt"):
+            rdisc_kv.kv()
             with open("sha.txt", "r", encoding="utf-8") as f:
                 latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
             print("prev", version_, tme_, bld_num_, run_num_)
@@ -215,7 +213,7 @@ while True:
                         s.send_e(f"ULK:{App.uid}🱫{ipk}")
                         ulk_resp = s.recv_d(128)
                         if ulk_resp == "SESH_T":
-                            error_popup("This accounts session is taken.")  # todo loop here?
+                            error_popup("This accounts session is taken.")
                         elif ulk_resp == "N":
                             error_popup("Incorrect Password\n- How exactly did you manage to trigger this.")
                         else:
@@ -425,7 +423,7 @@ while True:
                     if s.recv_d(1024) == "V":
                         if App.path == "make":
                             App.sm.switch_to(NacPassword(), direction="left")
-                        if App.path == "login":  # todo check here
+                        if App.path == "login":
                             if App.uname:
                                 s.send_e(f"LOG:{App.mkey}🱫u🱫{App.uname}")
                             else:
@@ -572,15 +570,19 @@ while True:
             def on_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
                 self.d_coins = App.d_coin+" D"
-                self.add_transaction(f"Spent [color=f46f0eff]15 R[/color] on [color=15c1e0ff]150 D[/color]")
-                self.add_transaction("Coinflip [color=25be42ff]won[/color][color=f46f0eff] 50 R[/color] "
-                                     "[color=25be42ff]gained[/color] [color=f2ef32ff]10 XP[/color]")
-                self.add_transaction("Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] 50 R[/color] "
-                                     "[color=25be42ff]gained[/color] [color=f2ef32ff]10 XP[/color]")
+                #self.add_transaction("Coinflip [color=25be42ff]won[/color][color=f46f0eff] 50 R[/color] "
+                #                     "[color=25be42ff]gained[/color] [color=f2ef32ff]10 XP[/color]")
+                #self.add_transaction("Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] 50 R[/color] "
+                #                     "[color=25be42ff]gained[/color] [color=f2ef32ff]10 XP[/color]")
+                self.level_progress = [float(App.xp), 100]
+                self.ids.level_bar_text.text = f"{self.level_progress[0]}/{self.level_progress[1]} XP"
+                [self.add_transaction(transaction) for transaction in App.transactions]
+                App.transactions = []
 
             def add_transaction(self, transaction):
                 self.ids.transactions.add_widget(Label(text=transaction, font_size=16, color=(1, 1, 1, 1),
-                                                       size_hint_y=None, height=40, halign="left", markup=True))
+                                                       size_hint_y=None, height=40+transaction.count("\n")*20,
+                                                       halign="left", markup=True))
                 self.transactions_counter += 1
                 if self.ids.transactions_scroll.scroll_y == 0:
                     scroll_down = True
@@ -663,12 +665,19 @@ while True:
             def check_code(self):
                 if not len(self.code.text) == 19:
                     error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
-                elif not self.code.text[4] == "-" and self.code.text[9] == "-" and self.code.text[14] == "-":
+                elif not self.code.text[5] == "-" and self.code.text[10] == "-" and self.code.text[15] == "-":
                     error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
                 else:
                     s.send_e(f"CLM:{self.code.text}")
-                    if s.recv_d(1024) != "N":
-                        claim_code_popup("Code is for xxx")
+                    code_resp = s.recv_d(1024)
+                    if code_resp != "N":
+                        if code_resp.startswith("R"):
+                            App.r_coin = str(round(float(App.r_coin)+float(code_resp[2:]), 2))
+                            if App.r_coin.endswith(".0"):
+                                App.r_coin = App.r_coin[:-2]
+                            self.r_coins = App.r_coin+" R"
+                            success_popup(f"Successfully claimed {code_resp[2:]} R")
+                            self.add_transaction(f"Claimed [color=f46f0eff]{code_resp[2:]} R[/color] from gift code")
                     else:
                         error_popup("Invalid Code")
 
@@ -946,7 +955,9 @@ while True:
                     self.r_coins = App.r_coin+" R"
                     success_popup(f"Successfully bought {amount} R gift card\nCode: {gift_code}\n\n"
                                   f"To view this code again,\ngo to your transaction history")
-                    # todo save code to transaction history
+                    App.transactions.append(f"Bought [color=f46f0eff]{amount} R gift card[/color] for "
+                                            f"[color=f46f0eff]{amount} R[/color]\n"
+                                            f"Code: [color=25be42ff]{gift_code}[/color]")
                 else:
                     error_popup("Insufficient Funds\n- You require more R Coins")
 
@@ -974,6 +985,8 @@ while True:
                         self.d_coins = App.d_coin+" D"
                         self.r_coins = App.r_coin+" R"
                         success_popup(f"Successfully bought {d_amount} D for {amount} R")
+                        App.transactions.append(f"Bought [color=15c1e0ff]{d_amount} D[/color] for "
+                                                f"[color=f46f0eff]{amount} R[/color]")
 
 
         class Coinflip(Screen):
@@ -1072,6 +1085,7 @@ while True:
                 #App.pin_code = None
                 #App.acc_key = None
                 #App.xp = None
+                App.transactions = []
                 App.popup = None
                 App.reload_text = ""
                 App.popup_text = "Popup Error"
