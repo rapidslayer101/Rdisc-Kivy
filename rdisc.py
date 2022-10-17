@@ -1,3 +1,5 @@
+import enclib as enc
+import rdisc_kv
 from base64 import b32encode
 from datetime import datetime
 from hashlib import sha512
@@ -24,9 +26,6 @@ from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
 from rsa import newkeys, PublicKey, decrypt
-
-import enclib as enc
-import rdisc_kv
 
 crash_num = 0
 while True:
@@ -401,6 +400,7 @@ while True:
 
         class Captcha(Screen):
             captcha_prompt_text = StringProperty()
+            captcha_inp = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.captcha_prompt_text = "Waiting for captcha..."
@@ -416,10 +416,9 @@ while True:
                 self.captcha_prompt_text = f"Enter the text below"
                 self.ids.captcha_image.source = 'captcha.jpg'
 
-            @staticmethod
-            def try_captcha(captcha_inp):
-                if len(captcha_inp) == 10:
-                    s.send_e(captcha_inp.replace(" ", "").replace("1", "I").replace("0", "O").upper())
+            def try_captcha(self):
+                if len(self.captcha_inp.text) == 10:
+                    s.send_e(self.captcha_inp.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
                     if s.recv_d(1024) == "V":
                         if App.path == "make":
                             App.sm.switch_to(NacPassword(), direction="left")
@@ -498,7 +497,7 @@ while True:
                 secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
                 print(secret_code)  # todo mention in UI text
                 self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
-                                             f"F%2Ftotp%2F{App.uid}%3Fsecret%3D{secret_code}%26issuer%3DApp"
+                                             f"F%2Ftotp%2F{App.uid}%3Fsecret%3D{secret_code}%26issuer%3DRdisc"
                 self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
                                          f"Your User ID (UID) is {App.uid}"
 
@@ -556,6 +555,7 @@ while True:
             d_coins = StringProperty()
             welcome_text = StringProperty()
             transfer_uid = ObjectProperty(None)
+            transfer_amt = ObjectProperty(None)
             transfer_cost = StringProperty()
             transfer_send = StringProperty()
             transfer_fee = StringProperty()
@@ -563,7 +563,6 @@ while True:
             coin_conversion = StringProperty()
             code = ObjectProperty(None)
             transfer_direction = "R"
-            transfer_amt = None
             level_progress = [0, 100]
             transactions_counter = 0
 
@@ -613,52 +612,52 @@ while True:
                 self.coin_conversion = "0.00 R"
                 self.direction_text = "Conversion Calculator (£->R)"
 
-            def check_transfer(self, transfer_amt):
-                if transfer_amt not in ["", "."]:
-                    transfer_amt = transfer_amt[:12]
-                    if float(transfer_amt) > float(App.r_coin)*0.995:
-                        transfer_amt = str(round(float(App.r_coin)*0.995, 2))
-                    if "." in transfer_amt:
-                        if len(transfer_amt.split(".")[1]) > 2:
-                            transfer_amt = transfer_amt[:-1]
-                    self.transfer_cost = str(round(float(transfer_amt)/0.995, 2))
-                    self.transfer_send = transfer_amt
-                    self.transfer_fee = str(round(float(self.transfer_cost) - float(transfer_amt), 2))
-                if transfer_amt == ".":
-                    self.transfer_amt = ""
-                else:
-                    self.transfer_amt = transfer_amt
-                if transfer_amt == "":
+            def check_transfer(self):
+                if self.transfer_amt.text not in ["", "."]:
+                    self.transfer_amt.text = self.transfer_amt.text[:12]
+                    if float(self.transfer_amt.text) > float(App.r_coin)*0.995:
+                        self.transfer_amt.text = str(round(float(App.r_coin)*0.995, 2))
+                    if "." in self.transfer_amt.text:
+                        if len(self.transfer_amt.text.split(".")[1]) > 2:
+                            self.transfer_amt.text = self.transfer_amt.text[:-1]
+                    self.transfer_cost = str(round(float(self.transfer_amt.text)/0.995, 2))
+                    self.transfer_send = self.transfer_amt.text
+                    self.transfer_fee = str(round(float(self.transfer_cost) - float(self.transfer_amt.text), 2))
+                if self.transfer_amt.text == ".":
+                    self.self.transfer_amt.text = ""
+                if self.transfer_amt.text == "":
                     self.transfer_cost = "0.00"
                     self.transfer_send = "0.00"
                     self.transfer_fee = "0.00"
 
             def transfer_coins(self):
-                if self.transfer_amt == "":
+                if self.transfer_amt.text == "":
                     error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
                 elif len(self.transfer_uid.text) < 8:
                     error_popup("Invalid Username/UID For Transfer")
                 elif self.transfer_uid.text == App.uid or self.transfer_uid.text == App.uname:
                     error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
-                elif float(self.transfer_amt) < 3:
+                elif float(self.transfer_amt.text) < 3:
                     error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
-                elif float(self.transfer_amt) > float(App.r_coin)*0.995:
+                elif float(self.transfer_amt.text) > float(App.r_coin)*0.995:
                     error_popup("Insufficient funds For Transfer")
                 else:
                     #App.popup_text = f"Send {self.transfer_uid.text} R to {self.transfer_send}\n" \
                     #                 f"Fee: {self.transfer_fee}\nTotal Cost: {self.transfer_cost}"
                     #App.popup = Factory.TransferConfirmPopup()
                     #App.popup.open()
-                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt}")
+                    s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
                     if s.recv_d(1024) == "V":
-                        success_popup(f"Transfer of {self.transfer_amt} R to "
+                        success_popup(f"Transfer of {self.transfer_amt.text} R to "
                                       f"{self.transfer_uid.text} Successful")
-                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt)/0.995, 2))
+                        self.add_transaction(f"Sent [color=f46f0eff]{self.transfer_amt.text} R[/color] "
+                                             f"to {self.transfer_uid.text}")
+                        App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
                         if App.r_coin.endswith(".0"):
                             App.r_coin = App.r_coin[:-2]
                         self.r_coins = App.r_coin+" R"
                         self.transfer_uid.text = ""
-                        self.transfer_amt = ""
+                        self.transfer_amt.text = ""
                     else:
                         error_popup("Invalid Username/UID For Transfer")
 
@@ -1005,10 +1004,7 @@ while True:
 
             def on_pre_enter(self, *args):
                 self.reload_text = App.reload_text
-            pass
 
-        class WindowManager(ScreenManager):
-            pass
 
         class App(KivyApp):
             def build(self):
@@ -1079,13 +1075,7 @@ while True:
                         App.col[color_name] = color
 
                 App.t_and_c = rdisc_kv.t_and_c()
-                #App.uid = None  # user id
-                #App.uname = None  # username
-                #App.ipk = None  # ip key
-                #App.pass_code = None
-                #App.pin_code = None
-                #App.acc_key = None
-                #App.xp = None
+                App.uname = None  # username
                 App.transactions = []
                 App.popup = None
                 App.reload_text = ""
@@ -1093,7 +1083,7 @@ while True:
 
                 # app defaults and window manager
                 Builder.load_file("rdisc.kv")
-                App.sm = WindowManager()
+                App.sm = ScreenManager()
                 [App.sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"),
                  IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"),
                  CreateKey(name="CreateKey"), UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"),
@@ -1138,8 +1128,6 @@ while True:
                 App.reload_text = "Rdisc crashed, reloading..."
                 if s.ip:
                     s.s.close()
-            #if reason == "crash_loop":
-            #    App.reload_text = "Rdisc crashed and was unable to reload."
             App.sm.current = "Reloading"
             Builder.unload_file("rdisc.kv")
             while len(App.sm.screens) > 2:
@@ -1168,9 +1156,8 @@ while True:
         crash_num += 1
         print(f"Error {crash_num} caught: {e}")
         if crash_num == 5:
-            App.reload_text = "Crash loop detected, exiting app in 5 seconds..."
-            #reload("crash_loop")
-            sleep(5)
+            print("Crash loop detected, exiting app in 3 seconds...")
+            sleep(3)
             break
         else:
             reload("crash")

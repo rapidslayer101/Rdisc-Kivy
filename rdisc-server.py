@@ -5,7 +5,8 @@ from time import sleep
 from datetime import datetime, timedelta
 from rsa import PublicKey, encrypt
 from zlib import error as zl_error
-from os import listdir, path
+from os import listdir, path, mkdir
+from csv import writer, reader
 from threading import Thread
 from random import choices, randint
 from requests import get
@@ -17,6 +18,10 @@ from captcha.image import ImageCaptcha
 
 class InvalidClientData(Exception):
     pass
+
+
+if not path.exists('users'):
+    mkdir('users')
 
 
 class Users:
@@ -55,6 +60,14 @@ class Users:
                         enc.pass_to_key(master_key, user_id), secret, user_pass, ip_key+"🱫"+expiry_time, None,
                         None, None, username, now, 0, 0, 350))
         self.db.commit()
+        mkdir(f"users/{user_id}")
+        with open(f"users/{user_id}/friends.csv", 'w') as f:
+            f.write("")
+        with open(f"users/{user_id}/transactions.csv", "w", newline='', encoding="utf-8") as csv:
+            writer(csv).writerows([["Date", "Type", "Amount", "Spent", "Description", "Hash"],
+                                  [str(datetime.now())[:-7], "NACD", "350", "0",
+                                  "New account 350 D bonus", enc.pass_to_key(f"{str(datetime.now())[:-7]}"
+                                   "NACD3500New account 350 D bonus", user_id)]])
 
     def check_logged_in(self, uid, ip):
         if uid in self.logged_in_users:
@@ -63,6 +76,15 @@ class Users:
             return True
         else:
             return False
+
+
+def add_transaction(uid, t_type, amount, spent, desc):
+    with open(f"users/{uid}/transactions.csv", "r", encoding="utf-8") as csv:
+        prev_hash = list(reader(csv))[-1][5]
+    with open(f"users/{uid}/transactions.csv", "a", newline='', encoding="utf-8") as csv:
+        writer(csv).writerow([str(datetime.now())[:-7], t_type, amount, spent, desc,
+                              enc.pass_to_key(f"{str(datetime.now())[:-7]}{t_type}{amount}{spent}{desc}",
+                                              prev_hash)])
 
 
 users = Users()
@@ -326,6 +348,7 @@ def client_connection(cs):
                             except sqlite3.IntegrityError:
                                 pass
                         users.db.commit()
+                        add_transaction(uid, "BGC", amount, amount, f"Code: {code}")
                         send_e(f"{code[:4]}-{code[4:8]}-{code[8:12]}-{code[12:]}")
                     else:
                         raise InvalidClientData
@@ -340,10 +363,11 @@ def client_connection(cs):
                 if amount in [15, 35, 50, 100, 210]:
                     if r_coin >= amount:
                         r_coin = round(r_coin-amount, 2)
+                        d_coin_amt = {15: 150, 35: 375, 50: 550, 100: 1150, 210: 2500}.get(amount)
                         users.db.execute("UPDATE users SET r_coin = ?, d_coin = ? WHERE user_id = ?",
-                                         (r_coin, d_coin+{15: 150, 35: 375, 50: 550, 100: 1150, 210: 2500}.get(amount),
-                                          uid))
+                                         (r_coin, d_coin+d_coin_amt, uid))
                         users.db.commit()
+                        add_transaction(uid, "BUYD", d_coin_amt, amount, "Bought d_coin")
                         send_e("V")
                     else:
                         raise InvalidClientData
@@ -371,6 +395,7 @@ def client_connection(cs):
                                 users.db.execute("UPDATE users SET username = ?, d_coin = ? WHERE user_id = ?",
                                                  (n_u_name_i, d_coin, uid))
                                 users.db.commit()
+                                add_transaction(uid, "CUN", 0, 5, f"Changed u_name to {n_u_name_i}")
                                 send_e(n_u_name_i)
                                 break
                         except sqlite3.OperationalError:
@@ -387,18 +412,31 @@ def client_connection(cs):
                     raise InvalidClientData
                 if transfer_to == uid:
                     raise InvalidClientData
-                try:  # todo what if the user is already logged in, resolve username to UID
-                    transfer_to_r_coin = users.db.execute("SELECT r_coin FROM users WHERE user_id = ?",
+                try:
+                    transfer_to_r_coin = users.db.execute("SELECT r_coin FROM users WHERE username = ?",
                                                           (transfer_to,)).fetchone()[0]
-                    r_coin = round(float(r_coin)-float(transfer_amount)/0.995, 2)
-                    users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?",
-                                     (r_coin, uid))
-                    users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?",
-                                     (float(transfer_to_r_coin)+float(transfer_amount), transfer_to))
+                    r_coin = round(float(r_coin) - float(transfer_amount) / 0.995, 2)
+                    users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?", (r_coin, uid))
+                    users.db.execute("UPDATE users SET r_coin = ? WHERE username = ?",
+                                     (float(transfer_to_r_coin) + float(transfer_amount), transfer_to))
                     users.db.commit()
+                    add_transaction(uid, "TRF", float(transfer_amount)/0.995, float(transfer_amount),
+                                    f"Transferred to {transfer_to}")
                     send_e("V")
                 except TypeError:
-                    send_e("N")  # user not exist
+                    try:  # todo what if the user is already logged in, resolve username to UID
+                        transfer_to_r_coin = users.db.execute("SELECT r_coin FROM users WHERE user_id = ?",
+                                                              (transfer_to,)).fetchone()[0]
+                        r_coin = round(float(r_coin)-float(transfer_amount)/0.995, 2)
+                        users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?", (r_coin, uid))
+                        users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?",
+                                         (float(transfer_to_r_coin)+float(transfer_amount), transfer_to))
+                        users.db.commit()
+                        add_transaction(uid, "TRF", float(transfer_amount)/0.995, float(transfer_amount),
+                                        f"Transferred to {transfer_to}")
+                        send_e("V")
+                    except TypeError:
+                        send_e("N")  # user not exist
 
             if request.startswith("CLM:"):  # claim code
                 code = request[4:].replace("-", "")
@@ -410,6 +448,7 @@ def client_connection(cs):
                         r_coin = round(r_coin+float(code_data[4]), 2)
                         users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?", (r_coin, uid))
                         users.db.commit()
+                        add_transaction(uid, "CLM", float(code_data[4]), 0, f"Claimed code: {code}")
                         send_e(f"R:{code_data[4]}")
                     if code_data[2] == "1":
                         users.db.execute("DELETE FROM codes WHERE code = ?", (code,))

@@ -459,6 +459,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
 
 <Captcha>:
+    captcha_inp: captcha_inp
     GreyFloatLayout:
         Label:
             text: root.captcha_prompt_text
@@ -469,9 +470,10 @@ kv_payload = """# You can edit this file to change the UI.
             source: 'resources/blank_captcha.jpg'
             pos_hint: {"x": 0, "top": 1.15}
         RoundedTextInput:
+            id: captcha_inp
             pos_hint: {"x": 0.35, "top": 0.5}
             on_text: self.text = self.text[:10].upper()
-            on_text_validate: root.try_captcha(self.text)
+            on_text_validate: root.try_captcha()
         RoundedButton:
             text: "Next"
             pos_hint: {"x": 0.35, "top": 0.35}
@@ -663,6 +665,7 @@ kv_payload = """# You can edit this file to change the UI.
             
 <Home>:
     transfer_uid: transfer_uid
+    transfer_amt: transfer_amt
     code: code
     GreyFloatLayout:
         HomeButton:
@@ -711,7 +714,7 @@ kv_payload = """# You can edit this file to change the UI.
             hint_text: "0.00"
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.07, "top": 0.67}
-            on_text: root.check_transfer(self.text)
+            on_text: root.check_transfer()
         Label:
             text: f"Cost: {root.transfer_cost}R"
             size_hint: 0.1, 0.1
@@ -776,7 +779,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.69, "top": 0.83}
             canvas.before:
                 Color:
-                    rgba: app.col['bk_grey_2']
+                    rgba: app.col['link_blue']
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
@@ -797,7 +800,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.32, 0.66
             pos_hint: {"x": 0.67, "top": 0.68}
         SizeLabel:
-            text: "Transaction History"
+            text: "Transaction History (This session)"
             pos_hint: {"x": 0.78, "top": 0.66}
         ScrollView:
             id: transactions_scroll
@@ -805,7 +808,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.67, "top": 0.59}
             scroll_type: ['bars']
             FloatLayout:
-                id: transactions
+                id: transactions.csv
                 canvas.before:
                     Color:
                         rgba: app.col['bk_grey_2']

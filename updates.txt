@@ -54,13 +54,14 @@
 0.54 invalid action popups, fixed Rdisc distro popup problems
 0.55 reloads, crash handling and coloring backend
 0.56 gift card and d_coin buying, color editing, color-blind modes
-
 0.57 code claiming, transaction history with xp leveling
 
-0.58 coinflip, public chat room, user pass changing
-0.59 friending and friends list, client misinformation logging
-0.60 scratch cards and inventory items support
-0.61 direct messaging
+0.58 coinflip, user pass changing, data hiding improvements
+
+0.59 public chat room, client misinformation logging
+0.60 friending and friends list
+0.61 scratch cards and inventory items support
+0.62 direct messaging
 
 known issues:
 - captcha does not update sometimes (not confirmed)
