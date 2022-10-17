@@ -989,6 +989,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.7}
             
 <Settings>:
+    uname_to: uname_to
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -1016,11 +1017,12 @@ kv_payload = """# You can edit this file to change the UI.
             text: f"Name:"
             pos_hint: {"x": -0.01, "top": 0.82}
         RoundedTextInput:
+            id: uname_to
             text: root.uname[:-4]
             size_hint: 0.14, 0.05
             pos_hint: {"x": 0.08, "top": 0.82}
             on_text: self.text = self.text.replace("  ", " ").replace("#", "")[:24]
-            on_text_validate: root.change_name(self.text)
+            on_text_validate: root.change_name()
         RoundedButton:
             text: "Change"
             size_hint: 0.05, 0.05

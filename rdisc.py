@@ -794,6 +794,7 @@ while True:
             d_coins = StringProperty()
             uname = StringProperty()
             uid = StringProperty()
+            uname_to = ObjectProperty(None)
 
             def on_pre_enter(self, *args):
                 self.r_coins = App.r_coin+" R"
@@ -801,11 +802,11 @@ while True:
                 self.uname = App.uname
                 self.uid = App.uid
 
-            def change_name(self, uname_to):
+            def change_name(self):
                 if float(App.d_coin) < 5:
                     error_popup("Insufficient Funds\n- You require 5 D to change your username")
-                elif 4 < len(uname_to) < 25:
-                    s.send_e(f"CUN:{uname_to}")
+                elif 4 < len(self.uname_to.text) < 25:
+                    s.send_e(f"CUN:{self.uname_to.text}")
                     new_uname = s.recv_d(1024)
                     if new_uname != "N":
                         App.uname = new_uname
