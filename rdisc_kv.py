@@ -1065,7 +1065,7 @@ kv_payload = """# You can edit this file to change the UI.
 <ColorSettings>:
     GreyFloatLayout:
         Button:
-            text: "<< Back"
+            text: "<< Settings"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press: root.manager.current = 'Settings'
@@ -1376,7 +1376,7 @@ kv_payload = """# You can edit this file to change the UI.
 <GiftCards>:
     GreyFloatLayout:
         Button:
-            text: "<< Back"
+            text: "<< Store"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press: root.manager.current = 'Store'
@@ -1429,11 +1429,16 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.73, "top": 0.41}
         GiftCardAsyncImage:
             pos_hint: {"x": 0.67, "top": 0.36}
+
+
+<DataCoinAsyncImage@AsyncImage>:
+    source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
+    size_hint: 0.21, 0.33
             
 <DataCoins>:
     GreyFloatLayout:
         Button:
-            text: "<< Back"
+            text: "<< Store"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press: root.manager.current = 'Store'
@@ -1449,9 +1454,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "150 D - 15 R"
             font_size: "20dp"
             pos_hint: {"x": 0.31, "top": 0.85}
-        AsyncImage:
-            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
-            size_hint: 0.21, 0.33
+        DataCoinAsyncImage:
             pos_hint: {"x": 0.26, "top": 0.8}
         RoundedBackingButton:
             size_hint: 0.27, 0.42
@@ -1461,9 +1464,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "375 D - 35 R"
             font_size: "20dp"
             pos_hint: {"x": 0.59, "top": 0.85}
-        AsyncImage:
-            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
-            size_hint: 0.21, 0.33
+        DataCoinAsyncImage:
             pos_hint: {"x": 0.54, "top": 0.8}
         RoundedBackingButton:
             size_hint: 0.27, 0.42
@@ -1473,9 +1474,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "550 D - 50 R"
             font_size: "20dp"
             pos_hint: {"x": 0.17, "top": 0.41}
-        AsyncImage:
-            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
-            size_hint: 0.21, 0.33
+        DataCoinAsyncImage:
             pos_hint: {"x": 0.12, "top": 0.36}
         RoundedBackingButton:
             size_hint: 0.27, 0.42
@@ -1485,9 +1484,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "1150  D - 100 R"
             font_size: "20dp"
             pos_hint: {"x": 0.45, "top": 0.41}
-        AsyncImage:
-            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
-            size_hint: 0.21, 0.33
+        DataCoinAsyncImage:
             pos_hint: {"x": 0.4, "top": 0.36}
         RoundedBackingButton:
             size_hint: 0.27, 0.42
@@ -1497,15 +1494,13 @@ kv_payload = """# You can edit this file to change the UI.
             text: "2500 D - 210 R"
             font_size: "20dp"
             pos_hint: {"x": 0.73, "top": 0.41}
-        AsyncImage:
-            source: "http://getdrawings.com/free-icon/database-icon-png-55.png"
-            size_hint: 0.21, 0.33
+        DataCoinAsyncImage:
             pos_hint: {"x": 0.68, "top": 0.36}
             
 <Coinflip>:
     GreyFloatLayout:
         Button:
-            text: "<< Back"
+            text: "<< Games"
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0, "top": 1}
             on_press: root.manager.current = 'Games'
@@ -1513,6 +1508,25 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.r_coins
         D_coin_label:
             text: root.d_coins
+        BackingLabel:
+            size_hint: 0.5, 0.9
+            pos_hint: {"x": 0.25, "top": 0.95}
+        Label:
+            text: "Coinflip"
+            font_size: "30dp"
+            pos_hint: {"x": 0, "top": 1.38}
+        AsyncImage:
+            id: coin
+            source: "https://steemitimages.com/p/USgKopgPm9jPY4YbQin2X7oZs7S8LWDhCfcBC4TeVAm5M4ban2qbokU48AqWFegJYh52KqNLCikjxNnMZYgf3K?format=match&mode=fit"
+            allow_stretch: True
+            size_hint: 0.3, 0.3
+            pos_hint: {"x": 0.35, "top": 0.75}
+            anim_delay: -1
+        RoundedButton:
+            text: "Flip"
+            size_hint: 0.2, 0.1
+            pos_hint: {"x": 0.4, "top": 0.3}
+            on_press: root.run_flip()
             
 <Reloading>
     GreyFloatLayout:

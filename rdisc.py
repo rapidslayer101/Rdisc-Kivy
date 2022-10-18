@@ -4,13 +4,10 @@ from base64 import b32encode
 from datetime import datetime
 from hashlib import sha512
 from os import path, mkdir, listdir
-from random import choices
-from random import randint, uniform
+from random import randint, uniform, choices
 from socket import socket
-from sys import platform
 from threading import Thread
-from time import perf_counter
-from time import sleep
+from time import perf_counter, sleep
 from zlib import error as zl_error
 
 from kivy.app import App as KivyApp
@@ -22,6 +19,7 @@ from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.graphics import Color, RoundedRectangle
+from kivy.utils import platform, get_color_from_hex as rgb
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -66,6 +64,11 @@ while True:
 
         default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=" \
                        "G-;|&&rR81!BTElChN|+\"TCM'CNJ+ws@ZQ~7[:¬`-OC8)JCTtI¬k<i#.\"H4tq)p4"
+
+        def color_canvas(self, color):
+            with self.canvas:
+                Color(*color)
+                self.rect = RoundedRectangle(size=self.size, pos=self.pos, radius=[10])
 
 
         class Server:
@@ -277,7 +280,7 @@ while True:
                     if confirmation_code == "":
                         error_popup("Confirmation Empty")
                     elif confirmation_code == self.rand_confirmation:
-                        if platform in ["win32", "linux"]:
+                        if platform in ["win", "linux"]:
                             App.sm.switch_to(UsbSetup(), direction="left")
                         else:
                             App.sm.switch_to(Captcha(), direction="left")
@@ -839,76 +842,7 @@ while True:
                     color = [round(rgb, 5) for rgb in self.ids.color_picker.color]
                 if self.selected_color is not None:
                     App.col[self.selected_color] = color
-                    if self.selected_color == "rdisc_purple":
-                        with self.ids.rdisc_purple_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_purple_btn.pos,
-                                             size=self.ids.rdisc_purple_btn.size, radius=[10])
-                    if self.selected_color == "rdisc_purple_dark":
-                        with self.ids.rdisc_purple_dark_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_purple_dark_btn.pos,
-                                             size=self.ids.rdisc_purple_dark_btn.size, radius=[10])
-                    if self.selected_color == "rdisc_cyan":
-                        with self.ids.rdisc_cyan_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.rdisc_cyan_btn.pos,
-                                             size=self.ids.rdisc_cyan_btn.size, radius=[10])
-                    if self.selected_color == "rcoin_orange":
-                        with self.ids.rcoin_orange_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.rcoin_orange_btn.pos,
-                                             size=self.ids.rcoin_orange_btn.size, radius=[10])
-                    if self.selected_color == "dcoin_blue":
-                        with self.ids.dcoin_blue_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.dcoin_blue_btn.pos,
-                                             size=self.ids.dcoin_blue_btn.size, radius=[10])
-                    if self.selected_color == "link_blue":
-                        with self.ids.link_blue_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.link_blue_btn.pos,
-                                             size=self.ids.link_blue_btn.size, radius=[10])
-                    if self.selected_color == "green":
-                        with self.ids.green_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.green_btn.pos,
-                                             size=self.ids.green_btn.size, radius=[10])
-                    if self.selected_color == "yellow":
-                        with self.ids.yellow_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.yellow_btn.pos,
-                                             size=self.ids.yellow_btn.size, radius=[10])
-                    if self.selected_color == "orange":
-                        with self.ids.orange_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.orange_btn.pos,
-                                             size=self.ids.orange_btn.size, radius=[10])
-                    if self.selected_color == "red":
-                        with self.ids.red_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.red_btn.pos,
-                                             size=self.ids.red_btn.size, radius=[10])
-                    if self.selected_color == "grey":
-                        with self.ids.grey_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.grey_btn.pos,
-                                             size=self.ids.grey_btn.size, radius=[10])
-                    if self.selected_color == "bk_grey_1":
-                        with self.ids.bk_grey_1_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.bk_grey_1_btn.pos,
-                                             size=self.ids.bk_grey_1_btn.size, radius=[10])
-                    if self.selected_color == "bk_grey_2":
-                        with self.ids.bk_grey_2_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.bk_grey_2_btn.pos,
-                                             size=self.ids.bk_grey_2_btn.size, radius=[10])
-                    if self.selected_color == "bk_grey_3":
-                        with self.ids.bk_grey_3_btn.canvas:
-                            Color(*color)
-                            RoundedRectangle(pos=self.ids.bk_grey_3_btn.pos,
-                                             size=self.ids.bk_grey_3_btn.size, radius=[10])
+                    color_canvas(self.ids[self.selected_color+"_btn"], color)
 
             def reset_colors(self, color=None):
                 if self.selected_color:
@@ -928,7 +862,10 @@ while True:
                 with open("color_scheme.txt", "w", encoding="utf-8") as f:
                     f.write(f"# CUSTOM COLOR SCHEME #\n")
                     for color in App.col:
-                        f.write(f"{color}: {[round(rgb, 5) for rgb in App.col[color]]}\n")
+                        hex_color = " #"
+                        for rgb1 in App.col[color]:
+                            hex_color += hex(int(rgb1*255))[2:].zfill(2)
+                        f.write(f"{color}:{hex_color}\n")
 
             def default_theme(self, theme):
                 if theme in ["purple", "pink", "green", "lime"]:
@@ -998,6 +935,20 @@ while True:
                 self.d_coins = App.d_coin+" D"
                 # request coinflip data
 
+            def flip(self):
+                self.ids.coin.anim_delay = 0.05
+                if randint(0, 1) == 1:
+                    print("yes")
+                else:
+                    print("no")
+                #for i in range(1, 65):
+                #    self.ids.coin.anim_delay = i*0.0015
+                #    print(i*0.002)
+                #    sleep(0.1)
+                #self.ids.coin.anim_delay = -1
+
+            def run_flip(self):
+                Thread(target=self.flip).start()
 
         class Reloading(Screen):
             reload_text = StringProperty()
@@ -1005,74 +956,42 @@ while True:
             def on_pre_enter(self, *args):
                 self.reload_text = App.reload_text
 
-
         class App(KivyApp):
             def build(self):
-                App.col = {"rdisc_purple": [104/255, 84/255, 252/255, 1],
-                           "rdisc_purple_dark": [104/255, 73/255, 160/255, 1],
-                           "rdisc_cyan": [37/255, 190/255, 150/255, 1],
-                           "rcoin_orange": [245/255, 112/255, 15/255, 1],
-                           "dcoin_blue": [22/255, 194/255, 225/255, 1],
-                           "link_blue": [80/255, 154/255, 228/255, 1],
-                           "green": [20/255, 228/255, 43/255, 1],
-                           "yellow": [243/255, 240/255, 51/255, 1],
-                           "orange": [243/255, 132/255, 1/255, 1],
-                           "red": [251/255, 30/255, 5/255, 1],
-                           "grey": [60/255, 60/255, 50/255, 1],
-                           "bk_grey_1": [50/255, 50/255, 50/255, 1],
-                           "bk_grey_2": [55/255, 55/255, 55/255, 1],
-                           "bk_grey_3": [60/255, 60/255, 60/255, 1]}
+                App.col = {"rdisc_purple": rgb("#6753fcff"), "rdisc_purple_dark": rgb("#6748a0ff"),
+                           "rdisc_cyan": rgb("#25be96ff"), "rcoin_orange": rgb("#f56f0eff"),
+                           "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
+                           "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"), "orange": rgb("#f38401ff"),
+                           "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                           "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}
                 App.theme = {"purple": App.col.copy()}
-                App.theme.update({"green": {"rdisc_purple": [0.0, 0.62745, 0.44314, 1.0],
-                                            "rdisc_purple_dark": [0.40057, 0.55773, 0.21835, 1.0],
-                                            "rdisc_cyan": [0.1451, 0.7451, 0.26237, 1],
-                                            "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
-                                            "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
-                                            "link_blue": [0.31373, 0.60392, 0.89412, 1],
-                                            "green": [0.07843, 0.89412, 0.16863, 1],
-                                            "yellow": [0.95294, 0.94118, 0.2, 1],
-                                            "orange": [0.95294, 0.51765, 0.00392, 1],
-                                            "red": [0.98431, 0.11765, 0.01961, 1],
-                                            "grey": [0.23529, 0.23529, 0.19608, 1],
-                                            "bk_grey_1": [0.19608, 0.19608, 0.19608, 1],
-                                            "bk_grey_2": [0.21569, 0.21569, 0.21569, 1],
-                                            "bk_grey_3": [0.23529, 0.23529, 0.23529, 1]}})
-                App.theme.update({"pink": {"rdisc_purple": [1.0, 0.27843, 0.44706, 1.0],
-                                           "rdisc_purple_dark": [1.0, 0.42353, 0.44314, 1.0],
-                                           "rdisc_cyan": [0.7687, 0.4043, 0.69965, 1],
-                                           "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
-                                           "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
-                                           "link_blue": [0.31373, 0.60392, 0.89412, 1],
-                                           "green": [0.07843, 0.89412, 0.16863, 1],
-                                           "yellow": [0.95294, 0.94118, 0.2, 1],
-                                           "orange": [0.95294, 0.51765, 0.00392, 1],
-                                           "red": [0.98431, 0.11765, 0.01961, 1],
-                                           "grey": [0.23529, 0.23529, 0.19608, 1],
-                                           "bk_grey_1": [0.19608, 0.19608, 0.19608, 1],
-                                           "bk_grey_2": [0.21569, 0.21569, 0.21569, 1],
-                                           "bk_grey_3": [0.23529, 0.23529, 0.23529, 1]}})
-                App.theme.update({"lime": {"rdisc_purple": [0.60358, 0.75294, 0.22389, 1.0],
-                                           "rdisc_purple_dark": [0.6, 0.53088, 0.22353, 1.0],
-                                           "rdisc_cyan": [0.8761, 0.73725, 0.2231, 1.0],
-                                           "rcoin_orange": [0.96078, 0.43922, 0.05882, 1],
-                                           "dcoin_blue": [0.08627, 0.76078, 0.88235, 1],
-                                           "link_blue": [0.31373, 0.60392, 0.89412, 1],
-                                           "green": [0.07843, 0.89412, 0.16863, 1],
-                                           "yellow": [0.95294, 0.94118, 0.2, 1],
-                                           "orange": [0.95294, 0.51765, 0.00392, 1],
-                                           "red": [0.98431, 0.11765, 0.01961, 1],
-                                           "grey": [0.23529, 0.23529, 0.19608, 1],
-                                           "bk_grey_1": [0.19608, 0.19608, 0.19608, 1],
-                                           "bk_grey_2": [0.21569, 0.21569, 0.21569, 1],
-                                           "bk_grey_3": [0.23529, 0.23529, 0.23529, 1]}})
+                App.theme.update({"pink": {"rdisc_purple": rgb("#ff4772ff"), "rdisc_purple_dark": rgb("#ff6d71ff"),
+                                           "rdisc_cyan": rgb("#c467b2ff"), "rcoin_orange": rgb("#f56f0eff"),
+                                           "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
+                                           "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
+                                           "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"),
+                                           "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                                           "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
+                App.theme.update({"green": {"rdisc_purple": rgb("#009f70ff"), "rdisc_purple_dark": rgb("#658e37ff"),
+                                            "rdisc_cyan": rgb("#25be42ff"), "rcoin_orange": rgb("#f56f0eff"),
+                                            "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
+                                            "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
+                                            "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"),
+                                            "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                                            "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
+                App.theme.update({"lime": {"rdisc_purple": rgb("#99bf38ff"), "rdisc_purple_dark": rgb("#998739ff"),
+                                           "rdisc_cyan": rgb("#dfbb38ff"), "rcoin_orange": rgb("#f56f0eff"),
+                                           "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
+                                           "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
+                                           "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"),
+                                           "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                                           "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
 
                 if path.exists("color_scheme.txt"):
                     with open("color_scheme.txt", encoding="utf-8") as f:
-                        color_scheme = f.readlines()[1:]
-                    for color in color_scheme:
-                        color_name, color = color.replace("\n", "").split(": ")
-                        color = [float(cl) for cl in color[1:-1].split(", ")]
-                        App.col[color_name] = color
+                        for color in f.readlines()[1:]:
+                            color_name, color = color.replace("\n", "").split(": ")
+                            App.col[color_name] = rgb(color)
 
                 App.t_and_c = rdisc_kv.t_and_c()
                 App.uname = None  # username
@@ -1101,7 +1020,7 @@ while True:
                 else:
                     App.title = [file for file in listdir('app') if
                                  file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
-                if platform in ["win32", "linux"]:
+                if platform in ["win", "linux"]:
                     Window.size = (1264, 681)
 
                 Window.bind(on_keyboard=on_keyboard)
