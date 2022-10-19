@@ -808,7 +808,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.67, "top": 0.59}
             scroll_type: ['bars']
             FloatLayout:
-                id: transactions.csv
+                id: transactions
                 canvas.before:
                     Color:
                         rgba: app.col['bk_grey_2']
@@ -1451,7 +1451,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.23, "top": 0.89}
             on_press: root.buy_d(15)
         SizeLabel:
-            text: "150 D - 15 R"
+            text: "15 R -> 150 D"
             font_size: "20dp"
             pos_hint: {"x": 0.31, "top": 0.85}
         DataCoinAsyncImage:
@@ -1461,7 +1461,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.51, "top": 0.89}
             on_press: root.buy_d(35)
         SizeLabel:
-            text: "375 D - 35 R"
+            text: "35 R -> 375 D"
             font_size: "20dp"
             pos_hint: {"x": 0.59, "top": 0.85}
         DataCoinAsyncImage:
@@ -1471,7 +1471,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.09, "top": 0.45}
             on_press: root.buy_d(50)
         SizeLabel:
-            text: "550 D - 50 R"
+            text: "50 R -> 550 D"
             font_size: "20dp"
             pos_hint: {"x": 0.17, "top": 0.41}
         DataCoinAsyncImage:
@@ -1481,7 +1481,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.37, "top": 0.45}
             on_press: root.buy_d(100)
         SizeLabel:
-            text: "1150  D - 100 R"
+            text: "100 R -> 1150 D"
             font_size: "20dp"
             pos_hint: {"x": 0.45, "top": 0.41}
         DataCoinAsyncImage:
@@ -1491,7 +1491,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.65, "top": 0.45}
             on_press: root.buy_d(210)
         SizeLabel:
-            text: "2500 D - 210 R"
+            text: "210 R -> 2500 D"
             font_size: "20dp"
             pos_hint: {"x": 0.73, "top": 0.41}
         DataCoinAsyncImage:
