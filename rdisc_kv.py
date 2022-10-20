@@ -274,15 +274,17 @@ kv_payload = """# You can edit this file to change the UI.
                 root.manager.transition.direction = "left"
 
 <KeyUnlock>:
+    pwd: pwd
     GreyFloatLayout:
         SizeLabel:
             text: root.passcode_prompt_text
             pos_hint: {"x": 0.45, "top": 0.75}
         RoundedTextInput:
+            id: pwd
             hint_text: "Password"
             password: True
             pos_hint: {"x": 0.35, "top": 0.65}
-            on_text_validate: root.login(self.text)
+            on_text_validate: root.login()
         RoundedButton:
             text: "LOGIN"
             pos_hint: {"x": 0.35, "top": 0.5}
@@ -538,15 +540,17 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.8}
                     
 <LogUnlock>:
+    pwd: pwd
     GreyFloatLayout:
         Label:
             text: root.passcode_prompt_text
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         RoundedTextInput:
+            id: pwd
             password: True
             pos_hint: {"x": 0.35, "top": 0.65}
-            on_text_validate: root.login(self.text)
+            on_text_validate: root.login()
         RoundedButton:
             text: "LOGIN"
             pos_hint: {"x": 0.35, "top": 0.5}

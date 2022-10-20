@@ -32,15 +32,15 @@ elif path.exists("rdisc.py"):
 else:
     app_hash = f"Unknown distro: {platform}"
 
-version_ = None
+version = None
 if path.exists("sha.txt"):
     rdisc_kv.kv()
     with open("sha.txt", "r", encoding="utf-8") as f:
-        latest_sha_, version_, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
-    print("prev", version_, tme_, bld_num_, run_num_)
-    release_major, major, build, run = version_.replace("V", "").split(".")
+        latest_sha_, version, tme_, bld_num_, run_num_ = f.readlines()[-1].split("§")
+    print("prev", version, tme_, bld_num_, run_num_)
+    release_major, major, build, run = version.replace("V", "").split(".")
     if latest_sha_ != app_hash:
-        run = int(run) + 1
+        run = int(run)+1
         with open("sha.txt", "a+", encoding="utf-8") as f:
             f.write(f"\n{app_hash}§V{release_major}.{major}.{build}.{run}"
                     f"§TME-{str(datetime.now())[:-4].replace(' ', '_')}"
@@ -50,14 +50,7 @@ if path.exists("sha.txt"):
                   f"BLD_NM-{bld_num_[7:]} RUN_NM-{int(run_num_[7:]) + 1}")
     print(f"Running rdisc V{release_major}.{major}.{build}.{run}")
 
-default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=" \
-               "G-;|&&rR81!BTElChN|+\"TCM'CNJ+ws@ZQ~7[:¬`-OC8)JCTtI¬k<i#.\"H4tq)p4"
-
-
-def color_canvas(self, color):
-    with self.canvas:
-        Color(*color)
-        self.rect = RoundedRectangle(size=self.size, pos=self.pos, radius=[10])
+default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=G-;|&&rR81!BTElChN|+\"T"
 
 
 class Server:
@@ -116,15 +109,18 @@ def error_popup(error_reason):
     App.popup = Factory.ErrorPopup()
     App.popup.open()
 
+
 def claim_code_popup(code_text):
     App.popup_text = code_text
     App.popup = Factory.ClaimCodePopup()
     App.popup.open()
 
+
 def success_popup(success_text):
     App.popup_text = success_text
     App.popup = Factory.SuccessPopup()
     App.popup.open()
+
 
 def connect_system():
     if s.ip and s.connect():
@@ -179,16 +175,18 @@ class LogInOrSignUp(Screen):
 
 class KeyUnlock(Screen):
     passcode_prompt_text = StringProperty()
+    pwd = ObjectProperty(None)
     counter = 0
 
     def on_pre_enter(self, *args):
         self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
         if path.exists("password.txt"):  # this is for testing ONLY
             with open("password.txt", "r") as f:
-                self.login(f.read())
+                self.pwd.text = f.read()
+                self.login()
 
-    def login(self, pwd):
-        if pwd == "":
+    def login(self):
+        if self.pwd.text == "":
             self.counter += 1
             if self.counter != 3:
                 error_popup("Password Blank\n- Top tip, type something in the password box.")
@@ -196,8 +194,7 @@ class KeyUnlock(Screen):
                 error_popup("Password Blank\n- WHY IS THE BOX BLANK?")
         else:
             try:
-                user_pass = enc.pass_to_key(pwd, default_salt, 50000)
-                user_pass = enc.pass_to_key(user_pass, App.uid)
+                user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
                 ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
                 s.send_e(f"ULK:{App.uid}🱫{ipk}")
                 ulk_resp = s.recv_d(128)
@@ -205,6 +202,7 @@ class KeyUnlock(Screen):
                     error_popup("This accounts session is taken.")
                 elif ulk_resp == "N":
                     error_popup("Incorrect Password\n- How exactly did you manage to trigger this.")
+                    self.pwd.text = ""
                 else:
                     App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
                     if App.r_coin.endswith(".0"):
@@ -214,6 +212,7 @@ class KeyUnlock(Screen):
                     App.sm.switch_to(Home(), direction="left")
             except zl_error:
                 error_popup("Incorrect Password")
+                self.pwd.text = ""
 
 
 class CreateKey(Screen):
@@ -425,7 +424,6 @@ class Captcha(Screen):
                         error_popup("Username/UID does not exist")
                         App.sm.switch_to(ReCreateKey(), direction="right")
                     else:
-                        App.ipk = log_resp
                         if App.uname:
                             App.uid = s.recv_d(1024)
                         App.sm.switch_to(LogUnlock(), direction="left")
@@ -453,27 +451,29 @@ class NacPassword(Screen):
 
 
 class LogUnlock(Screen):
+    pwd = ObjectProperty(None)
     passcode_prompt_text = StringProperty()
 
     def on_pre_enter(self, *args):
         self.passcode_prompt_text = f"Enter passcode for account {App.uid}"
 
-    @staticmethod
-    def login(pwd):
-        if pwd == "":
+    def login(self):
+        if self.pwd.text == "":
             error_popup("Password Blank\n- The question is, why is it blank?")
         else:
             try:
-                user_pass = enc.pass_to_key(pwd, default_salt, 50000)
-                user_pass = enc.pass_to_key(user_pass, App.uid)
-                ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
-                s.send_e(ipk)
-                if s.recv_d(1024) == "V":
-                    App.sm.switch_to(TwoFacLog(), direction="left")
-                else:
+                user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
+                s.send_e(user_pass)
+                ipk = s.recv_d(1024)
+                if ipk == "N":
                     error_popup("Incorrect Password\n- How exactly did you manage to trigger this")
+                    self.pwd.text = ""
+                else:
+                    App.ipk = ipk
+                    App.sm.switch_to(TwoFacLog(), direction="left")
             except zl_error:
                 error_popup("Incorrect Password")
+                self.pwd.text = ""
 
 
 class TwoFacSetup(Screen):
@@ -528,7 +528,9 @@ class TwoFacLog(Screen):
         else:
             s.send_e(two_fac_confirm.replace(" ", ""))
             two_fa_valid = s.recv_d(1024)
-            if two_fa_valid != "N":
+            if two_fa_valid == "N":
+                error_popup("2FA Failed\n- Please Try Again")
+            else:
                 with open("userdata/key", "wb") as f:
                     f.write(App.uid.encode()+App.ipk)
                 App.uname, App.xp, App.r_coin, App.d_coin = two_fa_valid.split("🱫")
@@ -537,8 +539,6 @@ class TwoFacLog(Screen):
                 if App.d_coin.endswith(".0"):
                     App.d_coin = App.d_coin[:-2]
                 App.sm.switch_to(Home(), direction="left")
-            else:
-                error_popup("2FA Failed\n- Please Try Again")
 
 
 class Home(Screen):
@@ -566,9 +566,8 @@ class Home(Screen):
         App.transactions = []
 
     def add_transaction(self, transaction):
-        self.ids.transactions.add_widget(Label(text=transaction, font_size=16, color=(1, 1, 1, 1),
-                                               size_hint_y=None, height=40+transaction.count("\n")*20,
-                                               halign="left", markup=True))
+        self.ids.transactions.add_widget(Label(text=transaction, font_size=16, color=(1, 1, 1, 1), size_hint_y=None,
+                                               height=40+transaction.count("\n")*20, halign="left", markup=True))
         self.transactions_counter += 1
         if self.ids.transactions_scroll.scroll_y == 0:
             scroll_down = True
@@ -609,7 +608,7 @@ class Home(Screen):
                     self.transfer_amt.text = self.transfer_amt.text[:-1]
             self.transfer_cost = str(round(float(self.transfer_amt.text)/0.995, 2))
             self.transfer_send = self.transfer_amt.text
-            self.transfer_fee = str(round(float(self.transfer_cost) - float(self.transfer_amt.text), 2))
+            self.transfer_fee = str(round(float(self.transfer_cost)-float(self.transfer_amt.text), 2))
         if self.transfer_amt.text == ".":
             self.self.transfer_amt.text = ""
         if self.transfer_amt.text == "":
@@ -635,8 +634,7 @@ class Home(Screen):
             #App.popup.open()
             s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
             if s.recv_d(1024) == "V":
-                success_popup(f"Transfer of {self.transfer_amt.text} R to "
-                              f"{self.transfer_uid.text} Successful")
+                success_popup(f"Transfer of {self.transfer_amt.text} R to {self.transfer_uid.text} Successful")
                 self.add_transaction(f"Sent [color=f46f0eff]{self.transfer_amt.text} R[/color] "
                                      f"to {self.transfer_uid.text}")
                 App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
@@ -719,12 +717,11 @@ class Chat(Screen):
     def send_public_message(self):
         if self.public_room_inp.text != "":
             if "https://" in self.public_room_inp.text or "http://" in self.public_room_inp.text:
-                self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text,
-                                                           size_hint_y=None, height=300, anim_delay=0.05))
+                self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text, size_hint_y=None,
+                                                           height=300, anim_delay=0.05))
             else:
-                self.ids.public_chat.add_widget(Label(text=self.public_room_inp.text, font_size=16,
-                                                      color=(1, 1, 1, 1), size_hint_y=None, height=40,
-                                                      halign="left"))
+                self.ids.public_chat.add_widget(Label(text=self.public_room_inp.text, font_size=16, color=(1, 1, 1, 1),
+                                                      size_hint_y=None, height=40, halign="left"))
             #s.send_e(f"MSG:{self.public_room_inp.text}")
             self.public_room_msg_counter += 1
             if self.ids.public_room_scroll.scroll_y == 0:
@@ -828,7 +825,10 @@ class ColorSettings(Screen):
             color = [round(col, 5) for col in self.ids.color_picker.color]
         if self.selected_color is not None:
             App.col[self.selected_color] = color
-            color_canvas(self.ids[self.selected_color+"_btn"], color)
+            with self.ids[self.selected_color+"_btn"].canvas:
+                Color(*color)
+                RoundedRectangle(size=self.ids[self.selected_color+"_btn"].size,
+                                 pos=self.ids[self.selected_color+"_btn"].pos, radius=[10])
 
     def reset_colors(self, color=None):
         if self.selected_color:
@@ -1004,8 +1004,8 @@ class App(KivyApp):
          GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Coinflip(name="Coinflip"),
          Reloading(name="Reloading")]]
 
-        if version_:
-            App.title = f"Rdisc-{version_}"
+        if version:
+            App.title = f"Rdisc-{version}"
         elif path.exists("rdisc.py"):
             App.title = "Rdisc-Dev"
         else:
@@ -1076,8 +1076,11 @@ if __name__ == "__main__":
             App().run()
             break
         except Exception as e:
-            crash_num += 1
-            print(f"Error {crash_num} caught: {e}")
+            if "App.stop() missing 1 required positional argument: 'self'" in str(e):
+                print("Crash forced by user.")
+            else:
+                crash_num += 1
+                print(f"Error {crash_num} caught: {e}")
             if crash_num == 5:
                 print("Crash loop detected, exiting app in 3 seconds...")
                 sleep(3)
