@@ -4,7 +4,7 @@ from base64 import b32encode
 from datetime import datetime
 from hashlib import sha512
 from os import path, mkdir, listdir
-from random import randint, uniform, choices
+from random import randint, uniform, choice, choices
 from socket import socket
 from threading import Thread
 from time import perf_counter, sleep
@@ -18,8 +18,9 @@ from kivy.factory import Factory
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
-from kivy.graphics import Color, RoundedRectangle
+from kivy.graphics import Line, Color, RoundedRectangle
 from kivy.utils import platform, get_color_from_hex as rgb
+from kivy.uix.widget import Widget
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -879,9 +880,8 @@ class GiftCards(Screen):
             self.r_coins = App.r_coin+" R"
             success_popup(f"Successfully bought {amount} R gift card\nCode: {gift_code}\n\n"
                           f"To view this code again,\ngo to your transaction history")
-            App.transactions.append(f"Bought [color=f46f0eff]{amount} R gift card[/color] for "
-                                    f"[color=f46f0eff]{amount} R[/color]\n"
-                                    f"Code: [color=25be42ff]{gift_code}[/color]")
+            App.transactions.append(f"Bought [color=f46f0eff]{amount} R gift card[/color] for [color=f46f0eff]"
+                                    f"{amount} R[/color]\n Code: [color=25be42ff]{gift_code}[/color]")
         else:
             error_popup("Insufficient Funds\n- You require more R Coins")
 
@@ -914,7 +914,53 @@ class DataCoins(Screen):
                                         f"[color=f46f0eff]{amount} R[/color]")
 
 
-class Coinflip(Screen):
+def draw_circle(self, rotation=1):
+    #rotation *= 360
+    segments = 2
+    seg = 360/segments
+    #seg_size = 0.36
+    #seg1 = 500 * seg_size
+    #seg2 = 500 * seg_size
+    #seg = [seg1, seg2, 0]
+    with self.canvas:
+        #seg_count = 0
+        for i in range(1, segments+1):
+            Color(1.0/segments*i, 1, 1, mode="hsv")
+            #Line(circle=[self.center[0], self.center[1]+(self.center[1]/5), 125, seg[seg_count-1]+rotation,
+            #             seg[seg_count]+rotation+seg[seg_count-1]], width=15, cap="none")
+            i += rotation
+            #seg_count += 1
+            Line(circle=[self.center[0], self.center[1]+(self.center[1] / 5), 125, seg*i,
+                         seg * i + seg], width=15, cap="none")
+
+
+def draw_triangle(self):
+    with self.canvas:
+        Color(*App.col["yellow"])
+        Line(points=[self.center[0], self.center[1]-(self.center[1]/4), self.center[0]-10,
+                     self.center[1]-(self.center[1]/4)-20, self.center[0]+10, self.center[1]-(self.center[1]/4)-20,
+                     self.center[0], self.center[1]-(self.center[1]/4)], width=1.5, cap="none")
+
+
+def create_draws(result, odds):
+    while True:
+        last = 1
+        rand_int = randint(100, 200)
+        draws = []
+        for i in reversed(range(1, rand_int)):
+            draws.append(round(last-i/10*0.01, 4))
+            last = round(last-i/10*0.01, 4)
+        print(last)
+        print(last*360)
+        if result == "win":
+            if float(str(last).split(".")[1]) <= odds:
+                return draws
+        if result == "loss":
+            if float(str(last).split(".")[1]) > odds:
+                return draws
+
+
+class Spinner(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
 
@@ -922,21 +968,44 @@ class Coinflip(Screen):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
         # request coinflip data
+        draw_circle(self)
+        draw_triangle(self)
 
-    def flip(self):
-        self.ids.coin.anim_delay = 0.05
-        if randint(0, 1) == 1:
-            print("yes")
+    def canvas_update(self, color):
+        with self.ids.spin_col.canvas:
+            Color(*color)
+            RoundedRectangle(size=self.ids.spin_col.size, pos=self.ids.spin_col.pos, radius=[10])
+
+    def spin(self):
+        self.ids.spin_btn.disabled = True
+
+        if randint(0, 100) < 48:
+            outcome = True
+            circle_draws = create_draws("win", 480)
         else:
-            print("no")
-        #for i in range(1, 65):
-        #    self.ids.coin.anim_delay = i*0.0015
-        #    print(i*0.002)
-        #    sleep(0.1)
-        #self.ids.coin.anim_delay = -1
+            outcome = False
+            circle_draws = create_draws("loss", 480)
+        print(outcome)
+        for draw in circle_draws:
+            Clock.schedule_once(lambda dt: draw_circle(self, draw))
+            sleep(0.03)
+        if outcome:
+            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
+            #self.ids.spin_text.text = "[Color=#2F3D2Fff]You Won![/color]"
+            self.ids.spin_text.text = "You Won!"
+        else:
+            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
+            #self.ids.spin_text.text = "[Color=#3D332Fff]You Lost[/color]"
+            self.ids.spin_text.text = "You Lost"
+        sleep(2)
+        Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
+        Clock.schedule_once(lambda dt: draw_circle(self))
+        self.ids.spin_text.text = ""
+        self.ids.spin_btn.disabled = False
 
-    def run_flip(self):
-        Thread(target=self.flip).start()
+    def run_spinner(self):
+        Thread(target=self.spin).start()
+        draw_circle(self, 0)
 
 
 class Reloading(Screen):
@@ -949,32 +1018,28 @@ class Reloading(Screen):
 class App(KivyApp):
     def build(self):
         App.col = {"rdisc_purple": rgb("#6753fcff"), "rdisc_purple_dark": rgb("#6748a0ff"),
-                   "rdisc_cyan": rgb("#25be96ff"), "rcoin_orange": rgb("#f56f0eff"),
-                   "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
-                   "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"), "orange": rgb("#f38401ff"),
-                   "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
-                   "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}
+                   "rdisc_cyan": rgb("#25be96ff"), "rcoin_orange": rgb("#f56f0eff"), "dcoin_blue": rgb("#16c2e1ff"),
+                   "link_blue": rgb("#509ae4ff"), "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
+                   "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"),
+                   "bk_grey_1": rgb("#323232ff"), "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}
         App.theme = {"purple": App.col.copy()}
         App.theme.update({"pink": {"rdisc_purple": rgb("#ff4772ff"), "rdisc_purple_dark": rgb("#ff6d71ff"),
                                    "rdisc_cyan": rgb("#c467b2ff"), "rcoin_orange": rgb("#f56f0eff"),
                                    "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
-                                   "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
-                                   "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"),
-                                   "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                                   "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"), "orange": rgb("#f38401ff"),
+                                   "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
                                    "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
         App.theme.update({"green": {"rdisc_purple": rgb("#009f70ff"), "rdisc_purple_dark": rgb("#658e37ff"),
                                     "rdisc_cyan": rgb("#25be42ff"), "rcoin_orange": rgb("#f56f0eff"),
                                     "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
-                                    "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
-                                    "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"),
-                                    "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                                    "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"), "orange": rgb("#f38401ff"),
+                                    "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
                                     "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
         App.theme.update({"lime": {"rdisc_purple": rgb("#99bf38ff"), "rdisc_purple_dark": rgb("#998739ff"),
                                    "rdisc_cyan": rgb("#dfbb38ff"), "rcoin_orange": rgb("#f56f0eff"),
                                    "dcoin_blue": rgb("#16c2e1ff"), "link_blue": rgb("#509ae4ff"),
-                                   "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"),
-                                   "orange": rgb("#f38401ff"), "red": rgb("#fb1e05ff"),
-                                   "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
+                                   "green": rgb("#14e42bff"), "yellow": rgb("#f3ef32ff"), "orange": rgb("#f38401ff"),
+                                   "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
                                    "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
 
         if path.exists("color_scheme.txt"):
@@ -1001,7 +1066,7 @@ class App(KivyApp):
          LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
          Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
          Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
-         GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Coinflip(name="Coinflip"),
+         GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Spinner(name="Spinner"),
          Reloading(name="Reloading")]]
 
         if version:
@@ -1009,8 +1074,7 @@ class App(KivyApp):
         elif path.exists("rdisc.py"):
             App.title = "Rdisc-Dev"
         else:
-            App.title = [file for file in listdir('app') if
-                         file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
+            App.title = [file for file in listdir('app') if file.endswith('.exe')][-1][:-4].replace("rdisc", "Rdisc")
         if platform in ["win", "linux"]:
             Window.size = (1264, 681)
 
@@ -1053,7 +1117,7 @@ def reload(reason):
      LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
      Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
      Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
-     GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Coinflip(name="Coinflip")]]
+     GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Spinner(name="Spinner")]]
     if reason == "reload":
         if current_screen == "_screen0":
             current_screen = "Home"

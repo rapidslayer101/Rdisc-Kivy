@@ -56,7 +56,7 @@
 0.56 gift card and d_coin buying, color editing, color-blind modes
 0.57 code claiming, transaction history with xp leveling
 
-0.58 coinflip, user pass changing, data hiding improvements
+0.58 spin 2 win, user pass changing, data hiding improvements
 
 0.59 public chat room, client misinformation logging
 0.60 friending and friends list

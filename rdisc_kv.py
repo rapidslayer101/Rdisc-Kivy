@@ -40,7 +40,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos: self.pos
             radius: [10]
             
-<RoundedTextInput@TextInput>:
+<RoundedTxtInp@TextInput>:
     font_size: '16dp'
     multiline: False
     halign: "center"
@@ -245,7 +245,7 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: "Enter server IP address"
             pos_hint: {"x": 0.45, "top": 0.8}
-        RoundedTextInput:
+        RoundedTxtInp:
             hint_text: "0.0.0.0:1337"
             pos_hint: {"x": 0.35, "top": 0.65}
             on_text_validate: root.try_connect(self.text)
@@ -279,7 +279,7 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: root.passcode_prompt_text
             pos_hint: {"x": 0.45, "top": 0.75}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: pwd
             hint_text: "Password"
             password: True
@@ -316,7 +316,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.1, 0.05
             pos_hint: {"x": 0.45, "top": 0.51}
             on_release: Factory.TermsPopup().open()
-        RoundedTextInput:
+        RoundedTxtInp:
             pos_hint: {"x": 0.35, "top": 0.4}
             on_text: root.continue_confirmation(self.text)
         YellowLabel:
@@ -380,7 +380,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Enter Username or User ID (UID)"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.9}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: name_or_uid
             hint_text: "Username or UID"
             size_hint: 0.3, 0.05
@@ -393,7 +393,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Enter Account Key"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.7}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: pass_code
             hint_text: "Account Key"
             size_hint: 0.3, 0.05
@@ -407,7 +407,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Enter Account Pin"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.5}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: pin_code
             hint_text: "Account Pin"
             size_hint: 0.3, 0.05
@@ -471,7 +471,7 @@ kv_payload = """# You can edit this file to change the UI.
             id: captcha_image
             source: 'resources/blank_captcha.jpg'
             pos_hint: {"x": 0, "top": 1.15}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: captcha_inp
             pos_hint: {"x": 0.35, "top": 0.5}
             on_text: self.text = self.text[:10].upper()
@@ -501,7 +501,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Enter new password"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: nac_password_1
             password: True
             pos_hint: {"x": 0.35, "top": 0.7}
@@ -510,7 +510,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Repeat password"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.6}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: nac_password_2
             password: True
             pos_hint: {"x": 0.35, "top": 0.5}
@@ -546,7 +546,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: root.passcode_prompt_text
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: pwd
             password: True
             pos_hint: {"x": 0.35, "top": 0.65}
@@ -579,7 +579,7 @@ kv_payload = """# You can edit this file to change the UI.
             id: two_fac_qr
             source: 'resources/blank_qr.png'
             pos_hint: {"x": 0, "top": 1.10}
-        RoundedTextInput:
+        RoundedTxtInp:
             hint_text: "2FA code"
             size_hint: 0.3, 0.05
             pos_hint: {"x": 0.35, "top": 0.34}
@@ -607,7 +607,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Enter 2FA code"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
-        RoundedTextInput:
+        RoundedTxtInp:
             input_filter: 'int'
             pos_hint: {"x": 0.35, "top": 0.65}
             on_text: self.text = self.text[:6]
@@ -705,14 +705,14 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Transfer R-Coins"
             size_hint: 0.1, 0.1
             pos_hint: {"x": 0.12, "top": 0.92}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: transfer_uid
             hint_text: "Username or UID"
             size_hint: 0.2, 0.1
             pos_hint: {"x": 0.07, "top": 0.82}
             on_text: self.text = self.text[:28]
             on_text_validate: transfer_amt.focus = True
-        RoundedTextInput
+        RoundedTxtInp
             id: transfer_amt
             input_filter: "float"
             hint_text: "0.00"
@@ -761,7 +761,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.04, 0.04
             pos_hint: {"x": 0.62, "top": 0.15}
             on_press: root.change_transfer_direction()
-        RoundedTextInput
+        RoundedTxtInp
             input_filter: "float"
             hint_text: "0.00"
             size_hint: 0.1, 0.05
@@ -778,7 +778,6 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.78, "top": 0.9}
         Label:
             id: level_bar
-            markup: True
             size_hint: 0.29, 0.05
             pos_hint: {"x": 0.69, "top": 0.83}
             canvas.before:
@@ -827,7 +826,7 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: "Check Code"
             pos_hint: {"x": 0.12, "top": 0.29}
-        RoundedTextInput
+        RoundedTxtInp
             id: code
             hint_text: "XXXX-XXXX-XXXX-XXXX"
             size_hint: 0.2, 0.1
@@ -881,7 +880,7 @@ kv_payload = """# You can edit this file to change the UI.
                         size: self.size    
                 size_hint_y: None
                 height: root.height
-        RoundedTextInput:
+        RoundedTxtInp:
             id: public_room_inp
             size_hint: 0.4, 0.1
             pos_hint: {"x": 0.3, "top": 0.15}
@@ -952,9 +951,9 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.01, "top": 0.92}
-            on_press: root.manager.current = 'Coinflip'
+            on_press: root.manager.current = 'Spinner'
         SizeLabel:
-            text: "Coinflip"
+            text: "Spin2Win"
             pos_hint: {"x": 0.06, "top": 0.91}
         AsyncImage:
             source: "https://purepng.com/public/uploads/large/purepng.com-gold-coingoldatomic-number-79chemical-elementgroup-11-elementaurumgold-dustprecious-metalgold-coins-1701528977728s2dcq.png"
@@ -963,7 +962,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.22, "top": 0.92}
-            #on_press: root.manager.current = 'Coinflip'
+            #on_press: root.manager.current = 'Spinner'
         SizeLabel:
             text: "Crash"
             pos_hint: {"x": 0.27, "top": 0.91}
@@ -1023,7 +1022,7 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: f"Name:"
             pos_hint: {"x": -0.01, "top": 0.82}
-        RoundedTextInput:
+        RoundedTxtInp:
             id: uname_to
             text: root.uname[:-4]
             size_hint: 0.14, 0.05
@@ -1501,7 +1500,7 @@ kv_payload = """# You can edit this file to change the UI.
         DataCoinAsyncImage:
             pos_hint: {"x": 0.68, "top": 0.36}
             
-<Coinflip>:
+<Spinner>:
     GreyFloatLayout:
         Button:
             text: "<< Games"
@@ -1513,24 +1512,31 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
+            id: spin_col
             size_hint: 0.5, 0.9
             pos_hint: {"x": 0.25, "top": 0.95}
         Label:
-            text: "Coinflip"
+            text: "Spin2Win"
             font_size: "30dp"
             pos_hint: {"x": 0, "top": 1.38}
-        AsyncImage:
-            id: coin
-            source: "https://steemitimages.com/p/USgKopgPm9jPY4YbQin2X7oZs7S8LWDhCfcBC4TeVAm5M4ban2qbokU48AqWFegJYh52KqNLCikjxNnMZYgf3K?format=match&mode=fit"
-            allow_stretch: True
-            size_hint: 0.3, 0.3
-            pos_hint: {"x": 0.35, "top": 0.75}
-            anim_delay: -1
+        Label:
+            id: spin_text
+            text: ""
+            markup: True
+            font_size: "20dp"
+            pos_hint: {"x": 0, "top": 1.1}
         RoundedButton:
-            text: "Flip"
-            size_hint: 0.2, 0.1
-            pos_hint: {"x": 0.4, "top": 0.3}
-            on_press: root.run_flip()
+            id: spin_btn
+            text: "Spin"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.55, "top": 0.3}
+            on_press: root.run_spinner()
+        RoundedTxtInp:
+            id: spin_bet
+            hint_text: "Bet"
+            size_hint: 0.15, 0.1
+            pos_hint: {"x": 0.35, "top": 0.3}
+            multiline: False
             
 <Reloading>
     GreyFloatLayout:
