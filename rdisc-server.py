@@ -53,12 +53,12 @@ class Users:
         except ValueError:
             pass
 
-    def add_user(self, uid, master_key, secret, user_pass, ipk, username):
+    def add_user(self, uid, master_key, secret, u_pass, ipk, username):
         now = str(datetime.now())[:-7]
         expiry_time = str(datetime.now()+timedelta(days=14))[:-7]
         self.db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (uid, now,
-                        enc.pass_to_key(master_key, uid), enc.enc_from_key(secret, user_pass),
-                        enc.pass_to_key(user_pass, uid), ipk+"🱫"+expiry_time, None,
+                        enc.pass_to_key(master_key, uid), enc.enc_from_key(secret, u_pass),
+                        enc.pass_to_key(u_pass, uid), ipk+"🱫"+expiry_time, None,
                         None, None, username, now, 0, 0, 350))
         self.db.commit()
         mkdir(f"users/{uid}")
@@ -85,6 +85,40 @@ def add_transaction(uid, t_type, amount, spent, desc):
     with open(f"users/{uid}/transactions.csv", "a", newline='', encoding="utf-8") as csv:
         writer(csv).writerow([str(datetime.now())[:-7], t_type, amount, spent, desc,
                               enc.pass_to_key(f"{str(datetime.now())[:-7]}{t_type}{amount}{spent}{desc}", prev_hash)])
+        
+        
+def add_ipk(uid, ipk, ip):
+    ipk1, ipk2, ipk3, ipk4 = users.db.execute("SELECT ipk1, ipk2, ipk3, ipk4 FROM users WHERE user_id = ?",
+                                              (uid,)).fetchone()  # get ip keys from db
+
+    expiry_time = str(datetime.now() + timedelta(days=14))[:-7]
+    if ipk1 and ipk2 and ipk3 and ipk4:  # if 4 ip keys, replace the oldest one
+        oldest_ipk = "1"
+        oldest_ipk_d = datetime.strptime(ipk1.split("🱫")[1], "%Y-%m-%d %H:%M:%S")
+        if oldest_ipk_d > datetime.strptime(ipk2.split("🱫")[1], "%Y-%m-%d %H:%M:%S"):
+            oldest_ipk_d = datetime.strptime(ipk2.split("🱫")[1], "%Y-%m-%d %H:%M:%S")
+            oldest_ipk = "2"
+        if oldest_ipk_d > datetime.strptime(ipk3.split("🱫")[1], "%Y-%m-%d %H:%M:%S"):
+            oldest_ipk_d = datetime.strptime(ipk3.split("🱫")[1], "%Y-%m-%d %H:%M:%S")
+            oldest_ipk = "3"
+        if oldest_ipk_d > datetime.strptime(ipk4.split("🱫")[1], "%Y-%m-%d %H:%M:%S"):
+            oldest_ipk = "4"
+        users.db.execute("UPDATE users SET ipk"+oldest_ipk+" = ? WHERE user_id = ?",
+                         (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
+    else:  # save to empty ip key
+        if not ipk1:
+            users.db.execute("UPDATE users SET ipk1 = ? WHERE user_id = ?",
+                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
+        elif not ipk2:
+            users.db.execute("UPDATE users SET ipk2 = ? WHERE user_id = ?",
+                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
+        elif not ipk3:
+            users.db.execute("UPDATE users SET ipk3 = ? WHERE user_id = ?",
+                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
+        elif not ipk4:
+            users.db.execute("UPDATE users SET ipk4 = ? WHERE user_id = ?",
+                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
+    users.db.commit()
 
 
 users = Users()
@@ -171,22 +205,22 @@ def client_connection(cs):
 
                 log_or_create = recv_d(1024)
                 if log_or_create.startswith("NAC:"):  # new account
-                    master_key, user_pass = log_or_create[4:].split("🱫")
+                    master_key, u_pass = log_or_create[4:].split("🱫")
                     while True:
                         uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
                         u_name = uid+"#"+str(randint(111, 999))
                         if users.db.execute("SELECT user_id FROM users WHERE user_id = ?", (uid,)).fetchone() is None:
                             break
-                    user_secret = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdefghijklmnopqrstuvwxyz", k=8))
-                    send_e(f"{uid}🱫{user_secret}")
+                    u_secret = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdefghijklmnopqrstuvwxyz", k=8))
+                    send_e(f"{uid}🱫{u_secret}")
                     while True:
                         code_challenge = recv_d(1024)
                         if get(f"https://www.authenticatorapi.com/Validate.aspx?"
-                               f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
+                               f"Pin={code_challenge}&SecretCode={u_secret}").content == b"True":
                             ipk = enc.rand_b96_str(24)
-                            send_e(enc.enc_from_pass(ipk, user_pass[:40], user_pass[40:]))
+                            send_e(enc.enc_from_pass(ipk, u_pass[:40], u_pass[40:]))
                             send_e(f"{u_name}🱫0🱫0🱫350")
-                            users.add_user(uid, master_key, user_secret, user_pass,
+                            users.add_user(uid, master_key, u_secret, u_pass,
                                            enc.pass_to_key(ip+ipk, uid), u_name)
                             break
                         else:
@@ -196,7 +230,7 @@ def client_connection(cs):
                     master_key_c, search_for, uname_or_uid = log_or_create[4:].split("🱫")
                     if search_for == "u":
                         try:
-                            uid, master_key, user_secret, user_pass, u_name, xp, r_coin, d_coin = users.db.execute(
+                            uid, master_key, u_secret, u_pass, u_name, xp, r_coin, d_coin = users.db.execute(
                                 "SELECT user_id, master_key, secret, user_pass, username, xp, r_coin, d_coin "
                                 "FROM users WHERE username = ?", (uname_or_uid,)).fetchone()
                         except TypeError:
@@ -205,7 +239,7 @@ def client_connection(cs):
                     else:
                         try:
                             uid = uname_or_uid
-                            master_key, user_secret, user_pass, u_name, xp, r_coin, d_coin = users.db.execute(
+                            master_key, u_secret, u_pass, u_name, xp, r_coin, d_coin = users.db.execute(
                                 "SELECT master_key, secret, user_pass, username, xp, r_coin, d_coin "
                                 "FROM users WHERE user_id = ?", (uname_or_uid,)).fetchone()
                         except TypeError:
@@ -219,54 +253,23 @@ def client_connection(cs):
                             if search_for == "u":
                                 send_e(uid)
                             while True:
-                                user_pass_c = recv_d(1024)
-                                if enc.pass_to_key(user_pass_c, uid) == user_pass:
+                                u_pass_c = recv_d(1024)
+                                if enc.pass_to_key(u_pass_c, uid) == u_pass:
                                     ipk = enc.rand_b96_str(24)
-                                    send_e(enc.enc_from_pass(ipk, user_pass_c[:40], user_pass_c[40:]))
+                                    send_e(enc.enc_from_pass(ipk, u_pass_c[:40], u_pass_c[40:]))
                                     break
                                 else:
                                     send_e("N")
-                            user_secret = enc.dec_from_key(user_secret, user_pass_c)
+                            u_secret = enc.dec_from_key(u_secret, u_pass_c)
                             while True:
                                 code_challenge = recv_d(1024)
                                 if get(f"https://www.authenticatorapi.com/Validate.aspx?"
-                                       f"Pin={code_challenge}&SecretCode={user_secret}").content == b"True":
-                                    send_e(f"{u_name}🱫{xp}🱫{r_coin}🱫{d_coin}")
-                                    ipk1, ipk2, ipk3, ipk4 = users.db.execute(
-                                        "SELECT ipk1, ipk2, ipk3, ipk4 FROM users WHERE user_id = ?",
-                                        (uid,)).fetchone()  # get ip keys from db
-
-                                    expiry_time = str(datetime.now()+timedelta(days=14))[:-7]
-                                    if ipk1 and ipk2 and ipk3 and ipk4:  # if 4 ip keys, replace the oldest one
-                                        oldest_ipk = "1"
-                                        oldest_ipk_d = datetime.strptime(ipk1.split("🱫")[1], "%Y-%m-%d %H:%M:%S")
-                                        if oldest_ipk_d > datetime.strptime(ipk2.split("🱫")[1], "%Y-%m-%d %H:%M:%S"):
-                                            oldest_ipk_d = datetime.strptime(ipk2.split("🱫")[1], "%Y-%m-%d %H:%M:%S")
-                                            oldest_ipk = "2"
-                                        if oldest_ipk_d > datetime.strptime(ipk3.split("🱫")[1], "%Y-%m-%d %H:%M:%S"):
-                                            oldest_ipk_d = datetime.strptime(ipk3.split("🱫")[1], "%Y-%m-%d %H:%M:%S")
-                                            oldest_ipk = "3"
-                                        if oldest_ipk_d > datetime.strptime(ipk4.split("🱫")[1], "%Y-%m-%d %H:%M:%S"):
-                                            oldest_ipk = "4"
-                                        users.db.execute("UPDATE users SET ipk"+oldest_ipk+" = ? WHERE user_id = ?",
-                                                         (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
-                                    else:  # save to empty ip key
-                                        if not ipk1:
-                                            users.db.execute("UPDATE users SET ipk1 = ? WHERE user_id = ?",
-                                                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
-                                        elif not ipk2:
-                                            users.db.execute("UPDATE users SET ipk2 = ? WHERE user_id = ?",
-                                                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
-                                        elif not ipk3:
-                                            users.db.execute("UPDATE users SET ipk3 = ? WHERE user_id = ?",
-                                                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
-                                        elif not ipk4:
-                                            users.db.execute("UPDATE users SET ipk4 = ? WHERE user_id = ?",
-                                                             (enc.pass_to_key(ip+ipk, uid)+"🱫"+expiry_time, uid))
-                                    users.db.commit()
+                                       f"Pin={code_challenge}&SecretCode={u_secret}").content == b"True":
                                     break
                                 else:
                                     send_e("N")
+                            send_e(f"{u_name}🱫{xp}🱫{r_coin}🱫{d_coin}")
+                            add_ipk(uid, ipk, ip)
                             break
 
             elif login_request.startswith("ULK:"):
@@ -370,8 +373,38 @@ def client_connection(cs):
                 else:
                     raise InvalidClientData
 
-            if request.startswith("CUP:"):
-                print("Triggered CUP, not yet built feature")
+            if request.startswith("CUP:"):  # change user password
+                u_pass_c = request[4:]
+                if len(u_pass_c) < 9:
+                    raise InvalidClientData
+                try:
+                    u_pass, u_secret = users.db.execute("SELECT user_pass, secret FROM users WHERE user_id = ?",
+                                                        (uid,)).fetchone()
+                    if enc.pass_to_key(u_pass_c, uid) == u_pass:
+                        send_e("V")
+                    else:
+                        send_e("N")
+                    n_u_pass = recv_d(1024)
+                    u_secret = enc.dec_from_key(u_secret, u_pass_c)
+                    while True:
+                        code_challenge = recv_d(1024)
+                        if get(f"https://www.authenticatorapi.com/Validate.aspx?"
+                               f"Pin={code_challenge}&SecretCode={u_secret}").content == b"True":
+                            break
+                        else:
+                            send_e("N")
+                    print()
+                    input()
+                    # todo delete all ipks, make new, change secret encryption
+                    n_u_secret = enc.enc_from_key(u_secret, n_u_pass)
+
+                    add_ipk(uid, ipk, ip)
+                    users.db.execute("UPDATE users SET user_pass = ? WHERE user_id = ?",
+                                     (enc.pass_to_key(n_u_pass, uid), uid))
+                    users.db.commit()
+                    send_e("V")
+                except sqlite3.OperationalError:
+                    send_e("N")
 
             if request.startswith("CUN:"):  # change username
                 if d_coin >= 5:
@@ -398,7 +431,6 @@ def client_connection(cs):
                             if counter == 10:
                                 send_e("N")
                                 break
-
                 else:
                     raise InvalidClientData
 

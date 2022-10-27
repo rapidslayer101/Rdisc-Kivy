@@ -443,11 +443,15 @@ class NacPassword(Screen):
         elif len(self.nac_password_1.text) < 9:
             error_popup("Password Invalid\n- Password must be at least 9 characters")
         elif self.nac_password_1.text != self.nac_password_2.text:
-            error_popup("Password Mismatch\n- Password must be the same")
+            error_popup("Password Mismatch\n- Passwords must be the same")
         else:
             pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
-            s.send_e(f"NAC:{App.mkey}🱫{pass_send}")
-            App.sm.switch_to(TwoFacSetup(), direction="left")
+            if App.path == "CHANGE_PASS":
+                s.send_e(pass_send)
+                App.sm.switch_to(TwoFacLog(), direction="left")
+            else:
+                s.send_e(f"NAC:{App.mkey}🱫{pass_send}")
+                App.sm.switch_to(TwoFacSetup(), direction="left")
 
 
 class LogUnlock(Screen):
@@ -478,6 +482,7 @@ class LogUnlock(Screen):
 
 class TwoFacSetup(Screen):
     two_fac_wait_text = StringProperty()
+    two_fac_code = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
         self.two_fac_wait_text = "Waiting for 2fa QR code..."
@@ -491,15 +496,13 @@ class TwoFacSetup(Screen):
         self.two_fac_wait_text = "Scan this QR with your authenticator, then enter code to confirm.\n" \
                                  f"Your User ID (UID) is {App.uid}"
 
-    @staticmethod
-    def confirm_2fa(two_fac_confirm):
-        two_fac_confirm = two_fac_confirm.replace(" ", "")
-        if two_fac_confirm == "":
+    def confirm_2fa(self):
+        if self.two_fac_code.text == "":
             error_popup("2FA Code Blank\n- Please enter a 2FA code")
-        elif len(two_fac_confirm) != 6:
+        elif len(self.two_fac_code.text) != 6:
             error_popup("Invalid 2FA Code")
         else:
-            s.send_e(two_fac_confirm.replace(" ", ""))
+            s.send_e(self.two_fac_code.text.replace(" ", ""))
             ipk = s.recv_d(1024)
             if ipk != "N":
                 with open("userdata/key", "wb") as f:
@@ -518,15 +521,15 @@ class TwoFacSetup(Screen):
 
 
 class TwoFacLog(Screen):
-    @staticmethod
-    def confirm_2fa(two_fac_confirm):
-        two_fac_confirm = two_fac_confirm.replace(" ", "")
-        if two_fac_confirm == "":
+    two_fac_code = ObjectProperty(None)
+
+    def confirm_2fa(self):
+        if self.two_fac_code.text == "":
             error_popup("2FA Code Blank\n- Please enter a 2FA code")
-        elif len(two_fac_confirm) != 6:
+        elif len(self.two_fac_code.text) != 6:
             error_popup("Invalid 2FA Code")
         else:
-            s.send_e(two_fac_confirm.replace(" ", ""))
+            s.send_e(self.two_fac_code.text.replace(" ", ""))
             two_fa_valid = s.recv_d(1024)
             if two_fa_valid == "N":
                 error_popup("2FA Failed\n- Please Try Again")
@@ -778,6 +781,7 @@ class Settings(Screen):
     uname = StringProperty()
     uid = StringProperty()
     uname_to = ObjectProperty(None)
+    n_pass = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
@@ -803,6 +807,21 @@ class Settings(Screen):
                                         f"[color=#14e42aff]{self.uname}[/color]")
         else:
             error_popup("Invalid Username\n- Username must be between 5 and 24 characters")
+
+    def change_pass(self):
+        if len(self.n_pass.text) < 9:
+            error_popup("Password Invalid\n- Password must be at least 9 characters")
+        else:
+            # todo 2fa, new ipk, needs old pass
+            s.send_e(f"CUP:{enc.pass_to_key(self.n_pass.text, default_salt, 50000)}")
+            if s.recv_d(1024) == "V":
+                App.path = "CHANGE_PASS"
+                App.sm.switch_to(NacPassword(), direction="left")
+            else:
+                error_popup("Incorrect Password\n- Please try again")
+
+            #if s.recv_d(1024) == "V":
+            #    success_popup(f"Password changed")
 
 
 class ColorSettings(Screen):

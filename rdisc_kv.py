@@ -570,6 +570,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
 
 <TwoFacSetup>:
+    two_fac_code: two_fac_code
     GreyFloatLayout:
         Label:
             text: root.two_fac_wait_text
@@ -580,10 +581,12 @@ kv_payload = """# You can edit this file to change the UI.
             source: 'resources/blank_qr.png'
             pos_hint: {"x": 0, "top": 1.10}
         RoundedTxtInp:
+            id: two_fac_code
             hint_text: "2FA code"
             size_hint: 0.3, 0.05
             pos_hint: {"x": 0.35, "top": 0.34}
-            on_text_validate: root.confirm_2fa(self.text)
+            on_text: self.text = self.text[:6].replace(" ", "")
+            on_text_validate: root.confirm_2fa()
         RoundedButton:
             text: "Confirm"
             pos_hint: {"x": 0.35, "top": 0.25}
@@ -602,16 +605,18 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.6,  "top": 1}
             
 <TwoFacLog>:
+    two_fac_code: two_fac_code
     GreyFloatLayout:
         Label:
             text: "Enter 2FA code"
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.8}
         RoundedTxtInp:
+            id: two_fac_code
             input_filter: 'int'
             pos_hint: {"x": 0.35, "top": 0.65}
-            on_text: self.text = self.text[:6]
-            on_text_validate: root.confirm_2fa(self.text)
+            on_text: self.text = self.text[:6].replace(" ", "")
+            on_text_validate: root.confirm_2fa()
         RoundedButton:
             text: "Confirm"
             pos_hint: {"x": 0.35, "top": 0.4}
@@ -996,6 +1001,7 @@ kv_payload = """# You can edit this file to change the UI.
             
 <Settings>:
     uname_to: uname_to
+    n_pass: n_pass
     GreyFloatLayout:
         HomeButton:
             on_press: root.manager.current = 'Home'
@@ -1014,7 +1020,7 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
-            size_hint: 0.36, 0.4
+            size_hint: 0.36, 0.5
             pos_hint: {"x": 0.01, "top": 0.92}
         SizeLabel:
             text: "User Settings"
@@ -1044,6 +1050,20 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             text: f"UID: {root.uid}"
             pos_hint: {"x": 0.14, "top": 0.73}
+        SizeLabel:
+            text: f"Change Password"
+            pos_hint: {"x": 0.14, "top": 0.65}
+        RoundedTxtInp:
+            id: n_pass
+            hint_text: f"Old Password"
+            password: True
+            size_hint: 0.23, 0.05
+            pos_hint: {"x": 0.05, "top": 0.6}
+        RoundedButton:
+            text: "Change"
+            size_hint: 0.05, 0.05
+            pos_hint: {"x": 0.31, "top": 0.6}
+            on_press: root.change_pass()
         RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.38, "top": 0.92}
