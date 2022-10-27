@@ -55,8 +55,9 @@
 0.55 reloads, crash handling and coloring backend
 0.56 gift card and d_coin buying, color editing, color-blind modes
 0.57 code claiming, transaction history with xp leveling
+0.58 data hiding improvements
 
-0.58 spin 2 win, user pass changing, data hiding improvements
+0.58 user pass changing, spin 2 win
 
 0.59 public chat room, client misinformation logging
 0.60 friending and friends list
@@ -67,6 +68,7 @@ known issues:
 - captcha does not update sometimes (not confirmed)
 - redrawn canvas does not move when UI resized
 - after a crash reload the app cannot be closed with cntl+x and color reloads don't work
+- spinner visually sometimes does not show correct result
 - crash text does not show, neither do crash loops
 
 - distro types:

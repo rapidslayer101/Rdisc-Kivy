@@ -4,7 +4,7 @@ from base64 import b32encode
 from datetime import datetime
 from hashlib import sha512
 from os import path, mkdir, listdir
-from random import randint, uniform, choice, choices
+from random import randint, uniform, choices
 from socket import socket
 from threading import Thread
 from time import perf_counter, sleep
@@ -20,7 +20,6 @@ from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.graphics import Line, Color, RoundedRectangle
 from kivy.utils import platform, get_color_from_hex as rgb
-from kivy.uix.widget import Widget
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -915,23 +914,18 @@ class DataCoins(Screen):
 
 
 def draw_circle(self, rotation=1):
-    #rotation *= 360
     segments = 2
-    seg = 360/segments
-    #seg_size = 0.36
-    #seg1 = 500 * seg_size
-    #seg2 = 500 * seg_size
-    #seg = [seg1, seg2, 0]
+    seg_size = 0.36
+    seg1 = 480 * seg_size
+    seg2 = 520 * seg_size
+    seg = [seg1, seg2, 0]
     with self.canvas:
-        #seg_count = 0
+        seg_count = 0
         for i in range(1, segments+1):
             Color(1.0/segments*i, 1, 1, mode="hsv")
-            #Line(circle=[self.center[0], self.center[1]+(self.center[1]/5), 125, seg[seg_count-1]+rotation,
-            #             seg[seg_count]+rotation+seg[seg_count-1]], width=15, cap="none")
-            i += rotation
-            #seg_count += 1
-            Line(circle=[self.center[0], self.center[1]+(self.center[1] / 5), 125, seg*i,
-                         seg * i + seg], width=15, cap="none")
+            Line(circle=[self.center[0], self.center[1]+(self.center[1]/5), 125, seg[seg_count-1]+rotation,
+                         seg[seg_count]+rotation+seg[seg_count-1]], width=15, cap="none")
+            seg_count += 1
 
 
 def draw_triangle(self):
@@ -945,18 +939,17 @@ def draw_triangle(self):
 def create_draws(result, odds):
     while True:
         last = 1
-        rand_int = randint(100, 200)
         draws = []
-        for i in reversed(range(1, rand_int)):
-            draws.append(round(last-i/10*0.01, 4))
-            last = round(last-i/10*0.01, 4)
-        print(last)
-        print(last*360)
+        for i in reversed(range(1, randint(100, 200))):
+            draws.append(round(last-i*0.36, 4))
+            last = round(last+i*0.36, 4)
+        print(float(str(round(last/360, 3)).split(".")[1]), result)
         if result == "win":
-            if float(str(last).split(".")[1]) <= odds:
+            if 500 >= float(str(round(last/360, 3)).split(".")[1]) or\
+                    float(str(round(last/360, 3)).split(".")[1]) > 500+odds:
                 return draws
         if result == "loss":
-            if float(str(last).split(".")[1]) > odds:
+            if 500 < float(str(round(last/360, 3)).split(".")[1]) <= 500+odds:
                 return draws
 
 
@@ -985,7 +978,6 @@ class Spinner(Screen):
         else:
             outcome = False
             circle_draws = create_draws("loss", 480)
-        print(outcome)
         for draw in circle_draws:
             Clock.schedule_once(lambda dt: draw_circle(self, draw))
             sleep(0.03)
