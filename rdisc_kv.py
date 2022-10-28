@@ -969,7 +969,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.22, "top": 0.92}
             #on_press: root.manager.current = 'Spinner'
         SizeLabel:
-            text: "Crash"
+            text: "Crash - Coming Soon"
             pos_hint: {"x": 0.27, "top": 0.91}
         AsyncImage:
             source: "https://www.pngmart.com/files/3/Stock-Market-Graph-Up-PNG-Image.png"
@@ -1521,6 +1521,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.68, "top": 0.36}
             
 <Spinner>:
+    game_info: game_info
     GreyFloatLayout:
         Button:
             text: "<< Games"
@@ -1557,6 +1558,16 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.15, 0.1
             pos_hint: {"x": 0.35, "top": 0.3}
             multiline: False
+        SizeLabel:
+            text: "This spinner is a WIP. It may show an invalid visual. The text in the centre of the spinner is the correct outcome."
+            font_size: "10dp"
+            pos_hint: {"x": 0.45, "top": 0.1}
+        BackingLabel:
+            size_hint: 0.23, 0.2
+            pos_hint: {"x": 0.76, "top": 0.92}
+        SizeLabel:
+            id: game_info
+            pos_hint: {"x": 0.827, "top": 0.9}
             
 <Reloading>
     GreyFloatLayout:

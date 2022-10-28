@@ -728,9 +728,11 @@ class Chat(Screen):
                 self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text, size_hint_y=None,
                                                            height=300, anim_delay=0.05))
             else:
-                self.ids.public_chat.add_widget(Label(text=self.public_room_inp.text, font_size=16, color=(1, 1, 1, 1),
-                                                      size_hint_y=None, height=40, halign="left"))
-            #s.send_e(f"MSG:{self.public_room_inp.text}")
+                self.ids.public_chat.add_widget(Label(text=f"[color=#14e42bff]{App.uname[:-4]}[/color] "
+                                                           f"[color=#858d8fff] {str(datetime.now())[:-7]}[/color] "
+                                                           f"{self.public_room_inp.text}", font_size=16,
+                                                      color=(1, 1, 1, 1), size_hint_y=None, height=40, markup=True))
+            s.send_e(f"MSG:{self.public_room_inp.text}")
             self.public_room_msg_counter += 1
             if self.ids.public_room_scroll.scroll_y == 0:
                 scroll_down = True
@@ -937,16 +939,14 @@ class DataCoins(Screen):
                                         f"[color=f46f0eff]{amount} R[/color]")
 
 
-def draw_circle(self, rotation=1):
-    segments = 2
-    seg_size = 0.36
-    seg1 = 480 * seg_size
-    seg2 = 520 * seg_size
-    seg = [seg1, seg2, 0]
+def draw_circle(self, segments, rotation=1):
+    seg = [seg*0.36 for seg in segments]
+    seg.append(0)
     with self.canvas:
         seg_count = 0
-        for i in range(1, segments+1):
-            Color(1.0/segments*i, 1, 1, mode="hsv")
+        cols = [App.col['green'], App.col['red']]
+        for i in range(1, len(segments)+1):
+            Color(*cols[i-1], mode="rgb")
             Line(circle=[self.center[0], self.center[1]+(self.center[1]/5), 125, seg[seg_count-1]+rotation,
                          seg[seg_count]+rotation+seg[seg_count-1]], width=15, cap="none")
             seg_count += 1
@@ -968,24 +968,30 @@ def create_draws(result, odds):
             draws.append(round(last-i*0.36, 4))
             last = round(last+i*0.36, 4)
         print(float(str(round(last/360, 3)).split(".")[1]), result)
+
         if result == "win":
-            if 500 >= float(str(round(last/360, 3)).split(".")[1]) or\
-                    float(str(round(last/360, 3)).split(".")[1]) > 500+odds:
+            if odds[0] >= float(str(round(last/360, 3)).split(".")[1]) or\
+                    float(str(round(last/360, 3)).split(".")[1]) > odds[1]:
                 return draws
         if result == "loss":
-            if 500 < float(str(round(last/360, 3)).split(".")[1]) <= 500+odds:
+            if odds[0] < float(str(round(last/360, 3)).split(".")[1]) <= odds[1]:
                 return draws
 
 
 class Spinner(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
+    game_info = ObjectProperty(None)
+    game_hash = None
+    spin_odds = [480, 520]
 
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
-        # request coinflip data
-        draw_circle(self)
+        s.send_e("COF:2")
+        self.game_hash = s.recv_d(1024)
+        self.game_info.text = "Game"
+        draw_circle(self, self.spin_odds)
         draw_triangle(self)
 
     def canvas_update(self, color):
@@ -995,33 +1001,28 @@ class Spinner(Screen):
 
     def spin(self):
         self.ids.spin_btn.disabled = True
-
-        if randint(0, 100) < 48:
-            outcome = True
-            circle_draws = create_draws("win", 480)
-        else:
-            outcome = False
-            circle_draws = create_draws("loss", 480)
-        for draw in circle_draws:
-            Clock.schedule_once(lambda dt: draw_circle(self, draw))
+        s.send_e("COR")
+        seed_inp, rand_float, outcome = s.recv_d(1024).split("🱫")
+        for draw in create_draws(outcome.lower(), self.spin_odds):
+            Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw))
             sleep(0.03)
-        if outcome:
+        if outcome == "WIN":
             Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
-            #self.ids.spin_text.text = "[Color=#2F3D2Fff]You Won![/color]"
             self.ids.spin_text.text = "You Won!"
         else:
             Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
-            #self.ids.spin_text.text = "[Color=#3D332Fff]You Lost[/color]"
             self.ids.spin_text.text = "You Lost"
         sleep(2)
         Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
-        Clock.schedule_once(lambda dt: draw_circle(self))
+        Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
+        s.send_e("COF:2")
+        self.game_hash = s.recv_d(1024)
         self.ids.spin_text.text = ""
         self.ids.spin_btn.disabled = False
 
     def run_spinner(self):
         Thread(target=self.spin).start()
-        draw_circle(self, 0)
+        draw_circle(self, self.spin_odds, 0)
 
 
 class Reloading(Screen):
@@ -1155,8 +1156,7 @@ if __name__ == "__main__":
             s = Server()
             App().run()
             break
-        except NameError:
-        #except Exception as e:
+        except Exception as e:
             if "App.stop() missing 1 required positional argument: 'self'" in str(e):
                 print("Crash forced by user.")
             else:

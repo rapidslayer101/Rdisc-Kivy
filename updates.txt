@@ -66,7 +66,7 @@
 known issues:
 - redrawn canvas does not move when UI resized
 - after a crash reload the app cannot be closed with cntl+x and color reloads don't work
-- spinner visually sometimes does not show correct result
+- spinner often does not visually show correct result
 - cannot change password straight after making account
 - crash text does not show, neither do crash loops
 
@@ -76,13 +76,13 @@ known issues:
     - updating rdisc source code
   - downloadable apk
 
+- public chat text on the left not centre
 - linux support
-- hide secret by encrypting with user pass hash 1
 - buying confirmations
 - check for rounding errors in transfers
 - ip_key expired removal as well as dealing with other invalid keys
-- asynchronous server
 - connection rate limit and checks for entire login paths
+- asynchronous server << not likely to happen due to complexity
 
 # account key + account pin = master key
 # MASTER KEY MAY BE SAVED TO USB
