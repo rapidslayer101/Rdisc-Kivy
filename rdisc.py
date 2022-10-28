@@ -533,6 +533,11 @@ class TwoFacLog(Screen):
             two_fa_valid = s.recv_d(1024)
             if two_fa_valid == "N":
                 error_popup("2FA Failed\n- Please Try Again")
+            elif App.path == "CHANGE_PASS":
+                with open("userdata/key", "wb") as f:
+                    f.write(App.uid.encode()+two_fa_valid)
+                App.sm.switch_to(Settings(), direction="left")
+                success_popup("Password Changed")
             else:
                 with open("userdata/key", "wb") as f:
                     f.write(App.uid.encode()+App.ipk)
@@ -1150,7 +1155,8 @@ if __name__ == "__main__":
             s = Server()
             App().run()
             break
-        except Exception as e:
+        except NameError:
+        #except Exception as e:
             if "App.stop() missing 1 required positional argument: 'self'" in str(e):
                 print("Crash forced by user.")
             else:
