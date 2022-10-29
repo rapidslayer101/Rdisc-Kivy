@@ -3,7 +3,7 @@ from random import seed, uniform, randint
 from hashlib import sha512
 
 
-def game(odds, seed_inp=None):
+def coin_game(odds, seed_inp=None):
     base, above_value = odds.split(":")
     base, above_value = int(base), int(above_value)+int(base)
     game_ = False
@@ -29,13 +29,11 @@ def run_test(odds):
     counter = 0
     while True:
         counter += 1
-        seed_input, rand_float, result, game_hash = game(odds)
+        seed_input, rand_float, result, game_hash = coin_game(odds)
         outcomes.append(result)
-        if rand_float == game(odds, seed_input):
+        if rand_float == coin_game(odds, seed_input):
             print("Game is fair!")
         else:
             print("Game is not fair!")
             break
         print(outcomes.count("WIN")/len(outcomes), counter)
-
-#run_test("480:520")

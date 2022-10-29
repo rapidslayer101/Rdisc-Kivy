@@ -1,5 +1,5 @@
-import enclib as enc
 import rdisc_kv
+from enclib import hash_a_file, to_base, pass_to_key, enc_from_key, dec_from_pass, dec_from_key
 from base64 import b32encode
 from datetime import datetime
 from hashlib import sha512
@@ -26,9 +26,9 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from rsa import newkeys, PublicKey, decrypt
 
 if path.exists("rdisc.exe"):
-    app_hash = enc.hash_a_file("rdisc.exe")
+    app_hash = hash_a_file("rdisc.exe")
 elif path.exists("rdisc.py"):
-    app_hash = enc.hash_a_file("rdisc.py")
+    app_hash = hash_a_file("rdisc.py")
 else:
     app_hash = f"Unknown distro: {platform}"
 
@@ -76,7 +76,7 @@ class Server:
                 return False
             print(" >> Public RSA key sent")
             enc_seed = decrypt(self.s.recv(128), pri_key).decode()
-            self.enc_key = enc.pass_to_key(enc_seed[:18], enc_seed[18:], 100000)
+            self.enc_key = pass_to_key(enc_seed[:18], enc_seed[18:], 100000)
             print(" << Client enc_seed and enc_salt received and loaded\n -- RSA Enc bootstrap complete")
             return True
         except ConnectionRefusedError:
@@ -85,21 +85,21 @@ class Server:
 
     def send_e(self, text):
         try:
-            self.s.send(enc.enc_from_key(text, self.enc_key))
+            self.s.send(enc_from_key(text, self.enc_key))
         except ConnectionResetError:
             print("CONNECTION_LOST, reconnecting...")
             if s.ip and s.connect():
-                self.s.send(enc.enc_from_key(text, self.enc_key))
+                self.s.send(enc_from_key(text, self.enc_key))
             else:
                 print("Failed to reconnect")
 
     def recv_d(self, buf_lim):
         try:
-            return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
+            return dec_from_key(self.s.recv(buf_lim), self.enc_key)
         except ConnectionResetError:
             print("CONNECTION_LOST, reconnecting...")
             if s.ip and s.connect():
-                return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
+                return dec_from_key(self.s.recv(buf_lim), self.enc_key)
             else:
                 print("Failed to reconnect")
 
@@ -194,8 +194,8 @@ class KeyUnlock(Screen):
                 error_popup("Password Blank\n- WHY IS THE BOX BLANK?")
         else:
             try:
-                user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
-                ipk = enc.dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
+                user_pass = pass_to_key(self.pwd.text, default_salt, 50000)
+                ipk = dec_from_pass(App.ipk, user_pass[:40], user_pass[40:])
                 s.send_e(f"ULK:{App.uid}🱫{ipk}")
                 ulk_resp = s.recv_d(128)
                 if ulk_resp == "SESH_T":
@@ -242,13 +242,13 @@ class CreateKey(Screen):
                     self.pin_code_text = f"Generating Key and Pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        App.mkey = enc.to_base(96, 16, master_key.hex())
+        App.mkey = to_base(96, 16, master_key.hex())
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Account Pin: {enc.to_base(36, 10, current_depth)}"
+        self.pin_code_text = f"Account Pin: {to_base(36, 10, current_depth)}"
         self.rand_confirm_text = f"Once you have written down your Account Key " \
                                  f"and Pin enter {self.rand_confirmation} below.\n" \
                                  f"By proceeding with account creation you agree to our Terms and Conditions."
-        App.pin_code = enc.to_base(36, 10, current_depth)
+        App.pin_code = to_base(36, 10, current_depth)
 
     def on_pre_enter(self, *args):
         App.path = "make"
@@ -378,13 +378,13 @@ class ReCreateGen(Screen):
                                          f"({round((depth_left-depth_count)/real_dps, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        App.mkey = enc.to_base(96, 16, master_key.hex())
+        App.mkey = to_base(96, 16, master_key.hex())
         Clock.schedule_once(lambda dt: App.sm.switch_to(Captcha(), direction="left"))
 
     def on_enter(self, *args):
         self.gen_left_text = f"Generating master key"
         Thread(target=self.regenerate_master_key, args=(App.pass_code[:6].encode(),
-               App.pass_code[6:].encode(), int(enc.to_base(10, 36, App.pin_code)),), daemon=True).start()
+               App.pass_code[6:].encode(), int(to_base(10, 36, App.pin_code)),), daemon=True).start()
 
 
 class Captcha(Screen):
@@ -445,7 +445,7 @@ class NacPassword(Screen):
         elif self.nac_password_1.text != self.nac_password_2.text:
             error_popup("Password Mismatch\n- Passwords must be the same")
         else:
-            pass_send = enc.pass_to_key(self.nac_password_1.text, default_salt, 50000)
+            pass_send = pass_to_key(self.nac_password_1.text, default_salt, 50000)
             if App.path == "CHANGE_PASS":
                 s.send_e(pass_send)
                 App.sm.switch_to(TwoFacLog(), direction="left")
@@ -466,7 +466,7 @@ class LogUnlock(Screen):
             error_popup("Password Blank\n- The question is, why is it blank?")
         else:
             try:
-                user_pass = enc.pass_to_key(self.pwd.text, default_salt, 50000)
+                user_pass = pass_to_key(self.pwd.text, default_salt, 50000)
                 s.send_e(user_pass)
                 ipk = s.recv_d(1024)
                 if ipk == "N":
@@ -820,7 +820,7 @@ class Settings(Screen):
             error_popup("Password Invalid\n- Password must be at least 9 characters")
         else:
             # todo 2fa, new ipk, needs old pass
-            s.send_e(f"CUP:{enc.pass_to_key(self.n_pass.text, default_salt, 50000)}")
+            s.send_e(f"CUP:{pass_to_key(self.n_pass.text, default_salt, 50000)}")
             if s.recv_d(1024) == "V":
                 App.path = "CHANGE_PASS"
                 App.sm.switch_to(NacPassword(), direction="left")
@@ -967,14 +967,14 @@ def create_draws(result, odds):
         for i in reversed(range(1, randint(100, 200))):
             draws.append(round(last-i*0.36, 4))
             last = round(last+i*0.36, 4)
-        print(float(str(round(last/360, 3)).split(".")[1]), result)
-
         if result == "win":
             if odds[0] >= float(str(round(last/360, 3)).split(".")[1]) or\
                     float(str(round(last/360, 3)).split(".")[1]) > odds[1]:
+                print(float(str(round(last / 360, 3)).split(".")[1]), result)
                 return draws
         if result == "loss":
             if odds[0] < float(str(round(last/360, 3)).split(".")[1]) <= odds[1]:
+                print(float(str(round(last / 360, 3)).split(".")[1]), result)
                 return draws
 
 
@@ -988,7 +988,7 @@ class Spinner(Screen):
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
-        s.send_e("COF:2")
+        s.send_e("MCF:2")
         self.game_hash = s.recv_d(1024)
         self.game_info.text = "Game"
         draw_circle(self, self.spin_odds)
@@ -1001,7 +1001,7 @@ class Spinner(Screen):
 
     def spin(self):
         self.ids.spin_btn.disabled = True
-        s.send_e("COR")
+        s.send_e(f"RCF:{self.game_hash}")
         seed_inp, rand_float, outcome = s.recv_d(1024).split("🱫")
         for draw in create_draws(outcome.lower(), self.spin_odds):
             Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw))
@@ -1015,7 +1015,7 @@ class Spinner(Screen):
         sleep(2)
         Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
         Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
-        s.send_e("COF:2")
+        s.send_e("MCF:2")
         self.game_hash = s.recv_d(1024)
         self.ids.spin_text.text = ""
         self.ids.spin_btn.disabled = False
