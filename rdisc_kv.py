@@ -1521,6 +1521,7 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.68, "top": 0.36}
             
 <Spinner>:
+    spin_bet: spin_bet
     game_info: game_info
     GreyFloatLayout:
         Button:
@@ -1554,10 +1555,12 @@ kv_payload = """# You can edit this file to change the UI.
             on_press: root.run_spinner()
         RoundedTxtInp:
             id: spin_bet
+            input_filter: "float"
             hint_text: "Bet"
             size_hint: 0.15, 0.1
             pos_hint: {"x": 0.35, "top": 0.3}
             multiline: False
+            on_text: root.check_bet()
         SizeLabel:
             text: "This spinner is a WIP. It may show an invalid visual. The text in the centre of the spinner is the correct outcome."
             font_size: "10dp"

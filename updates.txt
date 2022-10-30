@@ -56,14 +56,16 @@
 0.56 gift card and d_coin buying, color editing, color-blind modes
 0.57 code claiming, transaction history with xp leveling
 0.58 data hiding improvements, user pass changing
+0.59 client misinformation logging, spin 2 win
 
-0.59 client misinformation logging, spin 2 win, public chat room
+0.59 public chat room
 
 0.60 friending and friends list
 0.61 scratch cards and inventory items support
 0.62 direct messaging
 
 known issues:
+- check values for transfers and bets are actually 2dp server side
 - redrawn canvas does not move when UI resized
 - after a crash reload the app cannot be closed with cntl+x and color reloads don't work
 - spinner often does not visually show correct result

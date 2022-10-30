@@ -565,11 +565,19 @@ class Home(Screen):
     level_progress = [0, 100]
     transactions_counter = 0
 
+    def update_level_bar(self):
+        self.level_progress = [round(float(App.xp), 2), 100]
+        self.ids.level_bar_text.text = f"{self.level_progress[0]}/{self.level_progress[1]} XP"
+        with self.ids.level_bar.canvas:
+            Color(*App.col["yellow"])
+            RoundedRectangle(pos=self.ids.level_bar.pos,
+                             size=(self.ids.level_bar.size[0]*self.level_progress[0]/self.level_progress[1],
+                                   self.ids.level_bar.size[1]))
+
     def on_enter(self, *args):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
-        self.level_progress = [float(App.xp), 100]
-        self.ids.level_bar_text.text = f"{self.level_progress[0]}/{self.level_progress[1]} XP"
+        Clock.schedule_once(lambda dt: self.update_level_bar())
         [self.add_transaction(transaction) for transaction in App.transactions]
         App.transactions = []
 
@@ -607,7 +615,7 @@ class Home(Screen):
         self.direction_text = "Conversion Calculator (£->R)"
 
     def check_transfer(self):
-        if self.transfer_amt.text not in ["", "."]:
+        if self.transfer_amt.text != "":
             self.transfer_amt.text = self.transfer_amt.text[:12]
             if float(self.transfer_amt.text) > float(App.r_coin)*0.995:
                 self.transfer_amt.text = str(round(float(App.r_coin)*0.995, 2))
@@ -618,14 +626,14 @@ class Home(Screen):
             self.transfer_send = self.transfer_amt.text
             self.transfer_fee = str(round(float(self.transfer_cost)-float(self.transfer_amt.text), 2))
         if self.transfer_amt.text == ".":
-            self.self.transfer_amt.text = ""
+            self.transfer_amt.text = ""
         if self.transfer_amt.text == "":
             self.transfer_cost = "0.00"
             self.transfer_send = "0.00"
             self.transfer_fee = "0.00"
 
     def transfer_coins(self):
-        if self.transfer_amt.text == "":
+        if self.transfer_amt.text in ["", "."]:
             error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
         elif len(self.transfer_uid.text) < 8:
             error_popup("Invalid Username/UID For Transfer")
@@ -697,13 +705,6 @@ class Home(Screen):
                     self.coin_conversion = "£0.00"
 
     def change_transfer_direction(self):
-        self.level_progress[0] += 5
-        with self.ids.level_bar.canvas:
-            Color(*App.col["yellow"])
-            RoundedRectangle(pos=self.ids.level_bar.pos,
-                             size=(self.ids.level_bar.size[0]*self.level_progress[0]/self.level_progress[1],
-                                   self.ids.level_bar.size[1]))
-        self.ids.level_bar_text.text = f"{self.level_progress[0]}/{self.level_progress[1]} XP"
         if self.transfer_direction == "R":
             self.transfer_direction = "D"
             self.direction_text = "Conversion Calculator (R->£)"
@@ -981,6 +982,7 @@ def create_draws(result, odds):
 class Spinner(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
+    spin_bet = ObjectProperty(None)
     game_info = ObjectProperty(None)
     game_hash = None
     spin_odds = [480, 520]
@@ -988,11 +990,23 @@ class Spinner(Screen):
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
-        s.send_e("MCF:2")
-        self.game_hash = s.recv_d(1024)
-        self.game_info.text = "Game"
+        if self.game_hash is None:
+            s.send_e("MCF:2")
+            self.game_hash = s.recv_d(1024)
+            self.game_info.text = "Game"
         draw_circle(self, self.spin_odds)
         draw_triangle(self)
+
+    def check_bet(self):
+        if self.spin_bet.text != "":
+            self.spin_bet.text = self.spin_bet.text[:12]
+            if float(self.spin_bet.text) > float(App.r_coin):
+                self.spin_bet.text = App.r_coin
+            if "." in self.spin_bet.text:
+                if len(self.spin_bet.text.split(".")[1]) > 2:
+                    self.spin_bet.text = self.spin_bet.text[:-1]
+        if self.spin_bet.text == ".":
+            self.spin_bet.text = ""
 
     def canvas_update(self, color):
         with self.ids.spin_col.canvas:
@@ -1000,25 +1014,47 @@ class Spinner(Screen):
             RoundedRectangle(size=self.ids.spin_col.size, pos=self.ids.spin_col.pos, radius=[10])
 
     def spin(self):
-        self.ids.spin_btn.disabled = True
-        s.send_e(f"RCF:{self.game_hash}")
-        seed_inp, rand_float, outcome = s.recv_d(1024).split("🱫")
-        for draw in create_draws(outcome.lower(), self.spin_odds):
-            Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw))
-            sleep(0.03)
-        if outcome == "WIN":
-            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
-            self.ids.spin_text.text = "You Won!"
+        if self.spin_bet.text == "":
+            Clock.schedule_once(lambda dt: error_popup("Below Minimum Bet\n- Bet amount below the 1 R minimum"))
+        elif float(self.spin_bet.text) < 1:
+            Clock.schedule_once(lambda dt: error_popup("Below Minimum Bet\n- Bet amount below the 1 R minimum"))
+        elif float(self.spin_bet.text) > float(App.r_coin):
+            Clock.schedule_once(lambda dt: error_popup("Insufficient funds For Transfer"))
+        elif float(self.spin_bet.text) > 30:
+            Clock.schedule_once(lambda dt: error_popup("Above Maximum Bet\n- Bet amount above the 30 R maximum\n"
+                                                       "This limit is based on your level"))
         else:
-            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
-            self.ids.spin_text.text = "You Lost"
-        sleep(2)
-        Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
-        Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
-        s.send_e("MCF:2")
-        self.game_hash = s.recv_d(1024)
-        self.ids.spin_text.text = ""
-        self.ids.spin_btn.disabled = False
+            self.ids.spin_btn.disabled = True
+            s.send_e(f"RCF:{self.game_hash}🱫{self.spin_bet.text}")
+            seed_inp, rand_float, outcome = s.recv_d(1024).split("🱫")
+            for draw in create_draws(outcome.lower(), self.spin_odds):
+                Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw))
+                sleep(0.03)
+            xp_amt = round(float(self.spin_bet.text)/5, 2)
+            App.xp = str(float(App.xp)+xp_amt)
+            if outcome == "WIN":
+                Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
+                self.ids.spin_text.text = "You Won!"
+                App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*2))
+                App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
+                                        f"{float(self.spin_bet.text)*2} R[/color] [color=25be42ff]gained[/color] "
+                                        f"[color=f2ef32ff]{xp_amt} XP[/color]")
+            else:
+                Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
+                App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.spin_bet.text} "
+                                        f"R[/color] [color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
+                self.ids.spin_text.text = "You Lost"
+                App.r_coin = str(round(float(App.r_coin)-float(self.spin_bet.text)))
+            if App.r_coin.endswith(".0"):
+                App.r_coin = App.r_coin[:-2]
+            self.r_coins = App.r_coin + " R"
+            sleep(2)
+            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
+            Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
+            s.send_e("MCF:2")
+            self.game_hash = s.recv_d(1024)
+            self.ids.spin_text.text = ""
+            self.ids.spin_btn.disabled = False
 
     def run_spinner(self):
         Thread(target=self.spin).start()

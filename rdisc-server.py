@@ -512,11 +512,26 @@ def client_connection(cs):
                     print("Coinflip game created")
 
             elif request.startswith("RCF:"):  # accept coinflip game
-                game_hash_c = request[4:]
+                game_hash_c, bet_amt = request[4:].split("🱫")
                 if game_hash_c == coinflip_games[0][3]:
-                    send_e(f"{seed_inp}🱫{rand_float}🱫{outcome}")
-                    coinflip_games.pop()
-                    print("Coinflip game ran")
+                    if float(bet_amt) > r_coin:
+                        raise InvalidClientData
+                    elif float(bet_amt) > 30:
+                        raise InvalidClientData
+                    else:
+                        if outcome == "WIN":
+                            r_coin = round(r_coin+float(bet_amt)*2, 2)
+                            add_transaction(uid, "COF", float(bet_amt), float(bet_amt)*2, "Coinflip win")
+                        else:
+                            r_coin = round(r_coin-float(bet_amt), 2)
+                            add_transaction(uid, "COF", float(bet_amt), 0, "Coinflip loss")
+                        xp += round(float(bet_amt)/5, 2)
+                        users.db.execute("UPDATE users SET xp = ?, r_coin = ? WHERE user_id = ?", (xp, r_coin, uid))
+                        users.db.commit()
+                        add_transaction(uid, "CFW", float(bet_amt), 0, "Coinflip loss")
+                        send_e(f"{seed_inp}🱫{rand_float}🱫{outcome}")
+                        coinflip_games.pop()
+                        print("Coinflip game ran")
 
             else:
                 raise InvalidClientData  # invalid request
