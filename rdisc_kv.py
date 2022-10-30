@@ -640,7 +640,7 @@ kv_payload = """# You can edit this file to change the UI.
     pos_hint: {"x": 0.01, "top": 0.99}
     
 <ChatButton@Button>:
-    text: "Chat/Friends"
+    text: "Chat Room"
     size_hint: 0.14, 0.05
     pos_hint: {"x": 0.1, "top": 0.99}
     

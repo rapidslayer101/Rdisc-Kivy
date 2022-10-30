@@ -509,7 +509,6 @@ def client_connection(cs):
                     print(seed_inp, rand_float, outcome, game_hash)
                     coinflip_games.append([seed_inp, rand_float, outcome, game_hash])
                     send_e(game_hash)
-                    print("Coinflip game created")
 
             elif request.startswith("RCF:"):  # accept coinflip game
                 game_hash_c, bet_amt = request[4:].split("🱫")
@@ -531,7 +530,6 @@ def client_connection(cs):
                         add_transaction(uid, "CFW", float(bet_amt), 0, "Coinflip loss")
                         send_e(f"{seed_inp}🱫{rand_float}🱫{outcome}")
                         coinflip_games.pop()
-                        print("Coinflip game ran")
 
             else:
                 raise InvalidClientData  # invalid request
