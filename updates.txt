@@ -57,12 +57,13 @@
 0.57 code claiming, transaction history with xp leveling
 0.58 data hiding improvements, user pass changing
 0.59 client misinformation logging, spin 2 win
+0.60 multiple s2w odds options
 
-0.60 public chat room, multiple s2w odds options
+0.60 public chat room
 
 0.61 crash game, working leveling
 0.62 scratch cards and inventory items support
-
+0.xx commenting work, abstraction
 
 known issues:
 - check values for transfers and bets are actually 2dp server side

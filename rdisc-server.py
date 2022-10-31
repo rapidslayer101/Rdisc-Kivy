@@ -13,9 +13,6 @@ from random import choices, randint
 from requests import get
 from captcha.image import ImageCaptcha
 
-# TODO MAJOR: REMOVE 1 THREAD PER USER, Disconnect inactive not logged in users?
-#  async, sesh_key front of enc to identify user
-
 
 class InvalidClientData(Exception):
     pass
@@ -499,15 +496,17 @@ def client_connection(cs):
                     raise InvalidClientData
 
             elif request.startswith("MCF:"):  # create coinflip game  # todo make game expire after x time
-                odds = request[4:]
+                mult = request[4:]
                 if len(coinflip_games) > 0:
-                    raise InvalidClientData
-                elif odds not in ["2"]:
+                    coinflip_games.pop()
+                if mult not in ["2", "3", "5", "10"]:
                     raise InvalidClientData
                 else:
-                    seed_inp, rand_float, outcome, game_hash = coin_game("480:520")
-                    print(seed_inp, rand_float, outcome, game_hash)
-                    coinflip_games.append([seed_inp, rand_float, outcome, game_hash])
+                    odds = {"2": "470:530", "3": "310:690", "5": "190:810", "10": "105:895"}.get(mult)
+                    print(odds)
+                    seed_inp, rand_float, outcome, game_hash = coin_game(odds)
+                    print(seed_inp, rand_float, outcome, game_hash, mult)
+                    coinflip_games.append([seed_inp, rand_float, outcome, game_hash, mult])
                     send_e(game_hash)
 
             elif request.startswith("RCF:"):  # accept coinflip game
@@ -519,15 +518,16 @@ def client_connection(cs):
                         raise InvalidClientData
                     else:
                         if outcome == "WIN":
-                            r_coin = round(r_coin+float(bet_amt)*2, 2)
-                            add_transaction(uid, "COF", float(bet_amt), float(bet_amt)*2, "Coinflip win")
+                            r_coin = round(r_coin+float(bet_amt)*int(coinflip_games[0][4]), 2)
+                            add_transaction(uid, f"COF{coinflip_games[0][4]}", float(bet_amt),
+                                            float(bet_amt)*int(coinflip_games[0][4]),
+                                            "Coinflip win")
                         else:
                             r_coin = round(r_coin-float(bet_amt), 2)
-                            add_transaction(uid, "COF", float(bet_amt), 0, "Coinflip loss")
+                            add_transaction(uid, f"COF{coinflip_games[0][4]}", float(bet_amt), 0, "Coinflip loss")
                         xp += round(float(bet_amt)/5, 2)
                         users.db.execute("UPDATE users SET xp = ?, r_coin = ? WHERE user_id = ?", (xp, r_coin, uid))
                         users.db.commit()
-                        add_transaction(uid, "CFW", float(bet_amt), 0, "Coinflip loss")
                         send_e(f"{seed_inp}🱫{rand_float}🱫{outcome}")
                         coinflip_games.pop()
 

@@ -1571,6 +1571,31 @@ kv_payload = """# You can edit this file to change the UI.
         SizeLabel:
             id: game_info
             pos_hint: {"x": 0.827, "top": 0.9}
+        RoundedButton:
+            id: set_x2
+            text: "X2 - 47%"
+            size_hint: 0.15, 0.1
+            pos_hint: {"x": 0.8, "top": 0.65}
+            disabled: True
+            on_press: root.set_odds(2)
+        RoundedButton:
+            id: set_x3
+            text: "X3 - 31%"
+            size_hint: 0.15, 0.1
+            pos_hint: {"x": 0.8, "top": 0.5}
+            on_press: root.set_odds(3)
+        RoundedButton:
+            id: set_x5
+            text: "X5 - 19%"
+            size_hint: 0.15, 0.1
+            pos_hint: {"x": 0.8, "top": 0.35}
+            on_press: root.set_odds(5)
+        RoundedButton:
+            id: set_x10
+            text: "X10 - 9.5%"
+            size_hint: 0.15, 0.1
+            pos_hint: {"x": 0.8, "top": 0.2}
+            on_press: root.set_odds(10)
             
 <Reloading>
     GreyFloatLayout:

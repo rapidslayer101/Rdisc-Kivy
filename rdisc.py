@@ -969,13 +969,13 @@ def create_draws(result, odds):
             draws.append(round(last-i*0.36, 4))
             last = round(last+i*0.36, 4)
         if result == "win":
-            if odds[0] >= float(str(round(last/360, 3)).split(".")[1]) or\
-                    float(str(round(last/360, 3)).split(".")[1]) > odds[1]:
-                print(float(str(round(last / 360, 3)).split(".")[1]), result)
+            print(500, 500+odds[0], float(str(round(last/360, 3)).split(".")[1]))
+            if 500-odds[0] <= float(str(round(last/360, 3)).split(".")[1]) < 500:
                 return draws
         if result == "loss":
-            if odds[0] < float(str(round(last/360, 3)).split(".")[1]) <= odds[1]:
-                print(float(str(round(last / 360, 3)).split(".")[1]), result)
+            print(500, 500+odds[0], float(str(round(last/360, 3)).split(".")[1]))
+            if 500-odds[0] > float(str(round(last/360, 3)).split(".")[1]) or \
+                    500 <= float(str(round(last/360, 3)).split(".")[1]):
                 return draws
 
 
@@ -986,6 +986,7 @@ class Spinner(Screen):
     game_info = ObjectProperty(None)
     game_hash = None
     spin_odds = [480, 520]
+    mult = 2
 
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
@@ -993,9 +994,20 @@ class Spinner(Screen):
         if self.game_hash is None:
             s.send_e("MCF:2")
             self.game_hash = s.recv_d(1024)
-            self.game_info.text = "Game"
+            self.game_info.text = "Game - 2x"
         draw_circle(self, self.spin_odds)
         draw_triangle(self)
+
+    def set_odds(self, mult):
+        s.send_e(f"MCF:{mult}")
+        for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
+            self.ids[mult_btn].disabled = False
+        self.ids[f"set_x{mult}"].disabled = True
+        self.spin_odds = {2: [470, 530], 3: [310, 690], 5: [190, 810], 10: [105, 895]}.get(mult)
+        draw_circle(self, self.spin_odds)
+        self.mult = mult
+        self.game_hash = s.recv_d(1024)
+        self.game_info.text = f"Game - {mult}x"
 
     def check_bet(self):
         if self.spin_bet.text != "":
@@ -1024,6 +1036,8 @@ class Spinner(Screen):
             Clock.schedule_once(lambda dt: error_popup("Above Maximum Bet\n- Bet amount above the 30 R maximum\n"
                                                        "This limit is based on your level"))
         else:
+            for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
+                self.ids[mult_btn].disabled = True
             self.ids.spin_btn.disabled = True
             s.send_e(f"RCF:{self.game_hash}🱫{self.spin_bet.text}")
             seed_inp, rand_float, outcome = s.recv_d(1024).split("🱫")
@@ -1035,7 +1049,7 @@ class Spinner(Screen):
             if outcome == "WIN":
                 Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
                 self.ids.spin_text.text = "You Won!"
-                App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*2))
+                App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*self.mult))
                 App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
                                         f"{float(self.spin_bet.text)*2} R[/color] [color=25be42ff]gained[/color] "
                                         f"[color=f2ef32ff]{xp_amt} XP[/color]")
@@ -1047,14 +1061,17 @@ class Spinner(Screen):
                 App.r_coin = str(round(float(App.r_coin)-float(self.spin_bet.text)))
             if App.r_coin.endswith(".0"):
                 App.r_coin = App.r_coin[:-2]
-            self.r_coins = App.r_coin + " R"
+            self.r_coins = App.r_coin+" R"
             sleep(2)
             Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
             Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
-            s.send_e("MCF:2")
+            s.send_e(f"MCF:{self.mult}")
             self.game_hash = s.recv_d(1024)
             self.ids.spin_text.text = ""
             self.ids.spin_btn.disabled = False
+            for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
+                self.ids[mult_btn].disabled = False
+            self.ids[f"set_x{self.mult}"].disabled = True
 
     def run_spinner(self):
         Thread(target=self.spin).start()
