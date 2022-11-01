@@ -16,8 +16,7 @@ from kivy.config import Config
 from kivy.core.window import Window
 from kivy.factory import Factory
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, ObjectProperty
 from kivy.graphics import Line, Color, RoundedRectangle
 from kivy.utils import platform, get_color_from_hex as rgb
 from kivy.uix.image import AsyncImage
@@ -93,7 +92,7 @@ class Server:
             else:
                 print("Failed to reconnect")
 
-    def recv_d(self, buf_lim):
+    def recv_d(self, buf_lim=1024):
         try:
             return dec_from_key(self.s.recv(buf_lim), self.enc_key)
         except ConnectionResetError:
@@ -104,24 +103,15 @@ class Server:
                 print("Failed to reconnect")
 
 
-def error_popup(error_reason):
-    App.popup_text = error_reason
-    App.popup = Factory.ErrorPopup()
+def popup(popup_type, reason):
+    App.popup_text = reason
+    if popup_type == "error":
+        App.popup = Factory.ErrorPopup()
+    if popup_type == "success":
+        App.popup = Factory.SuccessPopup()
     App.popup.open()
-
-
-def claim_code_popup(code_text):
-    App.popup_text = code_text
-    App.popup = Factory.ClaimCodePopup()
-    App.popup.open()
-
-
-def success_popup(success_text):
-    App.popup_text = success_text
-    App.popup = Factory.SuccessPopup()
-    App.popup.open()
-
-
+    
+    
 def connect_system():
     if s.ip and s.connect():
         print("Loading account keys...")
@@ -147,16 +137,16 @@ class IpSet(Screen):
     @staticmethod
     def try_connect(ip_address):
         if ip_address == "":
-            error_popup("IP Blank\n- Type an IP into the IP box")
+            popup("error", "IP Blank\n- Type an IP into the IP box")
         else:
             try:
                 server_ip, server_port = ip_address.split(":")
                 server_port = int(server_port)
             except ValueError or NameError:
-                error_popup("Invalid IP address\n- Please type a valid IP")
+                popup("error", "Invalid IP address\n- Please type a valid IP")
             else:
                 if server_port < 1 or server_port > 65535:
-                    error_popup("IP Port Invalid\n- Port must be between 1 and 65535")
+                    popup("error", "IP Port Invalid\n- Port must be between 1 and 65535")
                 else:
                     try:
                         ip_1, ip_2, ip_3, ip_4 = server_ip.split(".")
@@ -164,9 +154,9 @@ class IpSet(Screen):
                             s.ip = [server_ip, server_port]
                             App.sm.switch_to(AttemptConnection(), direction="left")
                         else:
-                            error_popup("IP Address Invalid\n- Address must have integers between 0 and 255")
+                            popup("error", "IP Address Invalid\n- Address must have integers between 0 and 255")
                     except ValueError or NameError:
-                        error_popup("IP Address Invalid\n- Address must be in the format 'xxx.xxx.xxx.xxx")
+                        popup("error", "IP Address Invalid\n- Address must be in the format 'xxx.xxx.xxx.xxx")
 
 
 class LogInOrSignUp(Screen):
@@ -189,9 +179,9 @@ class KeyUnlock(Screen):
         if self.pwd.text == "":
             self.counter += 1
             if self.counter != 3:
-                error_popup("Password Blank\n- Top tip, type something in the password box.")
+                popup("error", "Password Blank\n- Top tip, type something in the password box.")
             else:
-                error_popup("Password Blank\n- WHY IS THE BOX BLANK?")
+                popup("error", "Password Blank\n- WHY IS THE BOX BLANK?")
         else:
             try:
                 user_pass = pass_to_key(self.pwd.text, default_salt, 50000)
@@ -199,9 +189,9 @@ class KeyUnlock(Screen):
                 s.send_e(f"ULK:{App.uid}🱫{ipk}")
                 ulk_resp = s.recv_d(128)
                 if ulk_resp == "SESH_T":
-                    error_popup("This accounts session is taken.")
+                    popup("error", "This accounts session is taken.")
                 elif ulk_resp == "N":
-                    error_popup("Incorrect Password\n- How exactly did you manage to trigger this.")
+                    popup("error", "Incorrect Password\n- How exactly did you manage to trigger this.")
                     self.pwd.text = ""
                 else:
                     App.uname, App.xp, App.r_coin, App.d_coin = ulk_resp.split("🱫")
@@ -211,7 +201,7 @@ class KeyUnlock(Screen):
                         App.d_coin = App.d_coin[:-2]
                     App.sm.switch_to(Home(), direction="left")
             except zl_error:
-                error_popup("Incorrect Password")
+                popup("error", "Incorrect Password")
                 self.pwd.text = ""
 
 
@@ -264,14 +254,14 @@ class CreateKey(Screen):
     def continue_confirmation(self, confirmation_code):
         if self.rand_confirmation:
             if confirmation_code == "":
-                error_popup("Confirmation Empty")
+                popup("error", "Confirmation Empty")
             elif confirmation_code == self.rand_confirmation:
                 if platform in ["win", "linux"]:
                     App.sm.switch_to(UsbSetup(), direction="left")
                 else:
                     App.sm.switch_to(Captcha(), direction="left")
             else:
-                error_popup("Incorrect Confirmation Number")
+                popup("error", "Incorrect Confirmation Number")
 
 
 class UsbSetup(Screen):
@@ -408,27 +398,26 @@ class Captcha(Screen):
     def try_captcha(self):
         if len(self.captcha_inp.text) == 10:
             s.send_e(self.captcha_inp.text.replace(" ", "").replace("1", "I").replace("0", "O").upper())
-            if s.recv_d(1024) == "V":
-                if App.path == "make":
-                    App.sm.switch_to(NacPassword(), direction="left")
-                if App.path == "login":
+            if s.recv_d() != "V":
+                popup("error", "Captcha Failed")
+            elif App.path == "make":
+                App.sm.switch_to(NacPassword(), direction="left")
+            elif App.path == "login":
+                if App.uname:
+                    s.send_e(f"LOG:{App.mkey}🱫u🱫{App.uname}")
+                else:
+                    s.send_e(f"LOG:{App.mkey}🱫i🱫{App.uid}")
+                log_resp = s.recv_d()
+                if log_resp == "IMK":
+                    popup("error", "Invalid Master Key")
+                    App.sm.switch_to(ReCreateKey(), direction="left")
+                elif log_resp == "NU":
+                    popup("error", "Username/UID does not exist")
+                    App.sm.switch_to(ReCreateKey(), direction="right")
+                else:
                     if App.uname:
-                        s.send_e(f"LOG:{App.mkey}🱫u🱫{App.uname}")
-                    else:
-                        s.send_e(f"LOG:{App.mkey}🱫i🱫{App.uid}")
-                    log_resp = s.recv_d(1024)
-                    if log_resp == "IMK":
-                        error_popup("Invalid Master Key")
-                        App.sm.switch_to(ReCreateKey(), direction="left")
-                    elif log_resp == "NU":
-                        error_popup("Username/UID does not exist")
-                        App.sm.switch_to(ReCreateKey(), direction="right")
-                    else:
-                        if App.uname:
-                            App.uid = s.recv_d(1024)
-                        App.sm.switch_to(LogUnlock(), direction="left")
-            else:
-                error_popup("Captcha Failed")
+                        App.uid = s.recv_d()
+                    App.sm.switch_to(LogUnlock(), direction="left")
 
 
 class NacPassword(Screen):
@@ -437,13 +426,13 @@ class NacPassword(Screen):
 
     def set_nac_password(self):
         if self.nac_password_1.text == "":
-            error_popup("Password 1 Blank")
+            popup("error", "Password 1 Blank")
         elif self.nac_password_2.text == "":
-            error_popup("Password 2 Blank")
+            popup("error", "Password 2 Blank")
         elif len(self.nac_password_1.text) < 9:
-            error_popup("Password Invalid\n- Password must be at least 9 characters")
+            popup("error", "Password Invalid\n- Password must be at least 9 characters")
         elif self.nac_password_1.text != self.nac_password_2.text:
-            error_popup("Password Mismatch\n- Passwords must be the same")
+            popup("error", "Password Mismatch\n- Passwords must be the same")
         else:
             pass_send = pass_to_key(self.nac_password_1.text, default_salt, 50000)
             if App.path == "CHANGE_PASS":
@@ -463,20 +452,20 @@ class LogUnlock(Screen):
 
     def login(self):
         if self.pwd.text == "":
-            error_popup("Password Blank\n- The question is, why is it blank?")
+            popup("error", "Password Blank\n- The question is, why is it blank?")
         else:
             try:
                 user_pass = pass_to_key(self.pwd.text, default_salt, 50000)
                 s.send_e(user_pass)
-                ipk = s.recv_d(1024)
+                ipk = s.recv_d()
                 if ipk == "N":
-                    error_popup("Incorrect Password\n- How exactly did you manage to trigger this")
+                    popup("error", "Incorrect Password\n- How exactly did you manage to trigger this")
                     self.pwd.text = ""
                 else:
                     App.ipk = ipk
                     App.sm.switch_to(TwoFacLog(), direction="left")
             except zl_error:
-                error_popup("Incorrect Password")
+                popup("error", "Incorrect Password")
                 self.pwd.text = ""
 
 
@@ -488,7 +477,7 @@ class TwoFacSetup(Screen):
         self.two_fac_wait_text = "Waiting for 2fa QR code..."
 
     def on_enter(self, *args):
-        App.uid, secret_code = s.recv_d(1024).split("🱫")
+        App.uid, secret_code = s.recv_d().split("🱫")
         secret_code = b32encode(secret_code.encode()).decode().replace('=', '')
         print(secret_code)  # todo mention in UI text
         self.ids.two_fac_qr.source = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=otpauth%3A%2" \
@@ -498,16 +487,18 @@ class TwoFacSetup(Screen):
 
     def confirm_2fa(self):
         if self.two_fac_code.text == "":
-            error_popup("2FA Code Blank\n- Please enter a 2FA code")
+            popup("error", "2FA Code Blank\n- Please enter a 2FA code")
         elif len(self.two_fac_code.text) != 6:
-            error_popup("Invalid 2FA Code")
+            popup("error", "Invalid 2FA Code")
         else:
             s.send_e(self.two_fac_code.text.replace(" ", ""))
-            ipk = s.recv_d(1024)
-            if ipk != "N":
+            ipk = s.recv_d()
+            if ipk == "N":
+                popup("error", "2FA Failed\n- Please Try Again")
+            else:
                 with open("userdata/key", "wb") as f:
                     f.write(App.uid.encode()+ipk)
-                App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d(1024).split("🱫")
+                App.uname, App.xp, App.r_coin, App.d_coin = s.recv_d().split("🱫")
                 if App.r_coin.endswith(".0"):
                     App.r_coin = App.r_coin[:-2]
                 if App.d_coin.endswith(".0"):
@@ -516,8 +507,6 @@ class TwoFacSetup(Screen):
                     with open(f"{App.new_drive}mkey", "w", encoding="utf-8") as f:
                         f.write(f"{App.uid}🱫{App.acc_key}🱫{App.pin_code}")
                 App.sm.switch_to(Home(), direction="left")
-            else:
-                error_popup("2FA Failed\n- Please Try Again")
 
 
 class TwoFacLog(Screen):
@@ -525,19 +514,19 @@ class TwoFacLog(Screen):
 
     def confirm_2fa(self):
         if self.two_fac_code.text == "":
-            error_popup("2FA Code Blank\n- Please enter a 2FA code")
+            popup("error", "2FA Code Blank\n- Please enter a 2FA code")
         elif len(self.two_fac_code.text) != 6:
-            error_popup("Invalid 2FA Code")
+            popup("error", "Invalid 2FA Code")
         else:
             s.send_e(self.two_fac_code.text.replace(" ", ""))
-            two_fa_valid = s.recv_d(1024)
+            two_fa_valid = s.recv_d()
             if two_fa_valid == "N":
-                error_popup("2FA Failed\n- Please Try Again")
+                popup("error", "2FA Failed\n- Please Try Again")
             elif App.path == "CHANGE_PASS":
                 with open("userdata/key", "wb") as f:
                     f.write(App.uid.encode()+two_fa_valid)
                 App.sm.switch_to(Settings(), direction="left")
-                success_popup("Password Changed")
+                popup("success", "Password Changed")
             else:
                 with open("userdata/key", "wb") as f:
                     f.write(App.uid.encode()+App.ipk)
@@ -634,23 +623,21 @@ class Home(Screen):
 
     def transfer_coins(self):
         if self.transfer_amt.text in ["", "."]:
-            error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
+            popup("error", "Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
         elif len(self.transfer_uid.text) < 8:
-            error_popup("Invalid Username/UID For Transfer")
+            popup("error", "Invalid Username/UID For Transfer")
         elif self.transfer_uid.text == App.uid or self.transfer_uid.text == App.uname:
-            error_popup("You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
+            popup("error", "You cannot transfer funds to yourself\n- WHY ARE YOU EVEN TRYING TO?!")
         elif float(self.transfer_amt.text) < 3:
-            error_popup("Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
+            popup("error", "Below Minimum Transfer\n- Transaction amount below the 3 R minimum")
         elif float(self.transfer_amt.text) > float(App.r_coin)*0.995:
-            error_popup("Insufficient funds For Transfer")
+            popup("error", "Insufficient funds For Transfer")
         else:
-            #App.popup_text = f"Send {self.transfer_uid.text} R to {self.transfer_send}\n" \
-            #                 f"Fee: {self.transfer_fee}\nTotal Cost: {self.transfer_cost}"
-            #App.popup = Factory.TransferConfirmPopup()
-            #App.popup.open()
             s.send_e(f"TRF:{self.transfer_uid.text}🱫{self.transfer_amt.text}")
-            if s.recv_d(1024) == "V":
-                success_popup(f"Transfer of {self.transfer_amt.text} R to {self.transfer_uid.text} Successful")
+            if s.recv_d() != "V":
+                popup("error", "Invalid Username/UID For Transfer")
+            else:
+                popup("success", f"Transfer of {self.transfer_amt.text} R to {self.transfer_uid.text} Successful")
                 self.add_transaction(f"Sent [color=f46f0eff]{self.transfer_amt.text} R[/color] "
                                      f"to {self.transfer_uid.text}")
                 App.r_coin = str(round(float(App.r_coin)-float(self.transfer_amt.text)/0.995, 2))
@@ -659,27 +646,25 @@ class Home(Screen):
                 self.r_coins = App.r_coin+" R"
                 self.transfer_uid.text = ""
                 self.transfer_amt.text = ""
-            else:
-                error_popup("Invalid Username/UID For Transfer")
 
     def check_code(self):
         if not len(self.code.text) == 19:
-            error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
+            popup("error", "Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
         elif not self.code.text[5] == "-" and self.code.text[10] == "-" and self.code.text[15] == "-":
-            error_popup("Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
+            popup("error", "Invalid Code\n- Does not match format xxxx-xxxx-xxxx-xxxx")
         else:
             s.send_e(f"CLM:{self.code.text}")
-            code_resp = s.recv_d(1024)
+            code_resp = s.recv_d()
             if code_resp != "N":
                 if code_resp.startswith("R"):
                     App.r_coin = str(round(float(App.r_coin)+float(code_resp[2:]), 2))
                     if App.r_coin.endswith(".0"):
                         App.r_coin = App.r_coin[:-2]
                     self.r_coins = App.r_coin+" R"
-                    success_popup(f"Successfully claimed {code_resp[2:]} R")
+                    popup("success", f"Successfully claimed {code_resp[2:]} R")
                     self.add_transaction(f"Claimed [color=f46f0eff]{code_resp[2:]} R[/color] from gift code")
             else:
-                error_popup("Invalid Code")
+                popup("error", "Invalid Code")
 
     def convert_coins(self, amount_convert):
         if amount_convert not in ["", "."]:
@@ -719,41 +704,54 @@ class Chat(Screen):
     public_room_msg_counter = 0
     public_room_inp = ObjectProperty(None)
 
+    def msg_watch(self):
+        s.send_e("JNC")
+        while True:
+            msg_author, msg_content = s.recv_d().split("🱫")
+            if msg_author == "LVC":
+                break
+            Clock.schedule_once(lambda dt: self.add_msg(msg_author[:-4], msg_content))
+
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
+        Thread(target=self.msg_watch, daemon=True).start()
+
+    def on_leave(self, *args):
+        s.send_e("LVC")
+
+    def add_msg(self, name, text):
+        if "https://" in text or "http://" in text:
+            self.ids.public_chat.add_widget(AsyncImage(source=text, size_hint_y=None, height=300, anim_delay=0.05))
+        else:
+            self.ids.public_chat.add_widget(Label(text=f"[color=#14e42bff]{name}[/color] [color=#858d8fff] "
+                                                       f"{str(datetime.now())[:-7]}[/color] {text}", font_size=16,
+                                                  color=(1, 1, 1, 1), size_hint_y=None, height=40, markup=True))
+        self.public_room_msg_counter += 1
+        if self.ids.public_room_scroll.scroll_y == 0:
+            scroll_down = True
+        else:
+            scroll_down = False
+        if self.public_room_msg_counter > 101:
+            self.ids.public_chat.remove_widget(self.ids.public_chat.children[-1])
+            self.ids.public_chat.children[-1].text = "MESSAGES ABOVE DELETED DUE 100 MESSAGE LIMIT"
+            self.public_room_msg_counter -= 1
+        message_height = 0
+        for i in range(self.public_room_msg_counter):
+            self.ids.public_chat.children[i].y = message_height
+            self.ids.public_chat.children[i].x = 0
+            message_height += self.ids.public_chat.children[i].height
+        self.ids.public_chat.height = message_height
+        if scroll_down:
+            self.ids.public_room_scroll.scroll_y = 0
+        else:
+            pass  # todo make stay still
 
     def send_public_message(self):
         if self.public_room_inp.text != "":
-            if "https://" in self.public_room_inp.text or "http://" in self.public_room_inp.text:
-                self.ids.public_chat.add_widget(AsyncImage(source=self.public_room_inp.text, size_hint_y=None,
-                                                           height=300, anim_delay=0.05))
-            else:
-                self.ids.public_chat.add_widget(Label(text=f"[color=#14e42bff]{App.uname[:-4]}[/color] "
-                                                           f"[color=#858d8fff] {str(datetime.now())[:-7]}[/color] "
-                                                           f"{self.public_room_inp.text}", font_size=16,
-                                                      color=(1, 1, 1, 1), size_hint_y=None, height=40, markup=True))
-            s.send_e(f"MSG:{self.public_room_inp.text}")
-            self.public_room_msg_counter += 1
-            if self.ids.public_room_scroll.scroll_y == 0:
-                scroll_down = True
-            else:
-                scroll_down = False
-            if self.public_room_msg_counter > 101:
-                self.ids.public_chat.remove_widget(self.ids.public_chat.children[-1])
-                self.ids.public_chat.children[-1].text = "MESSAGES ABOVE DELETED DUE 100 MESSAGE LIMIT"
-                self.public_room_msg_counter -= 1
-            message_height = 0
-            for i in range(self.public_room_msg_counter):
-                self.ids.public_chat.children[i].y = message_height
-                self.ids.public_chat.children[i].x = 0
-                message_height += self.ids.public_chat.children[i].height
-            self.ids.public_chat.height = message_height
+            self.add_msg(App.uname[:-4], self.public_room_inp.text)
+            s.send_e(f"{self.public_room_inp.text}")
             self.public_room_inp.text = ""
-            if scroll_down:
-                self.ids.public_room_scroll.scroll_y = 0
-            else:
-                pass  # todo make stay still
 
 
 class Store(Screen):
@@ -799,10 +797,10 @@ class Settings(Screen):
 
     def change_name(self):
         if float(App.d_coin) < 5:
-            error_popup("Insufficient Funds\n- You require 5 D to change your username")
+            popup("error", "Insufficient Funds\n- You require 5 D to change your username")
         elif 4 < len(self.uname_to.text) < 25:
             s.send_e(f"CUN:{self.uname_to.text}")
-            new_uname = s.recv_d(1024)
+            new_uname = s.recv_d()
             if new_uname != "N":
                 App.uname = new_uname
                 self.uname = App.uname
@@ -810,26 +808,23 @@ class Settings(Screen):
                 if App.d_coin.endswith(".0"):
                     App.d_coin = App.d_coin[:-2]
                 self.d_coins = App.d_coin+" D"
-                success_popup(f"Username changed to {self.uname}")
+                popup("success", f"Username changed to {self.uname}")
                 App.transactions.append(f"Spent [color=#16c2e1ff]5 D[/color] to change username to "
                                         f"[color=#14e42aff]{self.uname}[/color]")
         else:
-            error_popup("Invalid Username\n- Username must be between 5 and 24 characters")
+            popup("error", "Invalid Username\n- Username must be between 5 and 24 characters")
 
     def change_pass(self):
         if len(self.n_pass.text) < 9:
-            error_popup("Password Invalid\n- Password must be at least 9 characters")
+            popup("error", "Password Invalid\n- Password must be at least 9 characters")
         else:
             # todo 2fa, new ipk, needs old pass
             s.send_e(f"CUP:{pass_to_key(self.n_pass.text, default_salt, 50000)}")
-            if s.recv_d(1024) == "V":
+            if s.recv_d() == "V":
                 App.path = "CHANGE_PASS"
                 App.sm.switch_to(NacPassword(), direction="left")
             else:
-                error_popup("Incorrect Password\n- Please try again")
-
-            #if s.recv_d(1024) == "V":
-            #    success_popup(f"Password changed")
+                popup("error", "Incorrect Password\n- Please try again")
 
 
 class ColorSettings(Screen):
@@ -899,17 +894,17 @@ class GiftCards(Screen):
     def buy_gift_card(self, amount):
         if float(App.r_coin) >= float(amount):
             s.send_e(f"BGC:{amount}")
-            gift_code = s.recv_d(1024)
+            gift_code = s.recv_d()
             App.r_coin = str(round(float(App.r_coin)-float(amount), 2))
             if App.r_coin.endswith(".0"):
                 App.r_coin = App.r_coin[:-2]
             self.r_coins = App.r_coin+" R"
-            success_popup(f"Successfully bought {amount} R gift card\nCode: {gift_code}\n\n"
-                          f"To view this code again,\ngo to your transaction history")
+            popup("success", f"Successfully bought {amount} R gift card\nCode: {gift_code}\n\n"
+                             f"To view this code again,\ngo to your transaction history")
             App.transactions.append(f"Bought [color=f46f0eff]{amount} R gift card[/color] for [color=f46f0eff]"
                                     f"{amount} R[/color]\n Code: [color=25be42ff]{gift_code}[/color]")
         else:
-            error_popup("Insufficient Funds\n- You require more R Coins")
+            popup("error", "Insufficient Funds\n- You require more R Coins")
 
 
 class DataCoins(Screen):
@@ -922,10 +917,10 @@ class DataCoins(Screen):
 
     def buy_d(self, amount):
         if float(App.r_coin) < float(amount):
-            error_popup("Insufficient Funds\n- You require more R Coins")
+            popup("error", "Insufficient Funds\n- You require more R Coins")
         else:
             s.send_e(f"BYD:{amount}")
-            if s.recv_d(1024) == "V":
+            if s.recv_d() == "V":
                 App.r_coin = str(round(float(App.r_coin)-float(amount), 2))
                 d_amount = {15: 150, 35: 375, 50: 550, 100: 1150, 210: 2500}.get(amount)
                 App.d_coin = str(round(float(App.d_coin)+d_amount, 2))
@@ -935,7 +930,7 @@ class DataCoins(Screen):
                     App.d_coin = App.d_coin[:-2]
                 self.d_coins = App.d_coin+" D"
                 self.r_coins = App.r_coin+" R"
-                success_popup(f"Successfully bought {d_amount} D for {amount} R")
+                popup("success", f"Successfully bought {d_amount} D for {amount} R")
                 App.transactions.append(f"Bought [color=15c1e0ff]{d_amount} D[/color] for "
                                         f"[color=f46f0eff]{amount} R[/color]")
 
@@ -993,7 +988,7 @@ class Spinner(Screen):
         self.d_coins = App.d_coin+" D"
         if self.game_hash is None:
             s.send_e("MCF:2")
-            self.game_hash = s.recv_d(1024)
+            self.game_hash = s.recv_d()
             self.game_info.text = "Game - 2x"
         draw_circle(self, self.spin_odds)
         draw_triangle(self)
@@ -1006,7 +1001,7 @@ class Spinner(Screen):
         self.spin_odds = {2: [470, 530], 3: [310, 690], 5: [190, 810], 10: [105, 895]}.get(mult)
         draw_circle(self, self.spin_odds)
         self.mult = mult
-        self.game_hash = s.recv_d(1024)
+        self.game_hash = s.recv_d()
         self.game_info.text = f"Game - {mult}x"
 
     def check_bet(self):
@@ -1027,20 +1022,20 @@ class Spinner(Screen):
 
     def spin(self):
         if self.spin_bet.text == "":
-            Clock.schedule_once(lambda dt: error_popup("Below Minimum Bet\n- Bet amount below the 1 R minimum"))
+            Clock.schedule_once(lambda dt: popup("error", "Below Minimum Bet\n- Bet amount below the 1 R minimum"))
         elif float(self.spin_bet.text) < 1:
-            Clock.schedule_once(lambda dt: error_popup("Below Minimum Bet\n- Bet amount below the 1 R minimum"))
+            Clock.schedule_once(lambda dt: popup("error", "Below Minimum Bet\n- Bet amount below the 1 R minimum"))
         elif float(self.spin_bet.text) > float(App.r_coin):
-            Clock.schedule_once(lambda dt: error_popup("Insufficient funds For Transfer"))
+            Clock.schedule_once(lambda dt: popup("error", "Insufficient funds For Transfer"))
         elif float(self.spin_bet.text) > 30:
-            Clock.schedule_once(lambda dt: error_popup("Above Maximum Bet\n- Bet amount above the 30 R maximum\n"
-                                                       "This limit is based on your level"))
+            Clock.schedule_once(lambda dt: popup("error", "Above Maximum Bet\n- Bet amount above the 30 R maximum\n"
+                                                          "This limit is based on your level"))
         else:
             for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
                 self.ids[mult_btn].disabled = True
             self.ids.spin_btn.disabled = True
             s.send_e(f"RCF:{self.game_hash}🱫{self.spin_bet.text}")
-            seed_inp, rand_float, outcome = s.recv_d(1024).split("🱫")
+            seed_inp, rand_float, outcome = s.recv_d().split("🱫")
             for draw in create_draws(outcome.lower(), self.spin_odds):
                 Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw))
                 sleep(0.03)
@@ -1049,16 +1044,16 @@ class Spinner(Screen):
             if outcome == "WIN":
                 Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
                 self.ids.spin_text.text = "You Won!"
-                App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*self.mult))
+                App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*self.mult, 2))
                 App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
-                                        f"{float(self.spin_bet.text)*2} R[/color] [color=25be42ff]gained[/color] "
-                                        f"[color=f2ef32ff]{xp_amt} XP[/color]")
+                                        f"{float(self.spin_bet.text)*self.mult} R[/color] "
+                                        f"[color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
             else:
                 Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
                 App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.spin_bet.text} "
                                         f"R[/color] [color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
                 self.ids.spin_text.text = "You Lost"
-                App.r_coin = str(round(float(App.r_coin)-float(self.spin_bet.text)))
+                App.r_coin = str(round(float(App.r_coin)-float(self.spin_bet.text), 2))
             if App.r_coin.endswith(".0"):
                 App.r_coin = App.r_coin[:-2]
             self.r_coins = App.r_coin+" R"
@@ -1066,7 +1061,7 @@ class Spinner(Screen):
             Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
             Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
             s.send_e(f"MCF:{self.mult}")
-            self.game_hash = s.recv_d(1024)
+            self.game_hash = s.recv_d()
             self.ids.spin_text.text = ""
             self.ids.spin_btn.disabled = False
             for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
@@ -1076,6 +1071,36 @@ class Spinner(Screen):
     def run_spinner(self):
         Thread(target=self.spin).start()
         draw_circle(self, self.spin_odds, 0)
+
+
+class Crash(Screen):
+    r_coins = StringProperty()
+    d_coins = StringProperty()
+    crash_bet = ObjectProperty(None)
+    game_info = ObjectProperty(None)
+    game_hash = None
+
+    def on_pre_enter(self, *args):
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
+        #if self.game_hash is None:
+        #    s.send_e("MCF:2")
+        #    self.game_hash = s.recv_d()
+        #    self.game_info.text = "Game - 2x"
+
+    def check_bet(self):
+        if self.crash_bet.text != "":
+            self.crash_bet.text = self.crash_bet.text[:12]
+            if float(self.crash_bet.text) > float(App.r_coin):
+                self.crash_bet.text = App.r_coin
+            if "." in self.crash_bet.text:
+                if len(self.crash_bet.text.split(".")[1]) > 2:
+                    self.crash_bet.text = self.crash_bet.text[:-1]
+        if self.crash_bet.text == ".":
+            self.crash_bet.text = ""
+
+    def run_market(self):
+        pass
 
 
 class Reloading(Screen):
@@ -1136,7 +1161,7 @@ class App(KivyApp):
          LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
          Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
          Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
-         GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Spinner(name="Spinner"),
+         GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Spinner(name="Spinner"), Crash(name="Crash"),
          Reloading(name="Reloading")]]
 
         if version:
@@ -1187,7 +1212,7 @@ def reload(reason):
      LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
      Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
      Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
-     GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Spinner(name="Spinner")]]
+     GiftCards(name="GiftCards"), DataCoins(name="DataCoins"), Spinner(name="Spinner"), Crash(name="Crash")]]
     if reason == "reload":
         if current_screen == "_screen0":
             current_screen = "Home"

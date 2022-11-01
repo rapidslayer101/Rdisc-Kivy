@@ -165,26 +165,6 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.9, 0.9
             pos_hint: {"x": 0.05, "top": 1.1}
             
-<ClaimCodePopup@Popup>:
-    title: "Claim Code"
-    auto_dismiss: False
-    size_hint: 0.6, 0.6
-    GreyFloatLayout:
-        Label:
-            text: app.claim_result
-            size_hint: 0.9, 0.9
-            pos_hint: {"x": 0.05, "top": 1.2}
-        RoundedButton:
-            text: 'Exit'
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.19, "top": 0.2}
-            on_release: root.dismiss()
-        RoundedButton:
-            text: 'Claim'
-            size_hint: 0.3, 0.1
-            pos_hint: {"x": 0.51, "top": 0.2}
-            on_release: root.dismiss()
-
 # colored labels
 <GreyLabel@SizeLabel>
     canvas.before:
@@ -967,7 +947,7 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.22, "top": 0.92}
-            #on_press: root.manager.current = 'Spinner'
+            on_press: root.manager.current = 'Crash'
         SizeLabel:
             text: "Crash - Coming Soon"
             pos_hint: {"x": 0.27, "top": 0.91}
@@ -1065,16 +1045,16 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.31, "top": 0.6}
             on_press: root.change_pass()
         RoundedBackingButton:
-            size_hint: 0.2, 0.4
+            size_hint: 0.25, 0.5
             pos_hint: {"x": 0.38, "top": 0.92}
             on_press: root.manager.current = 'ColorSettings'
         SizeLabel:
             text: "Color settings"
-            pos_hint: {"x": 0.43, "top": 0.9}
+            pos_hint: {"x": 0.455, "top": 0.9}
         AsyncImage:
             source: "https://i.pinimg.com/originals/46/df/8a/46df8ac05dae334c4b473987f2d90574.png"
-            size_hint: 0.16, 0.3
-            pos_hint: {"x": 0.4, "top": 0.85}
+            size_hint: 0.2, 0.35
+            pos_hint: {"x": 0.405, "top": 0.83}
         RoundedButton:
             text: "T's and C's"
             size_hint: 0.1, 0.05
@@ -1561,10 +1541,6 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.35, "top": 0.3}
             multiline: False
             on_text: root.check_bet()
-        SizeLabel:
-            text: "This spinner is a WIP. It may show an invalid visual. The text in the centre of the spinner is the correct outcome."
-            font_size: "10dp"
-            pos_hint: {"x": 0.45, "top": 0.1}
         BackingLabel:
             size_hint: 0.23, 0.2
             pos_hint: {"x": 0.76, "top": 0.92}
@@ -1596,6 +1572,54 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.15, 0.1
             pos_hint: {"x": 0.8, "top": 0.2}
             on_press: root.set_odds(10)
+            
+<Crash>:
+    crash_bet: crash_bet
+    game_info: game_info
+    GreyFloatLayout:
+        Button:
+            text: "<< Games"
+            size_hint: 0.1, 0.05
+            pos_hint: {"x": 0, "top": 1}
+            on_press: root.manager.current = 'Games'
+        R_coin_label:
+            text: root.r_coins
+        D_coin_label:
+            text: root.d_coins
+        BackingLabel:
+            id: crash_col
+            size_hint: 0.6, 0.9
+            pos_hint: {"x": 0.15, "top": 0.95}
+        Label:
+            text: "Crash"
+            font_size: "30dp"
+            pos_hint: {"x": -0.05, "top": 1.38}
+        Label:
+            #id: spin_text
+            text: "Coming soon."
+            markup: True
+            font_size: "20dp"
+            pos_hint: {"x": -0.05, "top": 1.1}
+        RoundedButton:
+            id: crash_btn
+            text: "Start"
+            size_hint: 0.1, 0.1
+            pos_hint: {"x": 0.5, "top": 0.2}
+            on_press: root.run_market()
+        RoundedTxtInp:
+            id: crash_bet
+            input_filter: "float"
+            hint_text: "Bet"
+            size_hint: 0.15, 0.1
+            pos_hint: {"x": 0.3, "top": 0.2}
+            multiline: False
+            on_text: root.check_bet()
+        BackingLabel:
+            size_hint: 0.23, 0.2
+            pos_hint: {"x": 0.76, "top": 0.92}
+        SizeLabel:
+            id: game_info
+            pos_hint: {"x": 0.827, "top": 0.9}
             
 <Reloading>
     GreyFloatLayout:

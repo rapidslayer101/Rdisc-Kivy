@@ -23,9 +23,11 @@ if not path.exists('users'):
 
 
 class Users:
+    chat_users = {}
+    logged_in_users = []
+    uid_keys = {}
+
     def __init__(self):
-        self.logged_in_users = []
-        self.sockets = []
         self.db = sqlite3.connect('rdisc_server.db', check_same_thread=False)
         self.db.execute("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE,"
                         "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
@@ -36,16 +38,16 @@ class Users:
                         "expiry_date DATE NOT NULL, left TEXT NOT NULL, reward_type TEXT NOT NULL, "
                         "amount FLOAT NOT NULL)")
 
-    def login(self, u_id, ip, cs):
+    def login(self, u_id, ip, enc_key):
         self.logged_in_users.append(u_id)
         self.logged_in_users.append(ip)
-        self.sockets.append(cs)
+        self.uid_keys.update({u_id: enc_key})
 
-    def logout(self, u_id, ip, cs):
+    def logout(self, u_id, ip):
         try:
             self.logged_in_users.pop(self.logged_in_users.index(u_id))
             self.logged_in_users.pop(self.logged_in_users.index(ip))
-            self.sockets.pop(self.sockets.index(cs))
+            self.uid_keys.pop(u_id)
             self.db.execute("UPDATE users SET last_online = ? WHERE user_id = ?", (str(datetime.now())[:-7], u_id))
             self.db.commit()
         except ValueError:
@@ -75,6 +77,10 @@ class Users:
             return True
         else:
             return False
+
+
+    def join_chat(self, uid, cs):
+        self.chat_users.update({uid: cs})
 
 
 def add_transaction(uid, t_type, amount, spent, desc):
@@ -107,6 +113,7 @@ def client_connection(cs):
         cs.send(encrypt(enc_seed.encode(), pub_key_cli))
         enc_key = pass_to_key(enc_seed[:18], enc_seed[18:], 100000)
         coinflip_games = []
+        request = None
 
         def send_e(text):
             try:
@@ -312,7 +319,7 @@ def client_connection(cs):
             else:
                 raise InvalidClientData
 
-        users.login(uid, ip, cs)
+        users.login(uid, ip, enc_key)
         print(f"{uid} logged in with IP-{ip}:{port}")
         while True:  # main loop
             request = recv_d()
@@ -418,16 +425,30 @@ def client_connection(cs):
                                 users.db.commit()
                                 add_transaction(uid, "CUN", 0, 5, f"Changed u_name to {n_u_name_i}")
                                 send_e(n_u_name_i)
+                                u_name = n_u_name_i
                                 break
                         except sqlite3.OperationalError:
                             if counter == 10:
                                 send_e("N")
                                 break
 
-            elif request.startswith("MSG:"):  # send message
-                print(request[4:])  # todo send message to all clients
-                #for cs in client_sockets:
-                #    cs.sendall(request[4:].encode())
+            elif request.startswith("JNC"):  # join public chat
+                Users.chat_users.update({uid: cs})
+                while True:
+                    u_msg = recv_d()
+                    if u_msg == "LVC":  # leave public chat
+                        Users.chat_users.pop(uid)
+                        send_e("LVC🱫")
+                        break
+                    else:
+                        for user_id in Users.chat_users.keys():  # todo keys for each user
+                            if user_id != uid:
+                                try:
+                                    print(user_id, Users.chat_users[user_id])
+                                    Users.chat_users[user_id].send(enc_from_key(f"{u_name}🱫{u_msg}",
+                                                                                Users.uid_keys[user_id]))
+                                except zl_error:
+                                    raise ConnectionResetError
 
             elif request.startswith("TRF:"):  # transfer R coins
                 transfer_to, transfer_amount = request[4:].split("🱫")
@@ -537,13 +558,16 @@ def client_connection(cs):
     except ConnectionResetError:
         print(f"{uid}-{ip}:{port} DC")
         if ip in users.logged_in_users:
-            users.logout(uid, ip, cs)
+            users.logout(uid, ip)
     except InvalidClientData:
         print(f"{uid}-{ip}:{port} DC - modified/invalid client request")
         if ip in users.logged_in_users:
-            users.logout(uid, ip, cs)
+            users.logout(uid, ip)
         with open(f"users/{uid}/log.txt", "a") as log:
-            log.write(f"{str(datetime.now())[:-7]} - ICR: {request}\n")
+            if request:
+                log.write(f"{str(datetime.now())[:-7]} - ICR: {request}\n")
+            else:
+                log.write(f"{str(datetime.now())[:-7]} - ICR: None\n")
 
 
 while True:
