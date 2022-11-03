@@ -759,7 +759,8 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.32, 0.23
             pos_hint: {"x": 0.67, "top": 0.92}
         SizeLabel:
-            text: "Level 0"
+            #text: "Level 0"
+            text: "Experience"
             pos_hint: {"x": 0.78, "top": 0.9}
         Label:
             id: level_bar
@@ -847,7 +848,7 @@ kv_payload = """# You can edit this file to change the UI.
             size_hint: 0.5, 0.88
             pos_hint: {"x": 0.25, "top": 0.9}
         Label:
-            text: "Public Chat Room (WIP - This does not actually send messages yet)" 
+            text: "Public Chat Room" 
             size_hint: 0.3, 0.1
             pos_hint: {"x": 0.35, "top": 0.9}
         ScrollView:
@@ -947,12 +948,12 @@ kv_payload = """# You can edit this file to change the UI.
         RoundedBackingButton:
             size_hint: 0.2, 0.4
             pos_hint: {"x": 0.22, "top": 0.92}
-            on_press: root.manager.current = 'Crash'
+            on_press: root.manager.current = 'Wheel'
         SizeLabel:
-            text: "Crash - Coming Soon"
+            text: "Wheel of Fortune"
             pos_hint: {"x": 0.27, "top": 0.91}
         AsyncImage:
-            source: "https://www.pngmart.com/files/3/Stock-Market-Graph-Up-PNG-Image.png"
+            source: "https://newsroom.mohegansun.com/wp-content/uploads/2016/03/WOF_Family_Logo.png"
             size_hint: 0.16, 0.3
             pos_hint: {"x": 0.24, "top": 0.85}
             
@@ -1523,22 +1524,21 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0, "top": 1.38}
         Label:
             id: spin_text
-            text: ""
             markup: True
-            font_size: "20dp"
-            pos_hint: {"x": 0, "top": 1.1}
+            font_size: "25dp"
+            pos_hint: {"x": 0, "top": 1.07}
         RoundedButton:
             id: spin_btn
             text: "Spin"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.55, "top": 0.3}
+            pos_hint: {"x": 0.55, "top": 0.2}
             on_press: root.run_spinner()
         RoundedTxtInp:
             id: spin_bet
             input_filter: "float"
             hint_text: "Bet"
             size_hint: 0.15, 0.1
-            pos_hint: {"x": 0.35, "top": 0.3}
+            pos_hint: {"x": 0.35, "top": 0.2}
             multiline: False
             on_text: root.check_bet()
         BackingLabel:
@@ -1573,8 +1573,8 @@ kv_payload = """# You can edit this file to change the UI.
             pos_hint: {"x": 0.8, "top": 0.2}
             on_press: root.set_odds(10)
             
-<Crash>:
-    crash_bet: crash_bet
+<Wheel>:
+    wheel_bet: wheel_bet
     game_info: game_info
     GreyFloatLayout:
         Button:
@@ -1587,33 +1587,38 @@ kv_payload = """# You can edit this file to change the UI.
         D_coin_label:
             text: root.d_coins
         BackingLabel:
-            id: crash_col
-            size_hint: 0.6, 0.9
-            pos_hint: {"x": 0.15, "top": 0.95}
+            id: wheel_col
+            size_hint: 0.5, 0.9
+            pos_hint: {"x": 0.25, "top": 0.95}
         Label:
-            text: "Crash"
+            text: "Wheel of Fortune"
             font_size: "30dp"
-            pos_hint: {"x": -0.05, "top": 1.38}
+            pos_hint: {"x": 0, "top": 1.38}
         Label:
-            #id: spin_text
-            text: "Coming soon."
+            id: wheel_text
             markup: True
-            font_size: "20dp"
-            pos_hint: {"x": -0.05, "top": 1.1}
+            font_size: "25dp"
+            pos_hint: {"x": 0, "top": 1.07}
         RoundedButton:
-            id: crash_btn
-            text: "Start"
+            id: wheel_btn
+            text: "Spin"
             size_hint: 0.1, 0.1
-            pos_hint: {"x": 0.5, "top": 0.2}
-            on_press: root.run_market()
+            pos_hint: {"x": 0.55, "top": 0.2}
+            on_press: root.run_wheel()
         RoundedTxtInp:
-            id: crash_bet
+            id: wheel_bet
             input_filter: "float"
             hint_text: "Bet"
             size_hint: 0.15, 0.1
-            pos_hint: {"x": 0.3, "top": 0.2}
+            pos_hint: {"x": 0.35, "top": 0.2}
             multiline: False
             on_text: root.check_bet()
+        BackingLabel:
+            size_hint: 0.23, 0.2
+            pos_hint: {"x": 0.76, "top": 0.92}
+        SizeLabel:
+            id: game_info
+            pos_hint: {"x": 0.827, "top": 0.9}
         BackingLabel:
             size_hint: 0.23, 0.2
             pos_hint: {"x": 0.76, "top": 0.92}

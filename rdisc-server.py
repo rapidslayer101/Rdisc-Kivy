@@ -78,7 +78,6 @@ class Users:
         else:
             return False
 
-
     def join_chat(self, uid, cs):
         self.chat_users.update({uid: cs})
 

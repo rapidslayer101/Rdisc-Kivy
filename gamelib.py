@@ -1,4 +1,4 @@
-import enclib as enc
+from enclib import rand_b96_str, to_base
 from random import seed, uniform, randint
 from hashlib import sha512
 
@@ -9,7 +9,7 @@ def coin_game(odds, seed_inp=None):
     game_ = False
     if not seed_inp:
         game_ = True
-        seed_inp = enc.rand_b96_str(48)  # <-- sent after game finishes
+        seed_inp = rand_b96_str(48)  # <-- sent after game finishes
     seed(seed_inp[:24]+odds)
     rand_float = uniform(1, above_value)
     if rand_float > base:
@@ -17,8 +17,8 @@ def coin_game(odds, seed_inp=None):
     else:
         outcome = "WIN"
     if game_:
-        game_hash = enc.to_base(96, 16, sha512(f"{seed_inp[24:randint(25,36)]}_{outcome}_"
-                                               f"{seed_inp[randint(25,36):]}".encode()).hexdigest())
+        game_hash = to_base(96, 16, sha512(f"{seed_inp[24:randint(25,36)]}_{outcome}_"
+                                           f"{seed_inp[randint(25,36):]}".encode()).hexdigest())
         return seed_inp, rand_float, outcome, game_hash
     else:
         return rand_float
