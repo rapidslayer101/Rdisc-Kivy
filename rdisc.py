@@ -44,10 +44,10 @@ if path.exists("sha.txt"):
         with open("sha.txt", "a+", encoding="utf-8") as f:
             f.write(f"\n{app_hash}§V{release_major}.{major}.{build}.{run}"
                     f"§TME-{str(datetime.now())[:-4].replace(' ', '_')}"
-                    f"§BLD_NM-{bld_num_[7:]}§RUN_NM-{int(run_num_[7:]) + 1}")
+                    f"§BLD_NM-{bld_num_[7:]}§RUN_NM-{int(run_num_[7:])+1}")
             print(f"crnt V{release_major}.{major}.{build}.{run} "
                   f"TME-{str(datetime.now())[:-4].replace(' ', '_')} "
-                  f"BLD_NM-{bld_num_[7:]} RUN_NM-{int(run_num_[7:]) + 1}")
+                  f"BLD_NM-{bld_num_[7:]} RUN_NM-{int(run_num_[7:])+1}")
     print(f"Running rdisc V{release_major}.{major}.{build}.{run}")
 
 default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=G-;|&&rR81!BTElChN|+\"T"
@@ -937,9 +937,8 @@ class DataCoins(Screen):
                                         f"[color=f46f0eff]{amount} R[/color]")
 
 
-def draw_circle(self, segments, rotation=1):
+def draw_circle(self, segments, rotation=0):
     seg = [seg*0.36 for seg in segments]
-    seg.append(0)
     with self.canvas:
         seg_count = 0
         total = 0
@@ -958,6 +957,12 @@ def draw_triangle(self, color):
         Line(points=[self.center[0], self.center[1]-(self.center[1]/2.5), self.center[0]-15,
                      self.center[1]-(self.center[1]/2.5)-30, self.center[0]+15, self.center[1]-(self.center[1]/2.5)-30,
                      self.center[0], self.center[1]-(self.center[1]/2.5)], width=2, cap="none")
+
+
+def canvas_update(canvas, color):
+    with canvas.canvas:
+        Color(*color)
+        RoundedRectangle(size=canvas.size, pos=canvas.pos, radius=[10])
 
 
 def check_odd(odds, value):
@@ -1030,11 +1035,6 @@ class Spinner(Screen):
         if self.spin_bet.text == ".":
             self.spin_bet.text = ""
 
-    def canvas_update(self, color):
-        with self.ids.spin_col.canvas:
-            Color(*color)
-            RoundedRectangle(size=self.ids.spin_col.size, pos=self.ids.spin_col.pos, radius=[10])
-
     def spin(self):
         if self.spin_bet.text == "":
             Clock.schedule_once(lambda dt: popup("error", "Below Minimum Bet\n- Bet amount below the 1 R minimum"))
@@ -1062,14 +1062,14 @@ class Spinner(Screen):
             xp_amt = round(float(self.spin_bet.text)/5, 2)
             App.xp = str(float(App.xp)+xp_amt)
             if outcome == "WIN":
-                Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
+                Clock.schedule_once(lambda dt: canvas_update(self.ids.spin_col, rgb("#2F3D2Fff")))
                 self.ids.spin_text.text = "You Won!"
                 App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*self.mult, 2))
                 App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
                                         f"{float(self.spin_bet.text)*self.mult} R[/color] "
                                         f"[color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
             else:
-                Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
+                Clock.schedule_once(lambda dt: canvas_update(self.ids.spin_col, rgb("#3D332Fff")))
                 App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.spin_bet.text} "
                                         f"R[/color] [color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
                 self.ids.spin_text.text = "You Lost"
@@ -1078,7 +1078,7 @@ class Spinner(Screen):
                 App.r_coin = App.r_coin[:-2]
             self.r_coins = App.r_coin+" R"
             sleep(2)
-            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
+            Clock.schedule_once(lambda dt: canvas_update(self.ids.spin_col, rgb("#3c3c3cff")))
             Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
             Clock.schedule_once(lambda dt: draw_triangle(self, "yellow"))
             s.send_e(f"MCF:{self.mult}")
@@ -1091,7 +1091,7 @@ class Spinner(Screen):
 
     def run_spinner(self):
         Thread(target=self.spin).start()
-        draw_circle(self, self.spin_odds, 0)
+        draw_circle(self, self.spin_odds)
 
 
 class Wheel(Screen):
@@ -1100,29 +1100,17 @@ class Wheel(Screen):
     wheel_bet = ObjectProperty(None)
     game_info = ObjectProperty(None)
     game_hash = None
-    spin_odds = [120, 150, 190, 250, 290]
+    wheel_odds = [120, 150, 190, 250, 290]
 
     def on_pre_enter(self, *args):
-        self.r_coins = App.r_coin + " R"
-        self.d_coins = App.d_coin + " D"
-        self.ids.wheel_btn.disabled = True  # debug
+        self.r_coins = App.r_coin+" R"
+        self.d_coins = App.d_coin+" D"
         if self.game_hash is None:
             s.send_e("MCF:2")  # todo change
             self.game_hash = s.recv_d()
             self.game_info.text = "Game - ??"
-        draw_circle(self, self.spin_odds)
+        draw_circle(self, self.wheel_odds)
         draw_triangle(self, "yellow")
-
-    def set_odds(self, mult):
-        s.send_e(f"MCF:{mult}")
-        for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
-            self.ids[mult_btn].disabled = False
-        self.ids[f"set_x{mult}"].disabled = True
-        self.spin_odds = {2: [470, 530], 3: [310, 690], 5: [190, 810], 10: [105, 895]}.get(mult)
-        draw_circle(self, self.spin_odds)
-        self.mult = mult
-        self.game_hash = s.recv_d()
-        self.game_info.text = f"Game - {mult}x"
 
     def check_bet(self):
         if self.wheel_bet.text != "":
@@ -1134,11 +1122,6 @@ class Wheel(Screen):
                     self.wheel_bet.text = self.wheel_bet.text[:-1]
         if self.wheel_bet.text == ".":
             self.wheel_bet.text = ""
-
-    def canvas_update(self, color):
-        with self.ids.spin_col.canvas:
-            Color(*color)
-            RoundedRectangle(size=self.ids.spin_col.size, pos=self.ids.spin_col.pos, radius=[10])
 
     def wheel(self):
         if self.wheel_bet.text == "":
@@ -1154,42 +1137,42 @@ class Wheel(Screen):
             self.ids.wheel_btn.disabled = True
             s.send_e(f"RCF:{self.game_hash}🱫{self.wheel_bet.text}")
             seed_inp, rand_float, outcome = s.recv_d().split("🱫")
-            for draw in create_draws(outcome.lower(), self.spin_odds):
-                Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw))
+            for draw in create_draws(outcome.lower(), self.wheel_odds):
+                Clock.schedule_once(lambda dt: draw_circle(self, self.wheel_odds, draw[0]))
                 sleep(0.03)
-            xp_amt = round(float(self.spin_bet.text)/5, 2)
-            App.xp = str(float(App.xp) + xp_amt)
+            xp_amt = round(float(self.wheel_bet.text)/5, 2)
+            App.xp = str(float(App.xp)+xp_amt)
             if outcome == "WIN":
-                Clock.schedule_once(lambda dt: self.canvas_update(rgb("#2F3D2Fff")))
+                Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#2F3D2Fff")))
                 self.ids.wheel_text.text = "You Won!"
-                App.r_coin = str(round(float(App.r_coin) + float(self.spin_bet.text) * self.mult, 2))
+                App.r_coin = str(round(float(App.r_coin)+float(self.wheel_bet.text)*2, 2))
                 App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
-                                        f"{float(self.spin_bet.text) * self.mult} R[/color] "
+                                        f"{float(self.wheel_bet.text)*self.mult} R[/color] "
                                         f"[color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
             else:
-                Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3D332Fff")))
-                App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.spin_bet.text} "
+                Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#3D332Fff")))
+                App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.wheel_bet.text} "
                                         f"R[/color] [color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
-                self.ids.spin_text.text = "You Lost"
-                App.r_coin = str(round(float(App.r_coin) - float(self.spin_bet.text), 2))
+                self.ids.wheel_text.text = "You Lost"
+                App.r_coin = str(round(float(App.r_coin)-float(self.wheel_bet.text), 2))
             if App.r_coin.endswith(".0"):
                 App.r_coin = App.r_coin[:-2]
-            self.r_coins = App.r_coin + " R"
+            self.r_coins = App.r_coin+" R"
             sleep(2)
-            Clock.schedule_once(lambda dt: self.canvas_update(rgb("#3c3c3cff")))
-            Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds))
+            Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#3c3c3cff")))
+            Clock.schedule_once(lambda dt: draw_circle(self, self.wheel_odds))
             Clock.schedule_once(lambda dt: draw_triangle(self, "yellow"))
             s.send_e(f"MCF:{self.mult}")
             self.game_hash = s.recv_d()
-            self.ids.spin_text.text = ""
-            self.ids.spin_btn.disabled = False
+            self.ids.wheel_text.text = ""
+            self.ids.wheel_btn.disabled = False
             for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
                 self.ids[mult_btn].disabled = False
             self.ids[f"set_x{self.mult}"].disabled = True
 
     def run_wheel(self):
         Thread(target=self.wheel).start()
-        draw_circle(self, self.spin_odds, 0)
+        draw_circle(self, self.wheel_odds)
 
 
 class Reloading(Screen):
@@ -1323,7 +1306,8 @@ if __name__ == "__main__":
             s = Server()
             App().run()
             break
-        except Exception as e:
+        except NameError as e:
+        #except Exception as e:
             if "App.stop() missing 1 required positional argument: 'self'" in str(e):
                 print("Crash forced by user.")
             else:
