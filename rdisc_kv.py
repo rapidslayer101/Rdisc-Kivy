@@ -945,17 +945,17 @@ kv_payload = """# You can edit this file to change the UI.
             source: "https://purepng.com/public/uploads/large/purepng.com-gold-coingoldatomic-number-79chemical-elementgroup-11-elementaurumgold-dustprecious-metalgold-coins-1701528977728s2dcq.png"
             size_hint: 0.16, 0.3
             pos_hint: {"x": 0.03, "top": 0.85}
-        RoundedBackingButton:
-            size_hint: 0.2, 0.4
-            pos_hint: {"x": 0.22, "top": 0.92}
-            on_press: root.manager.current = 'Wheel'
-        SizeLabel:
-            text: "Wheel of Fortune"
-            pos_hint: {"x": 0.27, "top": 0.91}
-        AsyncImage:
-            source: "https://newsroom.mohegansun.com/wp-content/uploads/2016/03/WOF_Family_Logo.png"
-            size_hint: 0.16, 0.3
-            pos_hint: {"x": 0.24, "top": 0.85}
+        #RoundedBackingButton:
+        #    size_hint: 0.2, 0.4
+        #    pos_hint: {"x": 0.22, "top": 0.92}
+        #    on_press: root.manager.current = 'Wheel'
+        #SizeLabel:
+        #    text: "Wheel of Fortune"
+        #    pos_hint: {"x": 0.27, "top": 0.91}
+        #AsyncImage:
+        #    source: "https://newsroom.mohegansun.com/wp-content/uploads/2016/03/WOF_Family_Logo.png"
+        #    size_hint: 0.16, 0.3
+        #    pos_hint: {"x": 0.24, "top": 0.85}
             
 <Inventory>:
     GreyFloatLayout:

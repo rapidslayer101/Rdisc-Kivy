@@ -1084,28 +1084,6 @@ class Spinner(Screen):
         draw_circle(self, self.spin_odds)
 
 
-def check_odd2(odds, value):  # todo make support multiple odds
-    value = float(str(round(value/360, 3)).split(".")[1])
-    if 500-odds[0] <= value < 500:
-        print(500 - odds[0], value, "green")
-        return "green"
-    if 500-odds[0] > value or 500 <= value:
-        print(500 - odds[0], value, "red")
-        return "red"
-
-
-def create_draws2(result, odds):
-    while True:
-        last = 1
-        draws = []
-        for i in reversed(range(1, randint(100, 200))):
-            next_odd = round(last-i*0.36, 4)
-            draws.append([next_odd, check_odd(odds, next_odd)])
-            last = round(last+i*0.36, 4)
-        if check_odd(odds, last) == result:
-            return draws
-
-
 class Wheel(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -1117,10 +1095,11 @@ class Wheel(Screen):
     def on_pre_enter(self, *args):
         self.r_coins = App.r_coin+" R"
         self.d_coins = App.d_coin+" D"
-        if self.game_hash is None:
-            s.send_e("MCF:2")  # todo change
-            self.game_hash = s.recv_d()
-            self.game_info.text = "Game - ??"
+        self.ids.wheel_btn.disabled = True
+        #if self.game_hash is None:
+        #    s.send_e("MCF:2")
+        #    self.game_hash = s.recv_d()
+        #    self.game_info.text = "Game - ??"
         draw_circle(self, self.wheel_odds)
         draw_triangle(self, "yellow")
 
@@ -1149,7 +1128,7 @@ class Wheel(Screen):
             self.ids.wheel_btn.disabled = True
             s.send_e(f"RCF:{self.game_hash}🱫{self.wheel_bet.text}")
             seed_inp, rand_float, outcome = s.recv_d().split("🱫")
-            for draw in create_draws2(outcome, self.wheel_odds):
+            for draw in create_draws(outcome, self.wheel_odds):
                 Clock.schedule_once(lambda dt: draw_circle(self, self.wheel_odds, draw[0]))
                 if draw[1] == "green":
                     self.ids.wheel_text.text = "Green"
