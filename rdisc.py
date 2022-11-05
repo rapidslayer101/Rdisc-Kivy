@@ -965,12 +965,12 @@ def canvas_update(canvas, color):
         RoundedRectangle(size=canvas.size, pos=canvas.pos, radius=[10])
 
 
-def check_odd(odds, value):
+def check_odd(odds, value):  # todo make support multiple odds
     value = float(str(round(value/360, 3)).split(".")[1])
     if 500-odds[0] <= value < 500:
-        return True
+        return "green"
     if 500-odds[0] > value or 500 <= value:
-        return False
+        return "red"
 
 
 def create_draws(result, odds):
@@ -979,19 +979,10 @@ def create_draws(result, odds):
         draws = []
         for i in reversed(range(1, randint(100, 200))):
             next_odd = round(last-i*0.36, 4)
-            if check_odd(odds, next_odd):
-                draws.append([next_odd, "green"])
-            else:
-                draws.append([next_odd, "red"])
+            draws.append([next_odd, check_odd(odds, next_odd)])
             last = round(last+i*0.36, 4)
-        if result == "win":
-            print(500, 500+odds[0], float(str(round(last/360, 3)).split(".")[1]))
-            if check_odd(odds, last):
-                return draws
-        if result == "loss":
-            print(500, 500+odds[0], float(str(round(last/360, 3)).split(".")[1]))
-            if not check_odd(odds, last):
-                return draws
+        if check_odd(odds, last) == result:
+            return draws
 
 
 class Spinner(Screen):
@@ -1020,7 +1011,6 @@ class Spinner(Screen):
         self.ids[f"set_x{mult}"].disabled = True
         self.spin_odds = {2: [470, 530], 3: [310, 690], 5: [190, 810], 10: [105, 895]}.get(mult)
         draw_circle(self, self.spin_odds)
-        self.mult = mult
         self.game_hash = s.recv_d()
         self.game_info.text = f"Game - {mult}x"
 
@@ -1051,17 +1041,17 @@ class Spinner(Screen):
             self.ids.spin_btn.disabled = True
             s.send_e(f"RCF:{self.game_hash}🱫{self.spin_bet.text}")
             seed_inp, rand_float, outcome = s.recv_d().split("🱫")
-            for draw in create_draws(outcome.lower(), self.spin_odds):
+            for draw in create_draws(outcome, self.spin_odds):
                 Clock.schedule_once(lambda dt: draw_circle(self, self.spin_odds, draw[0]))
                 Clock.schedule_once(lambda dt: draw_triangle(self, draw[1]))
                 if draw[1] == "green":
                     self.ids.spin_text.text = "Green"
                 if draw[1] == "red":
                     self.ids.spin_text.text = "Red"
-                sleep(0.03)
+                sleep(0.03)  # wheel speed, higher is slower
             xp_amt = round(float(self.spin_bet.text)/5, 2)
             App.xp = str(float(App.xp)+xp_amt)
-            if outcome == "WIN":
+            if outcome == "green":
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.spin_col, rgb("#2F3D2Fff")))
                 self.ids.spin_text.text = "You Won!"
                 App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*self.mult, 2))
@@ -1084,14 +1074,36 @@ class Spinner(Screen):
             s.send_e(f"MCF:{self.mult}")
             self.game_hash = s.recv_d()
             self.ids.spin_text.text = ""
-            self.ids.spin_btn.disabled = False
             for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
                 self.ids[mult_btn].disabled = False
             self.ids[f"set_x{self.mult}"].disabled = True
+            self.ids.spin_btn.disabled = False
 
     def run_spinner(self):
         Thread(target=self.spin).start()
         draw_circle(self, self.spin_odds)
+
+
+def check_odd2(odds, value):  # todo make support multiple odds
+    value = float(str(round(value/360, 3)).split(".")[1])
+    if 500-odds[0] <= value < 500:
+        print(500 - odds[0], value, "green")
+        return "green"
+    if 500-odds[0] > value or 500 <= value:
+        print(500 - odds[0], value, "red")
+        return "red"
+
+
+def create_draws2(result, odds):
+    while True:
+        last = 1
+        draws = []
+        for i in reversed(range(1, randint(100, 200))):
+            next_odd = round(last-i*0.36, 4)
+            draws.append([next_odd, check_odd(odds, next_odd)])
+            last = round(last+i*0.36, 4)
+        if check_odd(odds, last) == result:
+            return draws
 
 
 class Wheel(Screen):
@@ -1137,17 +1149,21 @@ class Wheel(Screen):
             self.ids.wheel_btn.disabled = True
             s.send_e(f"RCF:{self.game_hash}🱫{self.wheel_bet.text}")
             seed_inp, rand_float, outcome = s.recv_d().split("🱫")
-            for draw in create_draws(outcome.lower(), self.wheel_odds):
+            for draw in create_draws2(outcome, self.wheel_odds):
                 Clock.schedule_once(lambda dt: draw_circle(self, self.wheel_odds, draw[0]))
-                sleep(0.03)
+                if draw[1] == "green":
+                    self.ids.wheel_text.text = "Green"
+                if draw[1] == "red":
+                    self.ids.wheel_text.text = "Red"
+                sleep(0.03)  # wheel speed, higher is slower
             xp_amt = round(float(self.wheel_bet.text)/5, 2)
             App.xp = str(float(App.xp)+xp_amt)
-            if outcome == "WIN":
+            if outcome == "green":
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#2F3D2Fff")))
                 self.ids.wheel_text.text = "You Won!"
                 App.r_coin = str(round(float(App.r_coin)+float(self.wheel_bet.text)*2, 2))
                 App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
-                                        f"{float(self.wheel_bet.text)*self.mult} R[/color] "
+                                        f"{float(self.wheel_bet.text)*2} R[/color] "
                                         f"[color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
             else:
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#3D332Fff")))
@@ -1162,13 +1178,10 @@ class Wheel(Screen):
             Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#3c3c3cff")))
             Clock.schedule_once(lambda dt: draw_circle(self, self.wheel_odds))
             Clock.schedule_once(lambda dt: draw_triangle(self, "yellow"))
-            s.send_e(f"MCF:{self.mult}")
+            s.send_e(f"MCF:2")
             self.game_hash = s.recv_d()
             self.ids.wheel_text.text = ""
             self.ids.wheel_btn.disabled = False
-            for mult_btn in ["set_x2", "set_x3", "set_x5", "set_x10"]:
-                self.ids[mult_btn].disabled = False
-            self.ids[f"set_x{self.mult}"].disabled = True
 
     def run_wheel(self):
         Thread(target=self.wheel).start()
@@ -1306,8 +1319,7 @@ if __name__ == "__main__":
             s = Server()
             App().run()
             break
-        except NameError as e:
-        #except Exception as e:
+        except Exception as e:
             if "App.stop() missing 1 required positional argument: 'self'" in str(e):
                 print("Crash forced by user.")
             else:

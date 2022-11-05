@@ -537,7 +537,7 @@ def client_connection(cs):
                     elif float(bet_amt) > 30:
                         raise InvalidClientData
                     else:
-                        if outcome == "WIN":
+                        if outcome == "green":
                             r_coin = round(r_coin+float(bet_amt)*int(coinflip_games[0][4]), 2)
                             add_transaction(uid, f"COF{coinflip_games[0][4]}", float(bet_amt),
                                             float(bet_amt)*int(coinflip_games[0][4]),

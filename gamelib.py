@@ -13,9 +13,9 @@ def coin_game(odds, seed_inp=None):
     seed(seed_inp[:24]+odds)
     rand_float = uniform(1, above_value)
     if rand_float > base:
-        outcome = "LOSS"
+        outcome = "red"
     else:
-        outcome = "WIN"
+        outcome = "green"
     if game_:
         game_hash = to_base(96, 16, sha512(f"{seed_inp[24:randint(25,36)]}_{outcome}_"
                                            f"{seed_inp[randint(25,36):]}".encode()).hexdigest())
