@@ -473,7 +473,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "2FA"
             pos_hint: {"x": 0.6,  "top": 1}
 
-<NacPassword>:
+<NacPass>:
     nac_password_1: nac_password_1
     nac_password_2: nac_password_2
     GreyFloatLayout:

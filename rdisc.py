@@ -402,7 +402,7 @@ class Captcha(Screen):
             if s.recv_d() != "V":
                 popup("error", "Captcha Failed")
             elif App.path == "make":
-                App.sm.switch_to(NacPassword(), direction="left")
+                App.sm.switch_to(NacPass(), direction="left")
             elif App.path == "login":
                 if App.uname:
                     s.send_e(f"LOG:{App.mkey}🱫u🱫{App.uname}")
@@ -421,7 +421,7 @@ class Captcha(Screen):
                     App.sm.switch_to(LogUnlock(), direction="left")
 
 
-class NacPassword(Screen):
+class NacPass(Screen):
     nac_password_1 = ObjectProperty(None)
     nac_password_2 = ObjectProperty(None)
 
@@ -824,7 +824,7 @@ class Settings(Screen):
             s.send_e(f"CUP:{pass_to_key(self.n_pass.text, default_salt, 50000)}")
             if s.recv_d() == "V":
                 App.path = "CHANGE_PASS"
-                App.sm.switch_to(NacPassword(), direction="left")
+                App.sm.switch_to(NacPass(), direction="left")
             else:
                 popup("error", "Incorrect Password\n- Please try again")
 
@@ -1055,12 +1055,12 @@ class Spinner(Screen):
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.spin_col, rgb("#2F3D2Fff")))
                 self.ids.spin_text.text = "You Won!"
                 App.r_coin = str(round(float(App.r_coin)+float(self.spin_bet.text)*self.mult, 2))
-                App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
+                App.transactions.append(f"Spinner [color=25be42ff]won[/color][color=f46f0eff] "
                                         f"{float(self.spin_bet.text)*self.mult} R[/color] "
                                         f"[color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
             else:
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.spin_col, rgb("#3D332Fff")))
-                App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.spin_bet.text} "
+                App.transactions.append(f"Spinner [color=fa1d04ff]lost[/color][color=f46f0eff] {self.spin_bet.text} "
                                         f"R[/color] [color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
                 self.ids.spin_text.text = "You Lost"
                 App.r_coin = str(round(float(App.r_coin)-float(self.spin_bet.text), 2))
@@ -1141,12 +1141,12 @@ class Wheel(Screen):
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#2F3D2Fff")))
                 self.ids.wheel_text.text = "You Won!"
                 App.r_coin = str(round(float(App.r_coin)+float(self.wheel_bet.text)*2, 2))
-                App.transactions.append(f"Coinflip [color=25be42ff]won[/color][color=f46f0eff] "
+                App.transactions.append(f"Spinner [color=25be42ff]won[/color][color=f46f0eff] "
                                         f"{float(self.wheel_bet.text)*2} R[/color] "
                                         f"[color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
             else:
                 Clock.schedule_once(lambda dt: canvas_update(self.ids.wheel_col, rgb("#3D332Fff")))
-                App.transactions.append(f"Coinflip [color=fa1d04ff]lost[/color][color=f46f0eff] {self.wheel_bet.text} "
+                App.transactions.append(f"Spinner [color=fa1d04ff]lost[/color][color=f46f0eff] {self.wheel_bet.text} "
                                         f"R[/color] [color=25be42ff]gained[/color] [color=f2ef32ff]{xp_amt} XP[/color]")
                 self.ids.wheel_text.text = "You Lost"
                 App.r_coin = str(round(float(App.r_coin)-float(self.wheel_bet.text), 2))
@@ -1221,7 +1221,7 @@ class App(KivyApp):
         [App.sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"),
          IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"),
          CreateKey(name="CreateKey"), UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"),
-         ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPassword(name="NacPassword"),
+         ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPass(name="NacPass"),
          LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
          Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
          Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
@@ -1272,7 +1272,7 @@ def reload(reason):
     [App.sm.add_widget(screen) for screen in [AttemptConnection(name="AttemptConnection"),
      IpSet(name="IpSet"), LogInOrSignUp(name="LogInOrSignUp"), KeyUnlock(name="KeyUnlock"),
      CreateKey(name="CreateKey"), UsbSetup(name="UsbSetup"), ReCreateKey(name="ReCreateKey"),
-     ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPassword(name="NacPassword"),
+     ReCreateGen(name="ReCreateGen"), Captcha(name="Captcha"), NacPass(name="NacPass"),
      LogUnlock(name="LogUnlock"), TwoFacSetup(name="TwoFacSetup"), TwoFacLog(name="TwoFacLog"),
      Home(name="Home"), Chat(name="Chat"), Store(name="Store"), Games(name="Games"),
      Inventory(name="Inventory"), Settings(name="Settings"), ColorSettings(name="ColorSettings"),
