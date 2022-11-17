@@ -391,7 +391,7 @@ def client_connection(cs):
                             else:
                                 break
                         n_ipk = rand_b96_str(24)
-                        expiry_time = str(datetime.now() + timedelta(days=14))[:-7]
+                        expiry_time = str(datetime.now()+timedelta(days=14))[:-7]
                         users.db.execute("UPDATE users SET secret = ?, user_pass = ?, ipk1 = ?, ipk2 = ?, ipk3 = ?, "
                                          "ipk4 = ? WHERE user_id = ?", (enc_from_key(u_secret, n_u_pass),
                                                                         pass_to_key(n_u_pass, uid),
@@ -540,8 +540,7 @@ def client_connection(cs):
                         if outcome == "green":
                             r_coin = round(r_coin+float(bet_amt)*int(coinflip_games[0][4]), 2)
                             add_transaction(uid, f"COF{coinflip_games[0][4]}", float(bet_amt),
-                                            float(bet_amt)*int(coinflip_games[0][4]),
-                                            "Coinflip win")
+                                            float(bet_amt)*int(coinflip_games[0][4]), "Coinflip win")
                         else:
                             r_coin = round(r_coin-float(bet_amt), 2)
                             add_transaction(uid, f"COF{coinflip_games[0][4]}", float(bet_amt), 0, "Coinflip loss")
