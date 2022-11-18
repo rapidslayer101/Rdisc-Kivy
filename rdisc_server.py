@@ -31,9 +31,8 @@ class Users:
         self.db = sqlite3.connect('rdisc_server.db', check_same_thread=False)
         self.db.execute("CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY NOT NULL UNIQUE,"
                         "creation_time DATE NOT NULL, master_key TEXT NOT NULL, secret TEXT NOT NULL,"
-                        "user_pass TEXT NOT NULL, ipk1 TEXT, ipk2 TEXT, ipk3 TEXT, ipk4 TEXT, "
-                        "username TEXT NOT NULL, last_online DATE NOT NULL, xp FLOAT NOT NULL, r_coin FLOAT NOT NULL, "
-                        "d_coin FLOAT NOT NULL)")
+                        "user_pass TEXT NOT NULL, ipk1 TEXT, ipk2 TEXT, ipk3 TEXT, ipk4 TEXT, username TEXT NOT NULL, "
+                        "last_online DATE NOT NULL, xp FLOAT NOT NULL, r_coin FLOAT NOT NULL, d_coin FLOAT NOT NULL)")
         self.db.execute("CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY NOT NULL UNIQUE,"
                         "expiry_date DATE NOT NULL, left TEXT NOT NULL, reward_type TEXT NOT NULL, "
                         "amount FLOAT NOT NULL)")
@@ -67,8 +66,7 @@ class Users:
         with open(f"users/{uid}/transactions.csv", "w", newline='', encoding="utf-8") as csv:
             writer(csv).writerows([["Date", "Type", "Amount", "Spent", "Description", "Hash"],
                                   [str(datetime.now())[:-7], "NACD", "350", "0", "New account 350 D bonus",
-                                   pass_to_key(f"{str(datetime.now())[:-7]}" 
-                                   "NACD3500New account 350 D bonus", uid)]])
+                                   pass_to_key(f"{str(datetime.now())[:-7]}NACD3500New account 350 D bonus", uid)]])
 
     def check_logged_in(self, uid, ip):
         if uid in self.logged_in_users:

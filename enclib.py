@@ -71,15 +71,14 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
     if len(text)//block_size < 11:
         if enc:
             return xor_salt+_xor_(text, key, xor_salt)
+        elif compressor:
+            block = decompress(_xor_(text, key, xor_salt))
         else:
-            if compressor:
-                block = decompress(_xor_(text, key, xor_salt))
-            else:
-                block = _xor_(text, key, xor_salt)
-            try:
-                return block.decode()
-            except UnicodeDecodeError:
-                return block
+            block = _xor_(text, key, xor_salt)
+        try:
+            return block.decode()
+        except UnicodeDecodeError:
+            return block
     else:
         text = [text[i:i+block_size] for i in range(0, len(text), block_size)]
         print(f"Generating {len(text)} block keys")
@@ -87,7 +86,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
         while len(alpha_gen) > 0:
             counter += 2
             value = int(str(key1)[counter:counter+2]) << 1
-            while value > len(alpha_gen) - 1:
+            while value > len(alpha_gen)-1:
                 value = value // 2
             if len(str(key1)[counter:]) < 2:
                 keys_salt += alpha_gen
@@ -102,8 +101,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
             block_keys.append(key)
         print(f"Launching {len(text)} threads")
         pool = Pool(cpu_count())
-        result_objects = [pool.apply_async(_xor_, args=(text[x], block_keys[x], xor_salt))
-                          for x in range(0, len(text))]
+        result_objects = [pool.apply_async(_xor_, args=(text[x], block_keys[x], xor_salt)) for x in range(0, len(text))]
         pool.close()
         if file_output:
             if enc:
@@ -136,13 +134,12 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
                 d_data += result.get()
             if enc:
                 d_data = xor_salt + d_data
-            else:
-                if compressor:
-                    d_data = decompress(d_data)
-                try:
-                    d_data = d_data.decode()
-                except UnicodeDecodeError:
-                    pass
+            elif compressor:
+                d_data = decompress(d_data)
+            try:
+                d_data = d_data.decode()
+            except UnicodeDecodeError:
+                pass
             pool.join()
             return d_data
 
