@@ -7,7 +7,7 @@ from hashlib import sha512
 from zlib import compress, decompress
 from multiprocessing import Pool, cpu_count
 
-# enc 11.9.0 - CREATED BY RAPIDSLAYER101 (Scott Bree)
+# enc 11.9.1 - CREATED BY RAPIDSLAYER101 (Scott Bree)
 _default_block_size_ = 5000000  # the chunking size
 _xor_salt_len_ = 7  # 94^8 combinations
 _default_pass_depth_ = 100000  # the hash loop depth
@@ -83,7 +83,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
         text = [text[i:i+block_size] for i in range(0, len(text), block_size)]
         print(f"Generating {len(text)} block keys")
         key1, alpha_gen, counter, keys_salt = int(to_base(16, 96, key), 36), _b94set_, 0, ""
-        while len(alpha_gen) > 0:
+        while len(alpha_gen) > 0:  # create keys_salt
             counter += 2
             value = int(str(key1)[counter:counter+2]) << 1
             while value > len(alpha_gen)-1:
@@ -133,7 +133,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
             for result in result_objects:
                 d_data += result.get()
             if enc:
-                d_data = xor_salt + d_data
+                d_data = xor_salt+d_data
             elif compressor:
                 d_data = decompress(d_data)
             try:

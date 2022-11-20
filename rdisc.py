@@ -25,6 +25,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from rsa import newkeys, PublicKey, decrypt
 
 
+# hashes client file
 if path.exists("rdisc.exe"):
     app_hash = hash_a_file("rdisc.exe")
 elif path.exists("rdisc.py"):
@@ -32,6 +33,7 @@ elif path.exists("rdisc.py"):
 else:
     app_hash = f"Unknown distro: {platform}"
 
+# updates sha.txt with new app_hash
 version = None
 if path.exists("sha.txt"):
     rdisc_kv.kv()
@@ -53,6 +55,7 @@ if path.exists("sha.txt"):
 default_salt = "52gy\"J$&)6%0}fgYfm/%ino}PbJk$w<5~j'|+R .bJcSZ.H&3z'A:gip/jtW$6A=G-;|&&rR81!BTElChN|+\"T"
 
 
+# server class containing connection algorithm and data transfer functions
 class Server:
     def __init__(self):
         self.s, self.enc_key = socket(), None
@@ -62,8 +65,8 @@ class Server:
         else:
             self.ip = None
 
-    def connect(self):
-        try:  # try to connect to server
+    def connect(self):  # connect to server
+        try:
             self.s.connect((self.ip[0], int(self.ip[1])))
             print("Connected to server")
             l_ip, l_port = str(self.s).split("laddr=")[1].split("raddr=")[0][2:-3].split("', ")
@@ -83,7 +86,7 @@ class Server:
             print("Connection refused")
             return False
 
-    def send_e(self, text):
+    def send_e(self, text):  # encrypt and send data
         try:
             self.s.send(enc_from_key(text, self.enc_key))
         except ConnectionResetError:
@@ -93,7 +96,7 @@ class Server:
             else:
                 print("Failed to reconnect")
 
-    def recv_d(self, buf_lim=1024):
+    def recv_d(self, buf_lim=1024):  # receive and decrypt data
         try:
             return dec_from_key(self.s.recv(buf_lim), self.enc_key)
         except ConnectionResetError:
@@ -104,6 +107,7 @@ class Server:
                 print("Failed to reconnect")
 
 
+# creates a popup
 def popup(popup_type, reason):
     App.popup_text = reason
     if popup_type == "error":
@@ -112,7 +116,8 @@ def popup(popup_type, reason):
         App.popup = Factory.SuccessPopup()
     App.popup.open()
     
-    
+
+# connects to sever with ip and port from file or user input
 def connect_system():
     if s.ip and s.connect():
         print("Loading account keys...")
@@ -129,11 +134,13 @@ def connect_system():
         App.sm.switch_to(IpSet(), direction="left")
 
 
+# screen to run connect_system()
 class AttemptConnection(Screen):
     def on_enter(self, *args):
         Clock.schedule_once(lambda dt: connect_system(), 1)  # todo make this retry
 
 
+# screen to set a new ip and port
 class IpSet(Screen):
     @staticmethod
     def try_connect(ip_address):
@@ -160,10 +167,12 @@ class IpSet(Screen):
                         popup("error", "IP Address Invalid\n- Address must be in the format 'xxx.xxx.xxx.xxx")
 
 
+# default screen to show after connection if no keys are found
 class LogInOrSignUp(Screen):
     pass
 
 
+# screen to unlock ip key
 class KeyUnlock(Screen):
     passcode_prompt_text = StringProperty()
     pwd = ObjectProperty(None)
@@ -206,6 +215,7 @@ class KeyUnlock(Screen):
                 self.pwd.text = ""
 
 
+# screen to create a new account master key
 class CreateKey(Screen):
     pass_code_text = StringProperty()
     pin_code_text = StringProperty()
@@ -265,6 +275,7 @@ class CreateKey(Screen):
                 popup("error", "Incorrect Confirmation Number")
 
 
+# screen to set up a USB to write the master key to
 class UsbSetup(Screen):
     usb_text = StringProperty()
     skip_text = StringProperty()
@@ -293,6 +304,7 @@ class UsbSetup(Screen):
         Thread(target=self.check_usb, daemon=True).start()
 
 
+# screen to collect data for regenerate master key
 class ReCreateKey(Screen):
     load_text = StringProperty()
     name_or_uid = ObjectProperty()
@@ -349,6 +361,7 @@ class ReCreateKey(Screen):
             App.sm.switch_to(ReCreateGen(), direction="left")
 
 
+# screen to regenerate master key
 class ReCreateGen(Screen):
     gen_left_text = StringProperty()
 
@@ -378,6 +391,7 @@ class ReCreateGen(Screen):
                App.pass_code[6:].encode(), int(to_base(10, 36, App.pin_code)),), daemon=True).start()
 
 
+# screen to verify a captcha
 class Captcha(Screen):
     captcha_prompt_text = StringProperty()
     captcha_inp = ObjectProperty(None)
@@ -421,6 +435,7 @@ class Captcha(Screen):
                     App.sm.switch_to(LogUnlock(), direction="left")
 
 
+# screen to create a new password
 class NacPass(Screen):
     nac_password_1 = ObjectProperty(None)
     nac_password_2 = ObjectProperty(None)
@@ -444,6 +459,7 @@ class NacPass(Screen):
                 App.sm.switch_to(TwoFacSetup(), direction="left")
 
 
+# screen to log in to an account
 class LogUnlock(Screen):
     pwd = ObjectProperty(None)
     passcode_prompt_text = StringProperty()
@@ -510,6 +526,7 @@ class TwoFacSetup(Screen):
                 App.sm.switch_to(Home(), direction="left")
 
 
+# screen to verify 2fa code on login
 class TwoFacLog(Screen):
     two_fac_code = ObjectProperty(None)
 
@@ -539,6 +556,7 @@ class TwoFacLog(Screen):
                 App.sm.switch_to(Home(), direction="left")
 
 
+# the home screen
 class Home(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -700,6 +718,7 @@ class Home(Screen):
             self.direction_text = "Conversion Calculator (£->R)"
 
 
+# screen for public chat room
 class Chat(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -756,6 +775,7 @@ class Chat(Screen):
             self.public_room_inp.text = ""
 
 
+# screen for the store
 class Store(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -765,6 +785,7 @@ class Store(Screen):
         self.d_coins = App.d_coin+" D"
 
 
+# screen for selecting a game
 class Games(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -774,6 +795,7 @@ class Games(Screen):
         self.d_coins = App.d_coin+" D"
 
 
+# screen for viewing inventory items
 class Inventory(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -783,6 +805,7 @@ class Inventory(Screen):
         self.d_coins = App.d_coin+" D"
 
 
+# screen for changing account details and other settings
 class Settings(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -829,6 +852,7 @@ class Settings(Screen):
                 popup("error", "Incorrect Password\n- Please try again")
 
 
+# screen for changing the colour scheme
 class ColorSettings(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -885,6 +909,7 @@ class ColorSettings(Screen):
                 self.change_color(App.theme[theme][color])
 
 
+# store screen for buying gift cards
 class GiftCards(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -909,6 +934,7 @@ class GiftCards(Screen):
             popup("error", "Insufficient Funds\n- You require more R Coins")
 
 
+# store screen for buying data coins
 class DataCoins(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -937,6 +963,7 @@ class DataCoins(Screen):
                                         f"[color=f46f0eff]{amount} R[/color]")
 
 
+# draw a circle with segments and a rotation
 def draw_circle(self, segments, rotation=0):
     seg = [seg*0.36 for seg in segments]
     with self.canvas:
@@ -951,6 +978,7 @@ def draw_circle(self, segments, rotation=0):
             seg_count += 1
 
 
+# draw a coloured triangle
 def draw_triangle(self, color):
     with self.canvas:
         Color(*App.col[color])
@@ -959,12 +987,14 @@ def draw_triangle(self, color):
                      self.center[0], self.center[1]-(self.center[1]/2.5)], width=2, cap="none")
 
 
+# update a canvas with a color
 def canvas_update(canvas, color):
     with canvas.canvas:
         Color(*color)
         RoundedRectangle(size=canvas.size, pos=canvas.pos, radius=[10])
 
 
+# check outcome of value against odds
 def check_odd(odds, value):  # todo make support multiple odds
     value = float(str(round(value/360, 3)).split(".")[1])
     if 500-odds[0] <= value < 500:
@@ -973,6 +1003,7 @@ def check_odd(odds, value):  # todo make support multiple odds
         return "red"
 
 
+# create game draws given the odds
 def create_draws(result, odds):
     while True:
         last = 1
@@ -985,6 +1016,7 @@ def create_draws(result, odds):
             return draws
 
 
+# games screen for the spin2win game
 class Spinner(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -1084,6 +1116,7 @@ class Spinner(Screen):
         draw_circle(self, self.spin_odds)
 
 
+# games class for the wheel game
 class Wheel(Screen):
     r_coins = StringProperty()
     d_coins = StringProperty()
@@ -1167,6 +1200,7 @@ class Wheel(Screen):
         draw_circle(self, self.wheel_odds)
 
 
+# screen that is shown when the app is reloading
 class Reloading(Screen):
     reload_text = StringProperty()
 
@@ -1174,6 +1208,7 @@ class Reloading(Screen):
         self.reload_text = App.reload_text
 
 
+# the app class
 class App(KivyApp):
     def build(self):
         App.col = {"rdisc_purple": rgb("#6753fcff"), "rdisc_purple_dark": rgb("#6748a0ff"),
@@ -1243,6 +1278,7 @@ class App(KivyApp):
         return App.sm
 
 
+# runs code on the detection of key presses
 def on_keyboard(window, key, scancode, text, modifiers):
     if 'ctrl' in modifiers and text == 'r':
         reload("reload")
@@ -1255,6 +1291,7 @@ def on_keyboard(window, key, scancode, text, modifiers):
         App.popup = None
 
 
+# reload function for the app
 def reload(reason):
     current_screen = App.sm.current
     if reason == "reload":
@@ -1283,6 +1320,7 @@ def reload(reason):
         App.sm.current = current_screen
 
 
+# app entry point
 if __name__ == "__main__":
     if not path.exists("resources"):
         mkdir("resources")
