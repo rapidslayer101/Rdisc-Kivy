@@ -86,7 +86,7 @@ class Server:
             print("Connection refused")
             return False
 
-    def send_e(self, text):  # encrypt and send data
+    def send_e(self, text):  # encrypt and send data to server
         try:
             self.s.send(enc_from_key(text, self.enc_key))
         except ConnectionResetError:
@@ -96,7 +96,7 @@ class Server:
             else:
                 print("Failed to reconnect")
 
-    def recv_d(self, buf_lim=1024):  # receive and decrypt data
+    def recv_d(self, buf_lim=1024):  # receive and decrypt data to server
         try:
             return dec_from_key(self.s.recv(buf_lim), self.enc_key)
         except ConnectionResetError:
@@ -130,7 +130,7 @@ def connect_system():
         else:
             print(" - No keys found")
             App.sm.switch_to(LogInOrSignUp(), direction="left")
-    else:
+    else:  # connection failed, switch to ip input screen
         App.sm.switch_to(IpSet(), direction="left")
 
 
@@ -322,7 +322,7 @@ class ReCreateKey(Screen):
     def detect_usb(self):
         dl = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         before_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
-        while True:
+        while True:  # check all possible new drives
             now_drives = [f"{d}:\\" for d in dl if path.exists(f"{d}:\\")]
             if before_drives != now_drives:
                 try:
@@ -486,6 +486,7 @@ class LogUnlock(Screen):
                 self.pwd.text = ""
 
 
+# screen to set up 2fa
 class TwoFacSetup(Screen):
     two_fac_wait_text = StringProperty()
     two_fac_code = ObjectProperty(None)
@@ -623,7 +624,7 @@ class Home(Screen):
         self.coin_conversion = "0.00 R"
         self.direction_text = "Conversion Calculator (£->R)"
 
-    def check_transfer(self):
+    def check_transfer(self):  # check if transfer is valid
         if self.transfer_amt.text != "":
             self.transfer_amt.text = self.transfer_amt.text[:12]
             if float(self.transfer_amt.text) > float(App.r_coin)*0.995:
@@ -709,7 +710,7 @@ class Home(Screen):
                 else:
                     self.coin_conversion = "£0.00"
 
-    def change_transfer_direction(self):
+    def change_conversion_direction(self):
         if self.transfer_direction == "R":
             self.transfer_direction = "D"
             self.direction_text = "Conversion Calculator (R->£)"
@@ -725,7 +726,7 @@ class Chat(Screen):
     public_room_msg_counter = 0
     public_room_inp = ObjectProperty(None)
 
-    def msg_watch(self):
+    def msg_watch(self):  # look for new messages
         s.send_e("JNC")
         while True:
             msg_author, msg_content = s.recv_d().split("🱫")
@@ -738,7 +739,7 @@ class Chat(Screen):
         self.d_coins = App.d_coin+" D"
         Thread(target=self.msg_watch, daemon=True).start()
 
-    def on_leave(self, *args):
+    def on_leave(self, *args):  # on leave stop looking for new messages
         s.send_e("LVC")
 
     def add_msg(self, name, text):
@@ -843,7 +844,6 @@ class Settings(Screen):
         if len(self.n_pass.text) < 9:
             popup("error", "Password Invalid\n- Password must be at least 9 characters")
         else:
-            # todo 2fa, new ipk, needs old pass
             s.send_e(f"CUP:{pass_to_key(self.n_pass.text, default_salt, 50000)}")
             if s.recv_d() == "V":
                 App.path = "CHANGE_PASS"
@@ -887,7 +887,7 @@ class ColorSettings(Screen):
                     self.selected_color = color
                     self.change_color(self.color_list_old[color])
 
-    @staticmethod
+    @staticmethod  # call reload from KV file
     def reload():
         reload("reload")
 
@@ -901,7 +901,7 @@ class ColorSettings(Screen):
                     hex_color += hex(int(rgb1*255))[2:].zfill(2)
                 f.write(f"{color}:{hex_color}\n")
 
-    def default_theme(self, theme):
+    def default_theme(self, theme):  # set default theme
         if theme in ["purple", "pink", "green", "lime"]:
             App.col = App.theme[theme]
             for color in App.col:
@@ -1208,7 +1208,7 @@ class Reloading(Screen):
         self.reload_text = App.reload_text
 
 
-# the app class
+# app class
 class App(KivyApp):
     def build(self):
         App.col = {"rdisc_purple": rgb("#6753fcff"), "rdisc_purple_dark": rgb("#6748a0ff"),
@@ -1236,7 +1236,7 @@ class App(KivyApp):
                                    "red": rgb("#fb1e05ff"), "grey": rgb("#3c3c32ff"), "bk_grey_1": rgb("#323232ff"),
                                    "bk_grey_2": rgb("#373737ff"), "bk_grey_3": rgb("#3c3c3cff")}})
 
-        if path.exists("color_scheme.txt"):
+        if path.exists("color_scheme.txt"):  # load color scheme
             with open("color_scheme.txt", encoding="utf-8") as f:
                 for color in f.readlines()[1:]:
                     color_name, color = color.replace("\n", "").split(": ")

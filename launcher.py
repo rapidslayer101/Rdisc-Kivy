@@ -17,6 +17,7 @@ from kivy.core.window import Window
 from kivy.config import Config
 
 
+# server class containing connection algorithm and data transfer functions
 class Server:
     def __init__(self):
         self.s, self.enc_key = socket(), None
@@ -47,7 +48,7 @@ class Server:
             print("Connection refused")
             return False
 
-    def send_e(self, text):
+    def send_e(self, text):  # encrypt and send data to server
         try:
             self.s.send(enc.enc_from_key(text, self.enc_key))
         except ConnectionResetError:
@@ -57,7 +58,7 @@ class Server:
             else:
                 print("Failed to reconnect")
 
-    def recv_d(self, buf_lim):
+    def recv_d(self, buf_lim):  # receive and decrypt data from server
         try:
             return enc.dec_from_key(self.s.recv(buf_lim), self.enc_key)
         except ConnectionResetError:
@@ -71,29 +72,31 @@ class Server:
 s = Server()
 
 
+# detects if any version of the app is already present
 def load():
-    if not path.exists("app"):
+    if not path.exists("app"):  # if no app present
         mkdir("app")
         sm.switch_to(ChooseDistro())
-    else:
-        if path.exists("app/code/rdisc.py"):
-            call("launch.bat")
-            sleep(2)
-            App.get_running_app().stop()
-        else:
-            try:
-                [file for file in listdir('app') if file.endswith('.exe')][-1]
-                sm.switch_to(AttemptConnection())
-            except IndexError:
-                sm.switch_to(ChooseDistro())
+    elif path.exists("app/code/rdisc.py"):  # if code version present
+        call("launch.bat")
+        sleep(2)
+        App.get_running_app().stop()
+    else:  # if app version present
+        try:
+            [file for file in listdir('app') if file.endswith('.exe')][-1]
+            sm.switch_to(AttemptConnection())
+        except IndexError:
+            sm.switch_to(ChooseDistro())
 
 
+# runs load()
 class Loading(Screen):
     def __init__(self, **kwargs):
         super(Loading, self).__init__(**kwargs)
         Clock.schedule_once(lambda dt: load(), 0.1)
 
 
+# screen for choosing between code and app version
 class ChooseDistro(Screen):
     def exe(self):
         sm.switch_to(AttemptConnection())
@@ -102,6 +105,7 @@ class ChooseDistro(Screen):
         sm.switch_to(CreateDev())
 
 
+# screen for while attempting to connect to server
 class AttemptConnection(Screen):
     def on_enter(self, *args):
         if s.ip and s.connect():
@@ -113,6 +117,7 @@ class AttemptConnection(Screen):
             sm.switch_to(IpSet(), direction="left")
 
 
+# screen for setting server ip and port
 class IpSet(Screen):
     ip_address = ObjectProperty(None)
 
@@ -140,6 +145,7 @@ class IpSet(Screen):
                         print("\n🱫[COL-RED] IP address must be in the format 'xxx.xxx.xxx.xxx'")
 
 
+# screen for launching/updating and showing progress
 class Update(Screen):
     update_text = StringProperty()
 
@@ -161,7 +167,7 @@ class Update(Screen):
             self.update_text = f"Downloading version {file_name[:-4].replace('rdisc', 'Rdisc')}..."
             all_bytes = b""
             start = perf_counter()
-            while True:
+            while True:  # receive update from server
                 bytes_read = s.s.recv(32768)
                 if b"_BREAK_" in bytes_read:
                     all_bytes += bytes_read[:-7]
@@ -196,6 +202,7 @@ class Update(Screen):
         Thread(target=self.update_system, daemon=True).start()
 
 
+# screen for creating/downloading dev environment
 class CreateDev(Screen):
     create_text = StringProperty()
 
@@ -245,6 +252,7 @@ class WindowManager(ScreenManager):
     pass
 
 
+# Kivy UI code for launcher
 Builder.load_string("""
 
 #:set rdisc_purple (104/255, 84/255, 252/255,1)
@@ -387,6 +395,7 @@ sm = WindowManager()
 [sm.add_widget(screen) for screen in [Loading(), ChooseDistro(), AttemptConnection(), IpSet(), Update(), CreateDev()]]
 
 
+# app class
 class RdiscLauncher(App):
     def build(self):
         self.title = f"Rdisc Launcher"

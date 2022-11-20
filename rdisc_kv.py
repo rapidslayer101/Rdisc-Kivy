@@ -75,7 +75,7 @@ kv_payload = """# You can edit this file to change the UI.
         Line:
             ellipse: self.size[0]+self.pos[0]-self.size[1]/2.0, self.pos[1], self.size[1], self.size[1], 360, 540
             
-<SizeLabel@Label>:
+<SizeLabel@Label>:  # label with a size hint
     size_hint: 0.1, 0.05
     
 <ErrorPopup@Popup>:
@@ -745,7 +745,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "<>"
             size_hint: 0.04, 0.04
             pos_hint: {"x": 0.62, "top": 0.15}
-            on_press: root.change_transfer_direction()
+            on_press: root.change_conversion_direction()
         RoundedTxtInp
             input_filter: "float"
             hint_text: "0.00"

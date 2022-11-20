@@ -14,6 +14,7 @@ from requests import get
 from captcha.image import ImageCaptcha
 
 
+# custom exception for invalid data from a client
 class InvalidClientData(Exception):
     pass
 
@@ -22,6 +23,7 @@ if not path.exists('users'):
     mkdir('users')
 
 
+# class containing data for logged in users
 class Users:
     chat_users = {}
     logged_in_users = []
@@ -112,19 +114,19 @@ def client_connection(cs):
         coinflip_games = []
         request = None
 
-        def send_e(text):
+        def send_e(text):  # encrypt and send to client
             try:
                 cs.send(enc_from_key(text, enc_key))
             except zl_error:
                 raise ConnectionResetError
 
-        def recv_d(buf_lim=1024):
+        def recv_d(buf_lim=1024):  # decrypt data from client
             try:
                 return dec_from_key(cs.recv(buf_lim), enc_key)
             except zl_error:
                 raise ConnectionResetError
 
-        def send_update(update_file):
+        def send_update(update_file):  # send update to client
             send_e(f"{update_file}🱫{(path.getsize(f'dist/{update_file}'))}")
             with open(f"dist/{update_file}", "rb") as f:
                 while True:
@@ -134,7 +136,7 @@ def client_connection(cs):
                         break
                     cs.sendall(bytes_read)
 
-        while True:
+        while True:  # login loop
             login_request = recv_d()
             print(login_request)  # temp debug for dev
 
@@ -175,14 +177,14 @@ def client_connection(cs):
                 log_or_create = recv_d()
                 if log_or_create.startswith("NAC:"):  # new account
                     master_key, u_pass = log_or_create[4:].split("🱫")
-                    while True:
+                    while True:  # create random unique user id
                         uid = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=8))
                         u_name = uid+"#"+str(randint(111, 999))
                         if users.db.execute("SELECT user_id FROM users WHERE user_id = ?", (uid,)).fetchone() is None:
                             break
                     u_secret = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdefghijklmnopqrstuvwxyz", k=8))
                     send_e(f"{uid}🱫{u_secret}")
-                    while True:
+                    while True:  # 2fa challenge
                         code_challenge = recv_d()
                         if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                                f"Pin={code_challenge}&SecretCode={u_secret}").content != b"True":
@@ -195,7 +197,7 @@ def client_connection(cs):
                                            pass_to_key(ip+ipk, uid), u_name)
                             break
 
-                if log_or_create.startswith("LOG:"):
+                if log_or_create.startswith("LOG:"):  # login
                     master_key_c, search_for, uname_or_uid = log_or_create[4:].split("🱫")
                     if search_for == "u":
                         try:
@@ -230,7 +232,7 @@ def client_connection(cs):
                                 else:
                                     send_e("N")
                             u_secret = dec_from_key(u_secret, u_pass_c)
-                            while True:
+                            while True:  # 2fa challenge
                                 code_challenge = recv_d()
                                 if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                                        f"Pin={code_challenge}&SecretCode={u_secret}").content != b"True":
@@ -271,7 +273,7 @@ def client_connection(cs):
                             users.db.commit()
                             break
 
-            elif login_request.startswith("ULK:"):
+            elif login_request.startswith("ULK:"):  # unlock account
                 uid, u_ipk = login_request[4:].split("🱫")
                 print(uid, u_ipk)
                 if users.check_logged_in(uid, ip):
@@ -325,8 +327,8 @@ def client_connection(cs):
             if request.startswith("LOG_A"):  # deletes all IP keys
                 raise ConnectionResetError
 
-            elif request.startswith("DLAC:"):  # todo delete account
-                pass
+            #elif request.startswith("DLAC:"):  # todo delete account
+            #    pass
 
             elif request.startswith("BGC:"):  # buy gift card
                 try:
@@ -336,9 +338,9 @@ def client_connection(cs):
                 if amount not in [25, 40, 100, 250, 600]:
                     raise InvalidClientData
                 elif r_coin >= amount:
-                    r_coin = round(r_coin - amount, 2)
+                    r_coin = round(r_coin-amount, 2)
                     users.db.execute("UPDATE users SET r_coin = ? WHERE user_id = ?", (r_coin, uid))
-                    while True:
+                    while True:  # create random unique gift code
                         code = "".join(choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXY", k=16))
                         try:
                             users.db.execute("INSERT INTO codes VALUES (?, ?, ?, ?, ?)", (code,
@@ -381,7 +383,7 @@ def client_connection(cs):
                         send_e("V")
                         n_u_pass = recv_d()
                         u_secret = dec_from_key(u_secret, u_pass_c)
-                        while True:
+                        while True:  # 2fa challenge
                             code_challenge = recv_d()
                             if get(f"https://www.authenticatorapi.com/Validate.aspx?"
                                    f"Pin={code_challenge}&SecretCode={u_secret}").content != b"True":
@@ -551,21 +553,21 @@ def client_connection(cs):
             else:
                 raise InvalidClientData  # invalid request
 
-    except ConnectionResetError:
+    except ConnectionResetError:  # client disconnection exception handler
         print(f"{uid}-{ip}:{port} DC")
         if ip in users.logged_in_users:
             users.logout(uid, ip)
-    except InvalidClientData:
+    except InvalidClientData:  # invalid client data exception handler
         print(f"{uid}-{ip}:{port} DC - modified/invalid client request")
         if ip in users.logged_in_users:
             users.logout(uid, ip)
-        with open(f"users/{uid}/log.txt", "a") as log:
+        with open(f"users/{uid}/log.txt", "a") as log:  # log logout time
             if request:
                 log.write(f"{str(datetime.now())[:-7]} - ICR: {request}\n")
             else:
                 log.write(f"{str(datetime.now())[:-7]} - ICR: None\n")
 
 
-while True:
+while True:  # connection accept loop
     client_socket, client_address = s.accept()
     t = Thread(target=client_connection, args=(client_socket,), daemon=True).start()
