@@ -24,6 +24,8 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
 from rsa import newkeys, PublicKey, decrypt
 
+# todo fix pasted ips not working
+
 
 # hashes client file
 if path.exists("rdisc.exe"):
@@ -243,13 +245,13 @@ class CreateKey(Screen):
                     self.pin_code_text = f"Generating Key and Pin ({round(time_left, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        App.mkey = to_base(96, 16, master_key.hex())
+        App.mkey = to_base(17, 95, master_key.hex())
         self.rand_confirmation = str(randint(0, 9))
-        self.pin_code_text = f"Account Pin: {to_base(36, 10, current_depth)}"
+        self.pin_code_text = f"Account Pin: {to_base(11, 36, current_depth).upper()}"
         self.rand_confirm_text = f"Once you have written down your Account Key " \
                                  f"and Pin enter {self.rand_confirmation} below.\n" \
                                  f"By proceeding with account creation you agree to our Terms and Conditions."
-        App.pin_code = to_base(36, 10, current_depth)
+        App.pin_code = to_base(11, 36, current_depth).upper()
 
     def on_pre_enter(self, *args):
         App.path = "make"
@@ -382,13 +384,13 @@ class ReCreateGen(Screen):
                                          f"({round((depth_left-depth_count)/real_dps, 2)}s left)"
                 except ZeroDivisionError:
                     pass
-        App.mkey = to_base(96, 16, master_key.hex())
+        App.mkey = to_base(17, 95, master_key.hex())
         Clock.schedule_once(lambda dt: App.sm.switch_to(Captcha(), direction="left"))
 
     def on_enter(self, *args):
         self.gen_left_text = f"Generating master key"
         Thread(target=self.regenerate_master_key, args=(App.pass_code[:6].encode(),
-               App.pass_code[6:].encode(), int(to_base(10, 36, App.pin_code)),), daemon=True).start()
+               App.pass_code[6:].encode(), int(to_base(36, 11, App.pin_code.lower())),), daemon=True).start()
 
 
 # screen to verify a captcha

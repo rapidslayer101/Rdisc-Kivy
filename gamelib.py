@@ -17,7 +17,7 @@ def coin_game(odds, seed_inp=None):
     else:
         outcome = "green"
     if game_:
-        game_hash = to_base(96, 16, sha512(f"{seed_inp[24:randint(25,36)]}_{outcome}_"
+        game_hash = to_base(17, 95, sha512(f"{seed_inp[24:randint(25,36)]}_{outcome}_"
                                            f"{seed_inp[randint(25,36):]}".encode()).hexdigest())
         return seed_inp, rand_float, outcome, game_hash
     else:

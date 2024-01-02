@@ -1,40 +1,46 @@
-from datetime import datetime, timedelta
-from sys import byteorder
-from time import perf_counter
-from os.path import exists, getsize
-from random import choices
-from hashlib import sha512
-from zlib import compress, decompress
-from multiprocessing import Pool, cpu_count
+from datetime import datetime as _datetime_, timedelta as _timedelta_
+from sys import byteorder as _byteorder_
+from time import perf_counter as _perf_counter_
+from os.path import exists as _exists_, getsize as _getsize_
+from random import choices as _choices_
+from hashlib import sha512 as _sha512_
+from zlib import compress as _compress_, decompress as _decompress_
+from multiprocessing import Pool as _Pool_, cpu_count as _cpu_count_
 
-# enc 11.9.1 - CREATED BY RAPIDSLAYER101 (Scott Bree)
+# enc 11.10.0 - CREATED BY RAPIDSLAYER101 (Scott Bree)
 _default_block_size_ = 5000000  # the chunking size
 _xor_salt_len_ = 7  # 94^8 combinations
 _default_pass_depth_ = 100000  # the hash loop depth
-_b94set_ = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/`!\"$%^&*() -=[{]};:'@#~\\|,<.>?"
-_b96set_ = _b94set_+"¬£"
+_b94set_ = "£0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/`!\"$%^&*() -=[{]};:'@#~\\|,<.>"
+_b96set_ = _b94set_+"¬?"
 
 
 # generate a random base 96 string of a given length
-def rand_b96_str(num):
-    return "".join(choices(_b96set_, k=int(num)))
+def rand_b96_str(num, alpha_set=_b96set_):
+    return "".join(_choices_(alpha_set, k=int(num)))
 
 
 # convert a string to another base
-def to_base(base_to, base_fr, hex_to_convert):
-    decimal, power = 0, len(str(hex_to_convert))-1
-    for digit in str(hex_to_convert):
-        decimal += _b96set_.index(digit)*base_fr**power
-        power -= 1
-    hexadecimal = ""
-    while decimal > 0:
-        hexadecimal, decimal = _b96set_[decimal % base_to]+hexadecimal, decimal//base_to
-    return hexadecimal
+def to_base(base_fr, base_to, hex_to_convert, alpha_set=_b96set_):
+    alpha_set, null_fix = alpha_set[:-1], alpha_set[-1]
+    if not all([digit in alpha_set[:base_fr] for digit in str(hex_to_convert)]):
+        return f"Input contains characters not in the base: {alpha_set[:base_fr]} "
+    if 2 > base_to or base_to > len(alpha_set):
+        return f"Base out of range 2-{len(alpha_set)}"
+    else:
+        decimal, power = 0, len(str(hex_to_convert))-1
+        for digit in str(hex_to_convert):
+            decimal += alpha_set.index(digit)*base_fr**power
+            power -= 1
+        hexadecimal = ""
+        while decimal > 0:
+            hexadecimal, decimal = alpha_set[decimal % base_to]+hexadecimal, decimal//base_to
+        return hexadecimal
 
 
 # attempts to find the base of an input string
 def get_base(data_to_resolve):
-    for i in range(96):
+    for i in range(95):
         if to_base(i+2, i+2, data_to_resolve) == data_to_resolve:
             return i+2
 
@@ -42,21 +48,21 @@ def get_base(data_to_resolve):
 # turns a password and salt into a key
 # used to save a key so encryption/decryption does not require the generation of a key each time
 # can also be used as a string hider to hide data other than a password
-def pass_to_key(password, salt, depth=1):
+def pass_to_key(password, salt, depth=1000000):
     password, salt = password.encode(), salt.encode()
     for i in range(depth):
-        password = sha512(password+salt).digest()
-    return to_base(96, 16, password.hex())
+        password = _sha512_(password+salt).digest()
+    return to_base(17, 95, password.hex())
 
 
 # generates a key of equal length to the data then xor the data with the key
 def _xor_(data, key, xor_salt):
     key_value, key = [], key.encode()
     for i in range((len(data)//64)+1):
-        key = sha512(key+xor_salt).digest()
+        key = _sha512_(key+xor_salt).digest()
         key_value.append(key)
     key = b"".join(key_value)[:len(data)]
-    return (int.from_bytes(data, byteorder) ^ int.from_bytes(key, byteorder)).to_bytes(len(data), byteorder)
+    return (int.from_bytes(data, _byteorder_) ^ int.from_bytes(key, _byteorder_)).to_bytes(len(data), _byteorder_)
 
 
 def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
@@ -64,15 +70,15 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
         if type(text) != bytes:
             text = text.encode()
         if compressor:
-            text = compress(text, 9)
-        xor_salt = "".join(choices(_b94set_, k=_xor_salt_len_)).encode()
+            text = _compress_(text, 9)
+        xor_salt = "".join(_choices_(_b94set_, k=_xor_salt_len_)).encode()
     else:
         xor_salt, text = text[:_xor_salt_len_], text[_xor_salt_len_:]
-    if len(text)//block_size < 11:
+    if len(text)//block_size < 11 and not file_output:
         if enc:
             return xor_salt+_xor_(text, key, xor_salt)
         elif compressor:
-            block = decompress(_xor_(text, key, xor_salt))
+            block = _decompress_(_xor_(text, key, xor_salt))
         else:
             block = _xor_(text, key, xor_salt)
         try:
@@ -82,8 +88,8 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
     else:
         text = [text[i:i+block_size] for i in range(0, len(text), block_size)]
         print(f"Generating {len(text)} block keys")
-        key1, alpha_gen, counter, keys_salt = int(to_base(16, 96, key), 36), _b94set_, 0, ""
-        while len(alpha_gen) > 0:  # create keys_salt
+        key1, alpha_gen, counter, keys_salt = int(to_base(95, 17, key), 36), _b94set_, 0, ""
+        while len(alpha_gen) > 0:
             counter += 2
             value = int(str(key1)[counter:counter+2]) << 1
             while value > len(alpha_gen)-1:
@@ -100,7 +106,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
             key = pass_to_key(key, keys_salt, 1)
             block_keys.append(key)
         print(f"Launching {len(text)} threads")
-        pool = Pool(cpu_count())
+        pool = _Pool_(_cpu_count_())
         result_objects = [pool.apply_async(_xor_, args=(text[x], block_keys[x], xor_salt)) for x in range(0, len(text))]
         pool.close()
         if file_output:
@@ -124,7 +130,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
                             f.write(block.replace("\r", ""))
                 if compressor:
                     with open(f"{file_output}", "rb") as f:
-                        data = decompress(f.read())
+                        data = _decompress_(f.read())
                     with open(f"{file_output}", "wb") as f:
                         f.write(data)
             pool.join()
@@ -133,9 +139,9 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
             for result in result_objects:
                 d_data += result.get()
             if enc:
-                d_data = xor_salt+d_data
+                d_data = xor_salt + d_data
             elif compressor:
-                d_data = decompress(d_data)
+                d_data = _decompress_(d_data)
             try:
                 d_data = d_data.decode()
             except UnicodeDecodeError:
@@ -146,7 +152,7 @@ def _encrypter_(enc, text, key, block_size, compressor, file_output=None):
 
 # returns the file size of a file in standard units
 def get_file_size(file):
-    size, power, n = [getsize(file), 2 ** 10, 0]
+    size, power, n = [_getsize_(file), 2 ** 10, 0]
     power_labels = {0: '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
     while size > power:
         size /= power
@@ -156,14 +162,14 @@ def get_file_size(file):
 
 # a wrapper for the encrypter function to support file encryption and decryption
 def _file_encrypter_(enc, file, key, file_output, compressor):
-    start = perf_counter()
-    if exists(file):
+    start = _perf_counter_()
+    if _exists_(file):
         file_name = file.split("/")[-1].split(".")[:-1]  # file_type = file.split("/")[-1].split(".")[-1:]
-        print(f"{file_name} is {get_file_size(file)}, should take {round(getsize(file)/136731168.599, 2)}s")
+        print(f"{file_name} is {get_file_size(file)}, should take {round(_getsize_(file)/136731168.599, 2)}s")
         with open(file, 'rb') as hash_file:
             data = hash_file.read()
         _encrypter_(enc, data, key, _default_block_size_, compressor, file_output)
-        print(f"ENC/DEC COMPLETE OF {get_file_size(file)} IN {round(perf_counter()-start, 2)}s")
+        print(f"ENC/DEC COMPLETE OF {get_file_size(file)} IN {round(_perf_counter_()-start, 2)}s")
     else:
         return "File not found"
 
@@ -204,17 +210,17 @@ def dec_file_from_pass(e_file, password, salt, file_output, depth=_default_pass_
 # this function can be used to create a time based key system
 def round_time(dt=None, round_to=30):
     if not dt:
-        dt = datetime.now()
+        dt = _datetime_.now()
     seconds = (dt.replace(tzinfo=None)-dt.min).seconds
-    return dt+timedelta(0, (seconds+round_to/2)//round_to*round_to-seconds, -dt.microsecond)
+    return dt+_timedelta_(0, (seconds+round_to/2)//round_to*round_to-seconds, -dt.microsecond)
 
 
 # hashes a file using the SHA512 algorithm
 def hash_a_file(file):
-    hash_ = sha512()
+    hash_ = _sha512_()
     with open(file, 'rb') as hash_file:
         buf = hash_file.read(262144)
         while len(buf) > 0:
             hash_.update(buf)
             buf = hash_file.read(262144)
-    return to_base(96, 16, hash_.hexdigest())
+    return to_base(17, 95, hash_.hexdigest())
