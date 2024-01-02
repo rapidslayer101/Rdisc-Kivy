@@ -899,7 +899,7 @@ kv_payload = """# You can edit this file to change the UI.
             text: "Buy R-Coin Gift Cards"
             pos_hint: {"x": 0.06, "top": 0.91}
         AsyncImage:
-            source: "https://d2j6dbq0eux0bg.cloudfront.net/default-store/giftcards/gift_card_002_1500px.jpg"
+            source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
             anim_delay: 0.05
             size_hint: 0.16, 0.3
             pos_hint: {"x": 0.03, "top": 0.85}
@@ -1374,7 +1374,7 @@ kv_payload = """# You can edit this file to change the UI.
     size_hint: 0.27, 0.42
     
 <GiftCardAsyncImage@AsyncImage>:
-    source: "https://d2j6dbq0eux0bg.cloudfront.net/default-store/giftcards/gift_card_002_1500px.jpg"
+    source: "https://oliveandgray.in/wp-content/uploads/2020/07/gift_card_003_1500px.png"
     size_hint: 0.23, 0.35
         
 <GiftCards>:
